@@ -98,6 +98,11 @@ int tg(Aris::RT_CONTROL::CMachineData& machineData,
             rt_printf("No. %d GS. %d MS. %d POS. %d \n",
                  i, gaitcmd[i], machineData.motorsStates[i], machineData.feedbackData[i].Position);
         }
+        msgSend.SetMsgID(DATA_REPORT);
+        msgSend.SetLength(sizeof(machineData));
+        msgSend.Copy((const char *)&machineData, sizeof(machineData));
+        
+        controlSystem.RT_PostMsg(msgSend);
     }
 
     CommandID=msgRecv.GetMsgID();
@@ -324,19 +329,28 @@ int OnGetControlCommand(Aris::Core::MSG &msg)
 
 };
 
+int OnDataReportReceived(Aris::Core::MSG &msg)
+{
+    CMachineData msgData;
+    if ( ControlSystem.IsConnected() ){
+        msg.Paste((void *)&msgData, msg.GetLength());
+        ControlSystem.SendData(msg);
+    }
+    return 0;
+}
+
 int main(int argc, char** argv)
 {	
     Aris::Core::RegisterMsgCallback(CS_Connected,On_CS_Connected);
     Aris::Core::RegisterMsgCallback(CS_CMD_Received,On_CS_CMD_Received);
     Aris::Core::RegisterMsgCallback(CS_Lost,On_CS_Lost);
     Aris::Core::RegisterMsgCallback(GetControlCommand,OnGetControlCommand);
+    Aris::Core::RegisterMsgCallback(DATA_REPORT, OnDataReportReceived);
 
     //   CONN call back
     /*设置所有CONN类型的回调函数*/
     ControlSystem.SetCallBackOnReceivedConnection(On_CS_ConnectionReceived);
-
     ControlSystem.SetCallBackOnReceivedData(On_CS_DataReceived);
-
     ControlSystem.SetCallBackOnLoseConnection(On_CS_ConnectionLost);
 
     ControlSystem.StartServer("5690");

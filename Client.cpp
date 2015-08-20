@@ -6,13 +6,30 @@ using namespace std;
 
 using namespace Aris::Core;
 
+enum MSG_ID_CLIENT
+{
+    ACK = 0,
+    DATA_REPORT = 1050
+};
 
+Aris::RT_CONTROL::CMachineData dataReported;
 CONN ControlSysClient;
 
 //CONN callback functions
 int OnConnDataReceived(Aris::Core::CONN *pConn, Aris::Core::MSG &data)
 {
-    Aris::Core::PostMsg(Aris::Core::MSG(ControlCommandNeeded));
+    cout << "WTF " << data.GetMsgID() << endl;
+    
+    // The command act messge is received
+    if (data.GetMsgID() == ACK){
+        Aris::Core::PostMsg(Aris::Core::MSG(ControlCommandNeeded));
+    }
+    // The data report message
+    else if (data.GetMsgID() == DATA_REPORT){
+        cout << "Data size = " << data.GetLength() << endl;
+        data.Paste(&dataReported, data.GetLength());
+        cout << "Motor Pos = " << dataReported.feedbackData[0].Position << endl;
+    }
     return 0;
 }
 

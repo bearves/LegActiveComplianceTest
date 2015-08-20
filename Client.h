@@ -1,7 +1,7 @@
 
 #include "Aris_Message.h"
 #include "Aris_Socket.h"
-
+#include "Aris_ControlData.h"
 
 extern Aris::Core::CONN ControlSysClient;
 
