@@ -14,6 +14,8 @@ ENDFUNCTION(PREPEND)
 project(PushRecoveryTest)
 
 set(CMAKE_CXX_FLAGS "-std=c++11")
+set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTOUIC ON)
 
 # set compile options
 if(UNIX)
@@ -26,7 +28,7 @@ set(LIBRARY_OUTPUT_PATH "${PROJECT_SOURCE_DIR}/lib")
 
 # set include and lib folders
 if(UNIX)
-    set(ARIS_SOURCE_LOCATION "/home/sun/Projects/Aris")
+    set(ARIS_SOURCE_LOCATION "/home/hex/Aris_with_force")
     include_directories("/usr/lapack/include")
     include_directories(${ARIS_SOURCE_LOCATION}/src/Aris_Control)
     include_directories(${ARIS_SOURCE_LOCATION}/src/Aris_Core)

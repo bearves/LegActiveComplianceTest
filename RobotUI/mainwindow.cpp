@@ -9,6 +9,7 @@ MainWindow::MainWindow(QWidget *parent) :
     m_remotePort = REMOTE_PORT;
     m_sendCount = 0;
     m_recvCount = 0;
+    m_isConnected = false;
 
     m_timer = new QTimer(this);
     m_timer->setInterval((int)(1000.0 / CONNECTION_FREQ));
@@ -45,12 +46,13 @@ MainWindow::MainWindow(QWidget *parent) :
     QString txt;
     ui->lineEditPort->setText(txt.sprintf("%d", REMOTE_PORT));
     ui->lineEditCmd->setFocus();
+    
 }
 
 MainWindow::~MainWindow()
 {
     m_timer->stop();
-    if (m_tcpSocket->ConnectedState == QAbstractSocket::ConnectedState)
+    if (m_tcpSocket->state() == QAbstractSocket::ConnectedState)
         m_tcpSocket->disconnectFromHost();
     m_tcpSocket->close();
     delete ui;
@@ -68,6 +70,7 @@ void MainWindow::OnCommandLineReturned()
 
 void MainWindow::OnPushbuttonConnectClicked()
 {
+    std::cout << m_isConnected << std::endl;
     if (m_isConnected == false){
         QHostAddress tmpAddr;
         int tmpPort;
@@ -86,9 +89,12 @@ void MainWindow::OnPushbuttonConnectClicked()
         m_remoteAddr = tmpAddr;
         m_remotePort = tmpPort;
 
-        m_tcpSocket->connectToHost(m_remoteAddr, m_remotePort);
+        //std::cout << m_remoteAddr << std::endl;
+        std::cout << m_remotePort << std::endl;
 
         m_timer->start();
+        m_tcpSocket->connectToHost(m_remoteAddr, m_remotePort);
+
         m_isConnected = true;
         ui->pushButtonConnect->setEnabled(false);
         ui->lineEditIP->setEnabled(false);
@@ -122,10 +128,7 @@ void MainWindow::OnDatagramReceived()
 
         case RMID_MESSAGE_DATA_REPORT:
             m_robotMsgReceive.Paste((void *)&m_machineData, m_robotMsgReceive.GetLength());
-            recvMsg.sprintf("MSG[R]: ID=%d Len=%d DATA_REPORT", m_robotMsgReceive.GetMsgID(), byteRead);
-            ui->plainTextEditMsgLog->appendPlainText(recvMsg);
             this->DisplayDeviceData(m_machineData);
-
             break;
         }
     }
@@ -142,11 +145,12 @@ void MainWindow::DisplayDeviceData(Aris::RT_CONTROL::CMachineData &machineData)
     ui->textBrowserDevStatus->setTextColor(QColor("blue"));
     ui->textBrowserDevStatus->setFontUnderline(false);
     ui->textBrowserDevStatus->setFontWeight(QFont::Normal);
-    for(int i = 0; i < ACTUAL_MOTOR_NUMBER; i++)
+    //for(int i = 0; i < ACTUAL_MOTOR_NUMBER; i++)
+    for(int i = 0; i < 12; i++)
     {
-        txt.sprintf("%2d%8d%6d%8d%15d%15d%8s",
+        txt.sprintf("%2d%8s%6d%8d%15d%15d%8s",
                     i,
-                    machineData.motorsStates[i],
+                    MOTOR_STATE_DISPLAY_STRING[machineData.motorsStates[i]],
                     machineData.motorsModesDisplay[i],
                     machineData.feedbackData[i].Torque,
                     machineData.feedbackData[i].Velocity,
@@ -187,7 +191,6 @@ void MainWindow::DisplayDeviceData(Aris::RT_CONTROL::CMachineData &machineData)
     //       deviceData.m_imuData.AngularVelocity[1],
     //       deviceData.m_imuData.AngularVelocity[2]
     //       );
-    ui->textBrowserDevStatus->append(txt);
 
 }
 
@@ -277,6 +280,8 @@ void MainWindow::ProcessCommand(QString cmd)
 void MainWindow::OnTimerTick()
 {
     m_tickCount++;
-    if(m_tickCount % 4 == 0)
+    if(m_tickCount % 4 == 0){
         DisplayDeviceData(m_machineData);
+        std::cout << "SOCK: " << m_tcpSocket->state() << std::endl;
+    }
 }

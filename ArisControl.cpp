@@ -272,51 +272,51 @@ int OnGetControlCommand(Aris::Core::MSG &msg)
 
     switch(CommandID)
     {
-        case 1:
+        case POWEROFF:
             data.SetMsgID(POWEROFF);
             controlSystem.NRT_PostMsg(data);
             break;
-        case 2:
+        case STOP:
             data.SetMsgID(STOP);
             controlSystem.NRT_PostMsg(data);
             break;
-        case 3:
+        case ENABLE:
             data.SetMsgID(ENABLE);
             controlSystem.NRT_PostMsg(data);
             break;
-        case 4:
+        case RUNNING:
             data.SetMsgID(RUNNING);
             controlSystem.NRT_PostMsg(data);
             break;
-        case 5:
+        case GOHOME_1:
             data.SetMsgID(GOHOME_1);
             controlSystem.NRT_PostMsg(data);
             break;
-        case 6:
+        case GOHOME_2:
             data.SetMsgID(GOHOME_2);
             controlSystem.NRT_PostMsg(data);
             break;
-        case 7:
+        case HOME2START_1:
             data.SetMsgID(HOME2START_1);
             controlSystem.NRT_PostMsg(data);
             break;
-        case 8:
+        case HOME2START_2:
             data.SetMsgID(HOME2START_2);
             controlSystem.NRT_PostMsg(data);
             break;
-        case 16:
+        case ONLINEGAIT:
             data.SetMsgID(ONLINEGAIT);
             controlSystem.NRT_PostMsg(data);
             break;
-        case 17:
+        case ONLINEBEGIN:
             data.SetMsgID(ONLINEBEGIN);
             controlSystem.NRT_PostMsg(data);
             break;
-        case 18:
+        case ONLINEEND:
             data.SetMsgID(ONLINEEND);
             controlSystem.NRT_PostMsg(data);
             break;
-        case 28:
+        case CLEAR_FORCE:
             data.SetMsgID(CLEAR_FORCE);
             controlSystem.NRT_PostMsg(data);
             break;

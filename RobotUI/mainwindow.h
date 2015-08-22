@@ -5,6 +5,7 @@
 #include <QMainWindow>
 #include <QtNetwork>
 #include <QTimer>
+#include <iostream>
 #include "Aris_Message.h"
 #include "Aris_ControlData.h"
 #include "GlobalConfiguration.h"

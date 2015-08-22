@@ -34,4 +34,18 @@ typedef union HEAD
     };
     char header[MSG_HEADER_LENGTH];
 } head_t;
+
+// motor state for display
+static const char *MOTOR_STATE_DISPLAY_STRING[20] = 
+{
+    "NONE",
+    "POWOFF",
+    "STOP",
+    "ENABLE",
+    "STSTL",
+    "HOMING",
+    "ERROR",
+    "INVAL",
+    "EMERG"
+};
 #endif // CONNECTIONSETTING_H
