@@ -13,14 +13,16 @@ ENDFUNCTION(PREPEND)
 
 project(PushRecoveryTest)
 
+set(CMAKE_CXX_FLAGS "-std=c++11")
+
 # set compile options
 if(UNIX)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -O2")
 endif(UNIX)
 
 # set binary and library folders
-set(EXECUTABLE_OUTPUT_PATH bin)
-set(LIBRARY_OUTPUT_PATH lib)
+set(EXECUTABLE_OUTPUT_PATH "${PROJECT_SOURCE_DIR}/bin")
+set(LIBRARY_OUTPUT_PATH "${PROJECT_SOURCE_DIR}/lib")
 
 # set include and lib folders
 if(UNIX)
@@ -70,3 +72,4 @@ PREPEND(FULL_SRC PRT ${SOURCE_FILES})
 add_executable(LogDataReader ${SOURCE_FILES})
 target_link_libraries(LogDataReader ${ROBOTS_LINK_LIBS} ${ARIS_LINK_LIBS} ${LAPACK_LINK_LIBS} ${ETHERLAB_LINK_LIBS} ${XENOMAI_LINK_LIBS} ${SYSTEM_LINK_LIBS})
 
+add_subdirectory(RobotUI)

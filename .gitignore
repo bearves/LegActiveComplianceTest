@@ -42,9 +42,9 @@ ParsedFile.txt
 *.out
 *.app
 
-# build dir
+# build and output dir
 build
-build-RobotUI-Desktop-Debug
+bin
 
 # python executables
 *.pyc
