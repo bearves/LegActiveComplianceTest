@@ -24,7 +24,7 @@ set(LIBRARY_OUTPUT_PATH lib)
 
 # set include and lib folders
 if(UNIX)
-    set(ARIS_SOURCE_LOCATION "/home/hex/Aris_with_force")
+    set(ARIS_SOURCE_LOCATION "/home/sun/Projects/Aris")
     include_directories("/usr/lapack/include")
     include_directories(${ARIS_SOURCE_LOCATION}/src/Aris_Control)
     include_directories(${ARIS_SOURCE_LOCATION}/src/Aris_Core)

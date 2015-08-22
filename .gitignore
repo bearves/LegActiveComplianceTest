@@ -44,6 +44,7 @@ ParsedFile.txt
 
 # build dir
 build
+build-RobotUI-Desktop-Debug
 
 # python executables
 *.pyc

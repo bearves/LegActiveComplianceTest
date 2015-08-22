@@ -91,7 +91,7 @@ int tg(Aris::RT_CONTROL::CMachineData& machineData,
 
     double timeNow = rtCycleCounter * 0.001;
 
-    if (rtCycleCounter % 200 == 0)
+    if (rtCycleCounter % 50 == 0)
     {
         for( int i = 0; i < 1; i++ )
         {
