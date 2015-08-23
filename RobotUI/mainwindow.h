@@ -45,6 +45,7 @@ private:
 
 private slots:
     void OnPushbuttonConnectClicked();
+    void OnSocketDisconnected();
     void OnDatagramReceived();
     void OnCommandLineReturned();
     void OnTimerTick();

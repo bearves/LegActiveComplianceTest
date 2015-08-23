@@ -41,6 +41,12 @@ MainWindow::MainWindow(QWidget *parent) :
                 this,
                 SLOT(OnTimerTick()));
 
+    m_tcpSocket->connect(
+                m_tcpSocket,
+                SIGNAL(disconnected()),
+                this,
+                SLOT(OnSocketDisconnected()));
+
     ui->lineEditIP->setText(REMOTE_IP_STRING);
 
     QString txt;
@@ -145,8 +151,7 @@ void MainWindow::DisplayDeviceData(Aris::RT_CONTROL::CMachineData &machineData)
     ui->textBrowserDevStatus->setTextColor(QColor("blue"));
     ui->textBrowserDevStatus->setFontUnderline(false);
     ui->textBrowserDevStatus->setFontWeight(QFont::Normal);
-    //for(int i = 0; i < ACTUAL_MOTOR_NUMBER; i++)
-    for(int i = 0; i < 12; i++)
+    for(int i = 0; i < ACTUAL_MOTOR_NUMBER; i++)
     {
         txt.sprintf("%2d%8s%6d%8d%15d%15d%8s",
                     i,
@@ -270,10 +275,16 @@ void MainWindow::ProcessCommand(QString cmd)
         }
     }
     if (hasMessageToSend){
-        byteSent = m_tcpSocket->write(m_robotMsgToSend.GetHeaderAddress(), m_robotMsgToSend.GetLength() + MSG_HEADER_LENGTH);
-        processMsg.sprintf("MSG[T]: ID=%d Len=%d", m_robotMsgToSend.GetMsgID(), byteSent);
-        ui->plainTextEditMsgLog->appendPlainText(processMsg);
-        m_sendCount++;
+        if (m_tcpSocket->state() == QAbstractSocket::ConnectedState){
+            byteSent = m_tcpSocket->write(m_robotMsgToSend.GetHeaderAddress(), m_robotMsgToSend.GetLength() + MSG_HEADER_LENGTH);
+            processMsg.sprintf("MSG[T]: ID=%d Len=%d", m_robotMsgToSend.GetMsgID(), byteSent);
+            ui->plainTextEditMsgLog->appendPlainText(processMsg);
+            m_sendCount++;
+        }
+        else{
+            processMsg.sprintf("Cannot send msg as the connection is broken");
+            ui->plainTextEditMsgLog->appendPlainText(processMsg);
+        }
     }
 }
 
@@ -284,4 +295,16 @@ void MainWindow::OnTimerTick()
         DisplayDeviceData(m_machineData);
         std::cout << "SOCK: " << m_tcpSocket->state() << std::endl;
     }
+}
+
+void MainWindow::OnSocketDisconnected()
+{
+    m_isConnected = false;
+    QString processMsg = "Connection is down, please reconnect again";
+
+    ui->pushButtonConnect->setEnabled(true);
+    ui->lineEditIP->setEnabled(true);
+    ui->lineEditPort->setEnabled(true);
+    ui->pushButtonConnect->setFocus();
+    ui->plainTextEditMsgLog->appendPlainText(processMsg);
 }
