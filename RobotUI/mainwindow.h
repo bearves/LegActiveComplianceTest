@@ -41,11 +41,13 @@ private:
     int m_sendCount;
     int m_recvCount;
     int m_tickCount;
+    int m_sourceIndex;
 
     char m_datagram[DATAGRAM_BUFFER_SIZE];
 
     void DisplayDeviceData(Aris::RT_CONTROL::CMachineData& machineData);
     void ProcessCommand(QString cmd);
+    void ChangePlottingDataSource(QString cmd);
     void InitializePloting();
 
     QVector<double> timeLine;

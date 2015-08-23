@@ -67,6 +67,8 @@ void MainWindow::InitializePloting()
     m_plotWidgets.push_back(ui->widget);
     
     m_GetSourceData = RetriveMotorData;
+    m_sourceIndex = 0;
+
     for( int i = 0; i < 3; i++)
     {
         plotData.push_back(std::shared_ptr<QVector<double>>(new QVector<double>()));
@@ -311,7 +313,7 @@ void MainWindow::ProcessCommand(QString cmd)
     }
     if (cmd.left(4) == "show")
     {
-        //ChangePlottingDataSource(cmd);
+        ChangePlottingDataSource(cmd);
     }
 
     
@@ -336,7 +338,7 @@ void MainWindow::OnTimerTick()
     if(m_tickCount % 4 == 0){
         DisplayDeviceData(m_machineData);
 
-        m_GetSourceData(m_machineData, retrivedData, 0);
+        m_GetSourceData(m_machineData, retrivedData, m_sourceIndex);
 
         for(int i = 0; i < 3; i++){
             plotData[i]->pop_front();
@@ -345,6 +347,12 @@ void MainWindow::OnTimerTick()
             m_plotWidgets[i]->graph(0)->setData(timeLine, *plotData[i]);
             m_plotWidgets[i]->rescaleAxes();
             m_plotWidgets[i]->replot();
+        }
+
+        // check the connection status 
+        if(m_tickCount % 10 == 0){
+            if (m_tcpSocket->state() != QAbstractSocket::ConnectedState && m_isConnected == true)
+                OnSocketDisconnected();
         }
     }
 }
@@ -361,6 +369,59 @@ void MainWindow::OnSocketDisconnected()
     ui->plainTextEditMsgLog->appendPlainText(processMsg);
 }
 
+void MainWindow::ChangePlottingDataSource(QString cmd)
+{
+    int index = 0;
+    bool flag = false;;
+
+    if(cmd.left(11).compare("show motor ", Qt::CaseInsensitive) == 0){
+        bool ok;
+        index = cmd.mid(11,2).toInt(&ok, 10);
+        if (ok && index < ACTUAL_MOTOR_NUMBER && index >= 0)
+        {
+            m_GetSourceData = RetriveMotorData;
+            m_sourceIndex = index;
+            flag = true;
+        }
+    }
+    else if(cmd.left(11).compare("show force ", Qt::CaseInsensitive) == 0){
+        bool ok;
+        index = cmd.mid(11,2).toInt(&ok, 10);
+        if (ok && index < ACTUAL_ATI_FORCE_SENSOR_NUM && index >= 0)
+        {
+            m_GetSourceData = RetriveForceData;
+            m_sourceIndex = index;
+            flag = true;
+        }
+        
+    }
+    else if(cmd.left(11).compare("show torqu ", Qt::CaseInsensitive) == 0){
+        bool ok;
+        index = cmd.mid(11,2).toInt(&ok, 10);
+        if (ok && index < ACTUAL_ATI_FORCE_SENSOR_NUM && index >= 0)
+        {
+            m_GetSourceData = RetriveTorquData;
+            m_sourceIndex = index;
+            flag = true;
+        }
+    }
+    else if(cmd.left(10).compare("show angle", Qt::CaseInsensitive) == 0){
+        m_GetSourceData = RetriveAngleData;
+        flag = true;
+    }
+    else if(cmd.left(10).compare("show omega", Qt::CaseInsensitive) == 0){
+        m_GetSourceData = RetriveOmegaData;
+        flag = true;
+    }
+    if (flag)
+    {
+        ui->plainTextEditMsgLog->appendPlainText("Plotting souce changed");
+    }
+    else
+    {
+        ui->plainTextEditMsgLog->appendPlainText("Invalid syntax");
+    }
+}
 
 int MainWindow::RetriveMotorData(const Aris::RT_CONTROL::CMachineData& source, QVector<double>& result, int index)
 {
