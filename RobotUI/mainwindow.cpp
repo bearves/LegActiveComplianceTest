@@ -11,6 +11,8 @@ MainWindow::MainWindow(QWidget *parent) :
     m_recvCount = 0;
     m_isConnected = false;
 
+    memset((void *)&m_machineData, 0, sizeof(m_machineData));
+
     m_timer = new QTimer(this);
     m_timer->setInterval((int)(1000.0 / CONNECTION_FREQ));
 
@@ -52,7 +54,40 @@ MainWindow::MainWindow(QWidget *parent) :
     QString txt;
     ui->lineEditPort->setText(txt.sprintf("%d", REMOTE_PORT));
     ui->lineEditCmd->setFocus();
+
+    InitializePloting();
+}
+
+
+void MainWindow::InitializePloting()
+{
+    m_plotWidgets.clear();
+    m_plotWidgets.push_back(ui->widget_3);
+    m_plotWidgets.push_back(ui->widget_2);
+    m_plotWidgets.push_back(ui->widget);
     
+    m_GetSourceData = RetriveMotorData;
+    for( int i = 0; i < 3; i++)
+    {
+        plotData.push_back(std::shared_ptr<QVector<double>>(new QVector<double>()));
+    }
+    
+    for( int i = 0; i < 101; i++ )
+    {
+        timeLine.push_back(i * 0.2);
+        for ( auto datIter = plotData.begin(); datIter < plotData.end(); datIter++)
+        {
+            (*datIter)->push_back(0);
+        }
+    }
+    
+    for (int i = 0; i < 3; i++)
+    {
+        m_plotWidgets[i]->addGraph();
+        m_plotWidgets[i]->graph(0)->setData(timeLine, *(plotData[i]));
+        m_plotWidgets[i]->rescaleAxes();
+        m_plotWidgets[i]->replot();
+    }
 }
 
 MainWindow::~MainWindow()
@@ -77,6 +112,7 @@ void MainWindow::OnCommandLineReturned()
 void MainWindow::OnPushbuttonConnectClicked()
 {
     std::cout << m_isConnected << std::endl;
+    m_timer->start();
     if (m_isConnected == false){
         QHostAddress tmpAddr;
         int tmpPort;
@@ -98,7 +134,6 @@ void MainWindow::OnPushbuttonConnectClicked()
         //std::cout << m_remoteAddr << std::endl;
         std::cout << m_remotePort << std::endl;
 
-        m_timer->start();
         m_tcpSocket->connectToHost(m_remoteAddr, m_remotePort);
 
         m_isConnected = true;
@@ -166,7 +201,7 @@ void MainWindow::DisplayDeviceData(Aris::RT_CONTROL::CMachineData &machineData)
     ui->textBrowserDevStatus->setTextColor(QColor("black"));
     ui->textBrowserDevStatus->setFontUnderline(true);
     ui->textBrowserDevStatus->setFontWeight(QFont::Bold);
-    txt.sprintf("No.         Value1      Value2      Value3      Value4        ");
+    txt.sprintf("No.   Value1   Value2   Value3   Value4   Value5   Value6 ");
     ui->textBrowserDevStatus->append(txt);
     ui->textBrowserDevStatus->setTextColor(QColor("blue"));
     ui->textBrowserDevStatus->setFontUnderline(false);
@@ -274,6 +309,12 @@ void MainWindow::ProcessCommand(QString cmd)
             hasMessageToSend = true;
         }
     }
+    if (cmd.left(4) == "show")
+    {
+        //ChangePlottingDataSource(cmd);
+    }
+
+    
     if (hasMessageToSend){
         if (m_tcpSocket->state() == QAbstractSocket::ConnectedState){
             byteSent = m_tcpSocket->write(m_robotMsgToSend.GetHeaderAddress(), m_robotMsgToSend.GetLength() + MSG_HEADER_LENGTH);
@@ -291,9 +332,20 @@ void MainWindow::ProcessCommand(QString cmd)
 void MainWindow::OnTimerTick()
 {
     m_tickCount++;
+    QVector<double> retrivedData(3);
     if(m_tickCount % 4 == 0){
         DisplayDeviceData(m_machineData);
-        std::cout << "SOCK: " << m_tcpSocket->state() << std::endl;
+
+        m_GetSourceData(m_machineData, retrivedData, 0);
+
+        for(int i = 0; i < 3; i++){
+            plotData[i]->pop_front();
+            plotData[i]->push_back(retrivedData[i]);
+            
+            m_plotWidgets[i]->graph(0)->setData(timeLine, *plotData[i]);
+            m_plotWidgets[i]->rescaleAxes();
+            m_plotWidgets[i]->replot();
+        }
     }
 }
 
@@ -308,3 +360,67 @@ void MainWindow::OnSocketDisconnected()
     ui->pushButtonConnect->setFocus();
     ui->plainTextEditMsgLog->appendPlainText(processMsg);
 }
+
+
+int MainWindow::RetriveMotorData(const Aris::RT_CONTROL::CMachineData& source, QVector<double>& result, int index)
+{
+    if (result.length() != 3){
+        result.resize(3);
+    }
+    if (index >= ACTUAL_MOTOR_NUMBER)
+         return -1;
+    result[0] = source.feedbackData[index].Position;
+    result[1] = source.feedbackData[index].Velocity;
+    result[2] = source.feedbackData[index].Torque;
+
+    return 0;
+}
+
+int MainWindow::RetriveForceData(const Aris::RT_CONTROL::CMachineData& source, QVector<double>& result, int index)
+{
+    if (result.length() != 3){
+        result.resize(3);
+    }
+    if (index >= ACTUAL_ATI_FORCE_SENSOR_NUM)
+         return -1;
+
+    for (int i = 0; i < 3; i++)
+    {
+        result[i] = source.forceData[index].forceValues[i];
+    }
+    return 0;
+}
+
+int MainWindow::RetriveTorquData(const Aris::RT_CONTROL::CMachineData& source, QVector<double>& result, int index)
+{
+    if (result.length() != 3){
+        result.resize(3);
+    }
+    if (index >= ACTUAL_ATI_FORCE_SENSOR_NUM)
+         return -1;
+
+    for (int i = 0; i < 3; i++)
+    {
+        result[i] = source.forceData[index].forceValues[i+3];
+    }
+    return 0;
+}
+
+int MainWindow::RetriveAngleData(const Aris::RT_CONTROL::CMachineData& source, QVector<double>& result, int index)
+{
+    if (result.length() != 3){
+        result.resize(3);
+    }
+
+    return -1;
+}
+
+int MainWindow::RetriveOmegaData(const Aris::RT_CONTROL::CMachineData& source, QVector<double>& result, int index)
+{
+    if (result.length() != 3){
+        result.resize(3);
+    }
+
+    return -1;
+}
+

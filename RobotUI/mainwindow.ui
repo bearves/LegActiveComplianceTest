@@ -185,7 +185,7 @@
         <widget class="QCustomPlot" name="widget_3" native="true"/>
        </item>
        <item>
-        <widget class="QCustomPlot" name="widget" native="true">
+        <widget class="QCustomPlot" name="widget_2" native="true">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
            <horstretch>0</horstretch>
@@ -198,10 +198,12 @@
            <height>0</height>
           </size>
          </property>
+         <zorder>widget_3</zorder>
+         <zorder>widget_3</zorder>
         </widget>
        </item>
        <item>
-        <widget class="QCustomPlot" name="widget_2" native="true">
+        <widget class="QCustomPlot" name="widget" native="true">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
            <horstretch>0</horstretch>

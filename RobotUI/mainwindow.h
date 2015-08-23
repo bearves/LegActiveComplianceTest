@@ -9,6 +9,9 @@
 #include "Aris_Message.h"
 #include "Aris_ControlData.h"
 #include "GlobalConfiguration.h"
+#include "qcustomplot.h"
+#include <vector>
+#include <memory>
 
 namespace Ui {
 class MainWindow;
@@ -28,6 +31,7 @@ private:
     QTimer *m_timer;
     QTcpSocket *m_tcpSocket;
     QHostAddress m_remoteAddr;
+    QVector<QCustomPlot *> m_plotWidgets;
 
     Aris::Core::MSG m_robotMsgReceive;
     Aris::Core::MSG m_robotMsgToSend;
@@ -42,6 +46,19 @@ private:
 
     void DisplayDeviceData(Aris::RT_CONTROL::CMachineData& machineData);
     void ProcessCommand(QString cmd);
+    void InitializePloting();
+
+    QVector<double> timeLine;
+    QVector<std::shared_ptr<QVector<double> > > plotData;
+
+    typedef int (* RetriveDataFromSourceFunction)(const Aris::RT_CONTROL::CMachineData& source, QVector<double>& result, int index);
+    RetriveDataFromSourceFunction m_GetSourceData;
+
+    static int RetriveMotorData(const Aris::RT_CONTROL::CMachineData& source, QVector<double>& result, int index);
+    static int RetriveForceData(const Aris::RT_CONTROL::CMachineData& source, QVector<double>& result, int index);
+    static int RetriveTorquData(const Aris::RT_CONTROL::CMachineData& source, QVector<double>& result, int index);
+    static int RetriveAngleData(const Aris::RT_CONTROL::CMachineData& source, QVector<double>& result, int index);
+    static int RetriveOmegaData(const Aris::RT_CONTROL::CMachineData& source, QVector<double>& result, int index);
 
 private slots:
     void OnPushbuttonConnectClicked();

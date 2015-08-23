@@ -1,0 +1,6 @@
+show motor [x]
+show force [x]
+show torqu [x]
+show angle [x]
+show omega [x]
+show accel [x]
