@@ -24,21 +24,24 @@ bool CGait::IsConsFinished[AXIS_NUMBER];
 bool CGait::IsHomeStarted[AXIS_NUMBER];
 double CGait::m_screwLength[AXIS_NUMBER];
 int CGait::m_commandMotorCounts[AXIS_NUMBER];
+double CGait::m_jointStateInput[AXIS_NUMBER];
+double CGait::m_jointStateOutput[AXIS_NUMBER];
+Aris::RT_CONTROL::CForceData CGait::m_forceData[FSR_NUM]; // must be 6 (legs) 
 
 int GaitHome2Start[GAIT_HOME2START_LEN][GAIT_WIDTH];
 
-void CGait::MapFeedbackDataIn(Aris::RT_CONTROL::CMachineData& p_data )
+void CGait::MapFeedbackDataIn(Aris::RT_CONTROL::CMachineData& data )
 {
     for(int i=0;i<MOTOR_NUM;i++)
     {
-        m_feedbackDataMapped[i] = p_data.feedbackData[MapAbsToPhy[i]];
+        m_feedbackDataMapped[i] = data.feedbackData[MapAbsToPhy[i]];
     }
 };
-void CGait::MapCommandDataOut(Aris::RT_CONTROL::CMachineData& p_data )
+void CGait::MapCommandDataOut(Aris::RT_CONTROL::CMachineData& data )
 {
     for(int i=0;i<MOTOR_NUM;i++)
     {
-        p_data.commandData[i] = m_commandDataMapped[MapPhyToAbs[i]];
+        data.commandData[i] = m_commandDataMapped[MapPhyToAbs[i]];
     }
 };
 
@@ -110,10 +113,10 @@ OPEN_FILE_FAIL:
 };
 
 
-int CGait::RunGait(double timeNow, EGAIT* p_gait,Aris::RT_CONTROL::CMachineData& p_data)
+int CGait::RunGait(double timeNow, EGAIT* p_gait,Aris::RT_CONTROL::CMachineData& data)
 {
-    // p_data.commandData -> m_feedbackDataMapped
-    MapFeedbackDataIn(p_data);
+    // data.commandData -> m_feedbackDataMapped
+    MapFeedbackDataIn(data);
 
     for(int i=0;i<AXIS_NUMBER;i++)
     {
@@ -136,7 +139,7 @@ int CGait::RunGait(double timeNow, EGAIT* p_gait,Aris::RT_CONTROL::CMachineData&
                 m_currentGait[i] = p_gait[i];
                 m_commandDataMapped[motorID] = m_feedbackDataMapped[motorID];
 
-                if(p_data.isMotorHomed[i]==true)
+                if(data.isMotorHomed[i]==true)
                 {
                     m_standStillData[motorID] = m_feedbackDataMapped[motorID];
                     p_gait[i]=GAIT_STANDSTILL;
@@ -150,7 +153,7 @@ int CGait::RunGait(double timeNow, EGAIT* p_gait,Aris::RT_CONTROL::CMachineData&
                 {
                     rt_printf("driver %d:   GAIT_STANDSTILL begins\n",i);
                     m_currentGait[i]=p_gait[i];
-                    m_gaitStartTime[i]=p_data.time;
+                    m_gaitStartTime[i]=data.time;
                     m_standStillData[motorID] = m_feedbackDataMapped[motorID];
                     m_commandDataMapped[motorID] = m_standStillData[motorID];
                 }
@@ -166,12 +169,12 @@ int CGait::RunGait(double timeNow, EGAIT* p_gait,Aris::RT_CONTROL::CMachineData&
                     rt_printf("driver %d: GAIT_HOME2START begin\n",i);
                     m_gaitState[i]=EGaitState::GAIT_RUN;
                     m_currentGait[i]=p_gait[i];
-                    m_gaitStartTime[i]=p_data.time;
+                    m_gaitStartTime[i]=data.time;
                     m_commandDataMapped[motorID].Position=GaitHome2Start[0][motorID];
                 }
                 else
                 {
-                    m_gaitCurrentIndex[i]=(int)(p_data.time-m_gaitStartTime[i]);
+                    m_gaitCurrentIndex[i]=(int)(data.time-m_gaitStartTime[i]);
                     m_commandDataMapped[motorID].Position=GaitHome2Start[m_gaitCurrentIndex[i]][motorID];
 
                     if(m_gaitCurrentIndex[i]==GAIT_HOME2START_LEN-1)
@@ -187,11 +190,12 @@ int CGait::RunGait(double timeNow, EGAIT* p_gait,Aris::RT_CONTROL::CMachineData&
         }
     }
 
-    if (onlinePlanner.GetCurrentState() == OnlinePlanner::OGS_ONLINE_WALK)
+    if (onlinePlanner.GetCurrentState() == OnlinePlanner::OGS_ONLINE_WALK || 
+        onlinePlanner.GetCurrentState() == OnlinePlanner::OGS_ONLINE_GOTO_START_POINT)
     {
-        //CalculateModelInputs(m_jointStateInput, m_forceDataMapped);
-        //onlinePlanner.GenerateJointTrajectory( timeNow, m_jointStateInput, m_forceDataMapped, m_jointStateOutput);
-        //CalculateActualMotorCounts(m_jointStateOutput, m_commandMotorCounts);
+        CalculateModelInputs(data, m_jointStateInput, m_forceData);
+        onlinePlanner.GenerateJointTrajectory( timeNow, m_jointStateInput, m_forceData, m_jointStateOutput);
+        CalculateActualMotorCounts(m_jointStateOutput, m_commandMotorCounts);
 
         for ( int i = 0; i < AXIS_NUMBER; i++)
         {
@@ -202,12 +206,33 @@ int CGait::RunGait(double timeNow, EGAIT* p_gait,Aris::RT_CONTROL::CMachineData&
             rt_printf("OL cmd: %d\n", m_commandDataMapped[0].Position);
         }
     }
-    // m_commandDataMapped -> p_data.commandData
-    MapCommandDataOut(p_data);
-    //rt_printf("command data pos%d\n",p_data.commandData[0].Position);
+    // m_commandDataMapped -> data.commandData
+    MapCommandDataOut(data);
+    //rt_printf("command data pos%d\n",data.commandData[0].Position);
 
     return 0;
 };
 
+void CGait::CalculateModelInputs(
+        Aris::RT_CONTROL::CMachineData& machineData, 
+        double* jointStateInput, 
+        Aris::RT_CONTROL::CForceData* forceData)
+{
+    for(int i = 0; i < AXIS_NUMBER; i++)
+    {
+        jointStateInput[i] = m_feedbackDataMapped[i].Position / 65536.0 * 0.005;
+    }
+    for(int i = 0; i < 6; i++)
+    {
+        forceData[i] = machineData.forceData[MapAbsToPhyForceSensor[i]];
+    }
+}
 
+void CGait::CalculateActualMotorCounts( double* screwLength, int* motorCounts)
+{
+    for(int i = 0; i < AXIS_NUMBER; i++)
+    {
+        motorCounts[i] = screwLength[i] * 65536.0 / 0.005;
+    }
+}
 }

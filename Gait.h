@@ -16,6 +16,7 @@ using namespace std;
 #define GAIT_WIDTH 18
 #define GAIT_HOME2START_LEN 4001
 #define MOTOR_NUM 18
+#define FSR_NUM 6
 
 namespace RobotHighLevelControl
 {
@@ -37,6 +38,12 @@ const int MapPhyToAbs[18]=
     2,  0,  1,
     3,  5,  4,
     7,  8,  6
+};
+
+const int MapAbsToPhyForceSensor[6]=
+{
+    0, 1, 2,
+    3, 4, 5
 };
 
 
@@ -65,7 +72,7 @@ class CGait
         ~CGait();
         //read txt to array
         static int InitGait(Aris::RT_CONTROL::CSysInitParameters& param);
-        static int RunGait(double timeNow, EGAIT* p_gait,Aris::RT_CONTROL::CMachineData& p_data );
+        static int RunGait(double timeNow, EGAIT* p_gait,Aris::RT_CONTROL::CMachineData& data );
         static bool IsGaitFinished();
         static bool IsHomeStarted[AXIS_NUMBER];
         static bool IsConsFinished[AXIS_NUMBER];
@@ -83,9 +90,14 @@ class CGait
         static Aris::RT_CONTROL::CMotorData m_standStillData[AXIS_NUMBER];
         static Aris::RT_CONTROL::CMotorData m_commandDataMapped[AXIS_NUMBER];
         static Aris::RT_CONTROL::CMotorData m_feedbackDataMapped[AXIS_NUMBER];
-        static void MapFeedbackDataIn(Aris::RT_CONTROL::CMachineData& p_data );
-        static void MapCommandDataOut(Aris::RT_CONTROL::CMachineData& p_data );
-        static void CalculateActualMotorCounts( double screwLength [], int motorCounts []);
+        static double m_jointStateInput[AXIS_NUMBER];
+        static double m_jointStateOutput[AXIS_NUMBER];
+        static Aris::RT_CONTROL::CForceData m_forceData[FSR_NUM]; // must be 6 (legs) 
+
+        static void MapFeedbackDataIn(Aris::RT_CONTROL::CMachineData& data );
+        static void MapCommandDataOut(Aris::RT_CONTROL::CMachineData& data );
+        static void CalculateActualMotorCounts( double* screwLength, int* motorCounts);
+        static void CalculateModelInputs(Aris::RT_CONTROL::CMachineData& machineData, double* jointStateInput, Aris::RT_CONTROL::CForceData* forceData);
 };
 
 }

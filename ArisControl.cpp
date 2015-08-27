@@ -1,10 +1,3 @@
-/*
- * Push recovery mimic program
- *
- *
- *  Created on: Jun 18, 2015
- *      Author: Q. Sun
- */
 #include <iostream>
 #include "Aris_Control.h"
 #include "Aris_Message.h"
@@ -255,12 +248,12 @@ int tg(Aris::RT_CONTROL::CMachineData& machineData,
 //offsets driver order
 static int HEXBOT_HOME_OFFSETS_RESOLVER[18] =
 {
-    -15849882 + 349000,	 -16354509 + 349000,	 -16354509 + 349000,
-    -15849882 + 349000 + 100000,	 -16354509 + 349000 + 100000,	 -16354509 + 349000 + 100000, // 5 
-    -15849882 + 349000,	 -16354509 + 349000,	 -16354509 + 349000,
-    -16354509 + 349000,	 -15849882 + 349000,	 -16354509 + 349000,
-    -15849882 + 349000,	 -16354509 + 349000,	 -16354509 + 349000,
-    -16354509 + 349000,	 -16354509 + 349000,  -15849882 + 349000,
+    0, 0, 0,
+    0, 0, 0,
+    0, 0, 0,
+    0, 0, 0,
+    0, 0, 0,
+    0, 0, 0,
 };
 
 
@@ -366,8 +359,9 @@ int main(int argc, char** argv)
 
     initParam.motorNum      = 18;
     initParam.homeHighSpeed = 280000;
-    initParam.homeLowSpeed  = 80000;
+    initParam.homeLowSpeed  = 40000;
     initParam.homeMode      = -1;
+    initParam.homeTorqueLimit = 950;
 
     ////necessary steps
     initParam.homeOffsets=HEXBOT_HOME_OFFSETS_RESOLVER;

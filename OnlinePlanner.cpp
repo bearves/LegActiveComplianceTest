@@ -1,26 +1,18 @@
 #include "OnlinePlanner.h"
 
-const double OnlinePlanner::BASIC_BODY_POSITION[] = {0, 0, 0, 0, 0, 0};
-const double OnlinePlanner::BASIC_FEET_POSITION[] =
-{
-    -0.3,  -0.85, -0.65,
-    -0.45, -0.85,  0.0,
-    -0.3,  -0.85,  0.65,
-    0.3,  -0.85, -0.65,
-    0.45, -0.85,  0.0,
-    0.3,  -0.85,  0.65
-};
-
+using namespace RobotHighLevelControl;
+using namespace Model;
 
 OnlinePlanner::OnlinePlanner(void)
 {
-    for(int i = 0; i < 6; i++)
-        initialBodyPosition[i] = BASIC_BODY_POSITION[i];
-    
-    for(int i = 0; i < 18; i++)
-        initialFeetPosition[i] = BASIC_FEET_POSITION[i];
-
+    m_initialFlag = false;
+    m_startOnlineGaitFlag = false;
     olgaitState = OGS_OFFLINE;
+
+    for(int i = 0; i < 6; i++)
+    {
+        legList[i].SetID(i);
+    }
 }
 
 OnlinePlanner::~OnlinePlanner(void)
@@ -35,7 +27,12 @@ int OnlinePlanner::LoadData()
 int OnlinePlanner::Initialize(int gaitMod)
 {
     if ( olgaitState == OGS_OFFLINE && gaitMod == 1){
+        m_initialFlag = true;
         olgaitState = OGS_ONLINE_WALK;
+    }
+    else if (olgaitState == OGS_OFFLINE && gaitMod == 2){
+        m_initialFlag = true;
+        olgaitState = OGS_ONLINE_GOTO_START_POINT;
     }
     return 0;
 }
@@ -43,6 +40,10 @@ int OnlinePlanner::Initialize(int gaitMod)
 int OnlinePlanner::Start(double timeNow)
 {
     if ( olgaitState == OGS_ONLINE_WALK ){
+        m_startOnlineGaitFlag = true;
+    }
+    else if (olgaitState == OGS_ONLINE_GOTO_START_POINT){
+        m_startOnlineGaitFlag = true;
     }
     return 0;
 }
@@ -51,6 +52,7 @@ int OnlinePlanner::Stop(double timeNow)
 {
     if ( olgaitState == OGS_ONLINE_WALK )
     {
+
     }
     return 0;
 }
@@ -59,6 +61,8 @@ int OnlinePlanner::Offline()
 {
     if ( olgaitState == OGS_ONLINE_WALK )
     {
+        m_initialFlag = false;
+        m_startOnlineGaitFlag = false;
         olgaitState = OGS_OFFLINE;
     }
     return 0;
@@ -68,46 +72,57 @@ int OnlinePlanner::GetInitialJointLength(double jointLength[])
 {
     if (jointLength == nullptr)
         return -1;
-    return 0;
-}
 
-int OnlinePlanner::GenerateJointTrajectory(
-        double timeNow,
-        Aris::RT_CONTROL::CMachineData& machineData,
-        double jointLength[])
-{
-    if ( olgaitState == OGS_OFFLINE)
-        return -1; // This function should not be called when olgaitState == OGS_OFFLINE
-    
-    if ( olgaitState == OGS_ONLINE_WALK)
+    double initialFootTipPosition[3] = {0, 0, -0.65};
+    for(int i = 0; i < 6; i++)
     {
-        this->CalculateEachLegPosition();
+        legList[i].InverseSolution(initialFootTipPosition, &jointLength[i * 3], false);
     }
 
     return 0;
 }
 
-
-int OnlinePlanner::GetForwardLegPositions(double jointLengthList[], double legTipPositions[])
+int OnlinePlanner::GenerateJointTrajectory(double timeNow, double* jointStateInput, Aris::RT_CONTROL::CForceData* forceData, double* jointStateOutput)
 {
-    return 0;
-}
-
-int OnlinePlanner::CalculateEachLegPosition()
-{
-    for(int i = 0; i < 18; i++)
-    {
-        feetPosition[i] = initialFeetPosition[i];
-    }
-    for(int i = 0; i < 2; i++)
-    {
-        for( int j = 0; j < 3; j++)
+    if ( olgaitState == OGS_OFFLINE){
+        for(int i = 0; i < AXIS_NUMBER; i++)
         {
-            feetPosition[(j * 2 + i) * 3 + 0] += legGroupPosition[(1 - i) * 3 + 0]; // all X offset
-            feetPosition[(j * 2 + i) * 3 + 1] += legGroupPosition[(1 - i) * 3 + 1]; // all h offset
-            feetPosition[(j * 2 + i) * 3 + 2] += legGroupPosition[(1 - i) * 3 + 2]; // all Z offset
+            jointStateOutput[i] = jointStateInput[i];
+        }
+        return -1; // This function should not be called when olgaitState == OGS_OFFLINE
+    }
+    else if ( olgaitState == OGS_ONLINE_WALK)
+    {
+        if (m_initialFlag == true){
+            m_initialFlag = false;
+        }
+        for(int i = 0; i < AXIS_NUMBER; i++)
+        {
+            jointStateOutput[i] = jointStateInput[i];
         }
     }
+    else if ( olgaitState == OGS_ONLINE_GOTO_START_POINT)
+    {
+        // when the goto to start point command is received, the m_initialFlag will be set ,
+        // afterwards, the trjplanner will check this flag and do the corresponding initialization
+        // works, e.g. set the start and end point of the PTP trj generator
+        if (m_initialFlag == true){
+            m_initialFlag = false;
+            double destPoint[18];
+            GetInitialJointLength(destPoint);
+            m_gotoPointPlanner.SetStartAndEndPoint(jointStateInput, destPoint);
+        }
+        // when the start gait command is received, this flag will be set,
+        // afterwards, the trjplanner will check this flag and start to move
+        if (m_startOnlineGaitFlag == true)
+        {
+            m_startOnlineGaitFlag = false;
+            m_gotoPointPlanner.Start(timeNow);
+        }
+        m_gotoPointPlanner.GenerateJointTrajectory(timeNow, jointStateInput, jointStateOutput);
+
+    }
+
     return 0;
 }
 

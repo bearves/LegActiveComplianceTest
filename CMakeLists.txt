@@ -59,7 +59,7 @@ set(ARIS_NORT_LINK_LIBS Aris_Plan Aris_DynKer Aris_ExpCal Aris_Core)
 set(ROBOTS_LINK_LIBS  HexapodIII)
 
 # build programs
-set(SOURCE_FILES ArisControl.cpp VirtualBipedPlanner.cpp OnlinePlanner.cpp Server.cpp Gait.cpp )
+set(SOURCE_FILES ArisControl.cpp OnlinePlanner.cpp Server.cpp Gait.cpp Planners.cpp LegKinematicsIV.cpp)
 PREPEND(FULL_SRC PRT ${SOURCE_FILES})
 add_executable(ArisControlPRT ${SOURCE_FILES})
 target_link_libraries(ArisControlPRT ${ROBOTS_LINK_LIBS} ${ARIS_LINK_LIBS} ${LAPACK_LINK_LIBS} ${ETHERLAB_LINK_LIBS} ${XENOMAI_LINK_LIBS} ${SYSTEM_LINK_LIBS})
