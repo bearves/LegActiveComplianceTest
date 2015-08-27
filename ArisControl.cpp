@@ -237,8 +237,8 @@ int tg(Aris::RT_CONTROL::CMachineData& machineData,
             gait.onlinePlanner.Stop(timeNow);
             break;
         case CLEAR_FORCE:
-            for (auto data : machineData.forceData){
-                data.isZeroingRequest = 1;
+            for (int i = 0; i < FORCE_SENSOR_NUMBER; i++){
+                machineData.forceData[i].isZeroingRequest = 1;
             }
             break; 
 

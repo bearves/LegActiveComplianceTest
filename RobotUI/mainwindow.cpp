@@ -210,7 +210,7 @@ void MainWindow::DisplayDeviceData(Aris::RT_CONTROL::CMachineData &machineData)
     ui->textBrowserDevStatus->setFontWeight(QFont::Normal);
     for(int i = 0; i < ACTUAL_ATI_FORCE_SENSOR_NUM ; i++)
     {
-        txt.sprintf("%3d%9.3f%9.3f%9.3f%9.3f%9.3f%9.3f",
+        txt.sprintf("%3d%9.2f%9.2f%9.2f%9.2f%9.2f%9.2f",
                     i,
                 machineData.forceData[i].forceValues[0]/1000.0,
                 machineData.forceData[i].forceValues[1]/1000.0,
@@ -220,11 +220,11 @@ void MainWindow::DisplayDeviceData(Aris::RT_CONTROL::CMachineData &machineData)
                 machineData.forceData[i].forceValues[5]/1.0);
         ui->textBrowserDevStatus->append(txt);
     }
-    txt.sprintf("IMU:       R       P       Y      WX      WY      WZ          ");
-    ui->textBrowserDevStatus->append(txt);
-    ui->textBrowserDevStatus->setTextColor(QColor("blue"));
-    ui->textBrowserDevStatus->setFontUnderline(false);
-    ui->textBrowserDevStatus->setFontWeight(QFont::Normal);
+    //txt.sprintf("IMU:       R       P       Y      WX      WY      WZ          ");
+    //ui->textBrowserDevStatus->append(txt);
+    //ui->textBrowserDevStatus->setTextColor(QColor("blue"));
+    //ui->textBrowserDevStatus->setFontUnderline(false);
+    //ui->textBrowserDevStatus->setFontWeight(QFont::Normal);
     //txt.sprintf("%12.3lf%8.3lf%8.3lf%8.3lf%8.3lf%8.3lf",
     //       deviceData.m_imuData.EulerAngle.EulerStruct.roll,
     //       deviceData.m_imuData.EulerAngle.EulerStruct.pitch,
@@ -335,7 +335,7 @@ void MainWindow::OnTimerTick()
 {
     m_tickCount++;
     QVector<double> retrivedData(3);
-    if(m_tickCount % 4 == 0){
+    if(m_tickCount % 1 == 0){
         DisplayDeviceData(m_machineData);
 
         m_GetSourceData(m_machineData, retrivedData, m_sourceIndex);
@@ -350,7 +350,7 @@ void MainWindow::OnTimerTick()
         }
 
         // check the connection status 
-        if(m_tickCount % 10 == 0){
+        if(m_tickCount % 40 == 0){
             if (m_tcpSocket->state() != QAbstractSocket::ConnectedState && m_isConnected == true)
                 OnSocketDisconnected();
         }
@@ -447,7 +447,7 @@ int MainWindow::RetriveForceData(const Aris::RT_CONTROL::CMachineData& source, Q
 
     for (int i = 0; i < 3; i++)
     {
-        result[i] = source.forceData[index].forceValues[i];
+        result[i] = source.forceData[index].forceValues[i]/1000.0;
     }
     return 0;
 }
