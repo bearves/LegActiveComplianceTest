@@ -9,6 +9,7 @@
 #include "Aris_Message.h"
 #include "Aris_ControlData.h"
 #include "GlobalConfiguration.h"
+#include "Gait.h"
 #include "qcustomplot.h"
 #include <vector>
 #include <memory>

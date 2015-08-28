@@ -8,12 +8,12 @@ class Leg
     public:
         enum LEG_IDENTIFIER
         {
-            LEG_ID_RF = 0,
-            LEG_ID_MF = 1,
-            LEG_ID_LF = 2,
-            LEG_ID_RB = 3,
-            LEG_ID_MB = 4,
-            LEG_ID_LB = 5
+            LEG_ID_LB = 0,
+            LEG_ID_MB = 1,
+            LEG_ID_RB = 2,
+            LEG_ID_RF = 3,
+            LEG_ID_MF = 4,
+            LEG_ID_LF = 5
         };
         Leg();
         Leg(int legID);

@@ -104,7 +104,7 @@ int tg(Aris::RT_CONTROL::CMachineData& machineData,
         case INVALID_MSG_ID: // when no message actually is received, a INVALID_MSG_ID will be got here
             break;
         case NOCMD:
-            for(int i=0;i<18;i++)
+            for(int i=0;i<AXIS_NUMBER;i++)
             {
                 machineData.motorsCommands[i]=EMCMD_NONE;
                 gaitcmd[i] = GAIT_NULL;
@@ -114,7 +114,7 @@ int tg(Aris::RT_CONTROL::CMachineData& machineData,
 
         case ENABLE:
             gait.onlinePlanner.Offline();
-            for(int i=0;i<18;i++)
+            for(int i=0;i<AXIS_NUMBER;i++)
             {
                 machineData.motorsCommands[i]=EMCMD_ENABLE;
                 gaitcmd[i] = GAIT_NULL;
@@ -124,7 +124,7 @@ int tg(Aris::RT_CONTROL::CMachineData& machineData,
             break;
         case POWEROFF:
             gait.onlinePlanner.Offline();
-            for(int i=0;i<18;i++)
+            for(int i=0;i<AXIS_NUMBER;i++)
             {
                 machineData.motorsCommands[i]=EMCMD_POWEROFF;
                 gaitcmd[i] = GAIT_NULL;
@@ -134,7 +134,7 @@ int tg(Aris::RT_CONTROL::CMachineData& machineData,
             break;
         case STOP:
             gait.onlinePlanner.Offline();
-            for(int i=0;i<18;i++)
+            for(int i=0;i<AXIS_NUMBER;i++)
             {
                 machineData.motorsCommands[i]=EMCMD_STOP;
                 gaitcmd[i] = GAIT_NULL;
@@ -144,7 +144,7 @@ int tg(Aris::RT_CONTROL::CMachineData& machineData,
             break;
         case RUNNING:
             gait.onlinePlanner.Offline();
-            for(int i=0;i<18;i++)
+            for(int i=0;i<AXIS_NUMBER;i++)
             {
                 machineData.motorsCommands[i]=EMCMD_RUNNING;
                 gaitcmd[i] = GAIT_STANDSTILL;
@@ -177,7 +177,7 @@ int tg(Aris::RT_CONTROL::CMachineData& machineData,
 
             if(gait.m_gaitState[MapAbsToPhy[0]]==GAIT_STOP)
             {
-                for(int i=0;i<18;i++)
+                for(int i=0;i<AXIS_NUMBER;i++)
                 {
                     machineData.motorsModes[i]=EOperationMode::OM_CYCLICVEL;
                 }
@@ -195,7 +195,7 @@ int tg(Aris::RT_CONTROL::CMachineData& machineData,
 
             if(gait.m_gaitState[MapAbsToPhy[3]]==GAIT_STOP)
             {
-                for(int i=0;i<18;i++)
+                for(int i=0;i<AXIS_NUMBER;i++)
                 {
                     machineData.motorsModes[i]=EOperationMode::OM_CYCLICVEL;
                 }
@@ -210,10 +210,10 @@ int tg(Aris::RT_CONTROL::CMachineData& machineData,
         case ONLINEGAIT:
             // TODO: add online trj code here
 
-            gait.onlinePlanner.Initialize(1);
+            gait.onlinePlanner.Initialize(2);
             if(gait.m_gaitState[MapAbsToPhy[0]]==GAIT_STOP)
             {
-                for(int i=0;i<18;i++)
+                for(int i=0;i<AXIS_NUMBER;i++)
                 {
                     machineData.motorsModes[i]=EOperationMode::OM_CYCLICVEL;
                     gaitcmd[MapAbsToPhy[i]]=EGAIT::GAIT_ONLINE;
@@ -246,7 +246,7 @@ int tg(Aris::RT_CONTROL::CMachineData& machineData,
 };
 
 //offsets driver order
-static int HEXBOT_HOME_OFFSETS_RESOLVER[18] =
+static int HEXBOT_HOME_OFFSETS_RESOLVER_CUSTOM[18] =
 {
     0, 0, 0,
     0, 0, 0,
@@ -364,7 +364,7 @@ int main(int argc, char** argv)
     initParam.homeTorqueLimit = 950;
 
     ////necessary steps
-    initParam.homeOffsets=HEXBOT_HOME_OFFSETS_RESOLVER;
+    initParam.homeOffsets=HEXBOT_HOME_OFFSETS_RESOLVER_CUSTOM;
     controlSystem.SysInit(initParam);
 
     controlSystem.SysInitCommunication();

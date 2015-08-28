@@ -212,12 +212,12 @@ void MainWindow::DisplayDeviceData(Aris::RT_CONTROL::CMachineData &machineData)
     {
         txt.sprintf("%3d%9.2f%9.2f%9.2f%9.2f%9.2f%9.2f",
                     i,
-                machineData.forceData[i].forceValues[0]/1000.0,
-                machineData.forceData[i].forceValues[1]/1000.0,
-                machineData.forceData[i].forceValues[2]/1000.0,
-                machineData.forceData[i].forceValues[3]/1.0,
-                machineData.forceData[i].forceValues[4]/1.0,
-                machineData.forceData[i].forceValues[5]/1.0);
+                machineData.forceData[RobotHighLevelControl::MapAbsToPhyForceSensor[i]].forceValues[0]/1000.0,
+                machineData.forceData[RobotHighLevelControl::MapAbsToPhyForceSensor[i]].forceValues[1]/1000.0,
+                machineData.forceData[RobotHighLevelControl::MapAbsToPhyForceSensor[i]].forceValues[2]/1000.0,
+                machineData.forceData[RobotHighLevelControl::MapAbsToPhyForceSensor[i]].forceValues[3]/1.0,
+                machineData.forceData[RobotHighLevelControl::MapAbsToPhyForceSensor[i]].forceValues[4]/1.0,
+                machineData.forceData[RobotHighLevelControl::MapAbsToPhyForceSensor[i]].forceValues[5]/1.0);
         ui->textBrowserDevStatus->append(txt);
     }
     //txt.sprintf("IMU:       R       P       Y      WX      WY      WZ          ");
@@ -447,7 +447,7 @@ int MainWindow::RetriveForceData(const Aris::RT_CONTROL::CMachineData& source, Q
 
     for (int i = 0; i < 3; i++)
     {
-        result[i] = source.forceData[index].forceValues[i]/1000.0;
+        result[i] = source.forceData[RobotHighLevelControl::MapAbsToPhyForceSensor[i]].forceValues[i]/1000.0;
     }
     return 0;
 }
@@ -462,7 +462,7 @@ int MainWindow::RetriveTorquData(const Aris::RT_CONTROL::CMachineData& source, Q
 
     for (int i = 0; i < 3; i++)
     {
-        result[i] = source.forceData[index].forceValues[i+3];
+        result[i] = source.forceData[RobotHighLevelControl::MapAbsToPhyForceSensor[i]].forceValues[i+3];
     }
     return 0;
 }

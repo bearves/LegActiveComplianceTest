@@ -139,6 +139,7 @@ int CGait::RunGait(double timeNow, EGAIT* p_gait,Aris::RT_CONTROL::CMachineData&
                 m_currentGait[i] = p_gait[i];
                 m_commandDataMapped[motorID] = m_feedbackDataMapped[motorID];
 
+                // BUG detected here, which prevents the robot from going home for multiple times
                 if(data.isMotorHomed[i]==true)
                 {
                     m_standStillData[motorID] = m_feedbackDataMapped[motorID];
@@ -190,6 +191,16 @@ int CGait::RunGait(double timeNow, EGAIT* p_gait,Aris::RT_CONTROL::CMachineData&
         }
     }
 
+
+    if (fabs(fmod(timeNow, 1.0)) < 1.1e-3)
+    {
+        for( int i = 0; i < FORCE_SENSOR_NUMBER; i++)
+        {
+            rt_printf("%9.1f\t", data.forceData[MapAbsToPhyForceSensor[i]].forceValues[0] / 1000.0);
+        }
+        rt_printf("\n");
+    }
+
     if (onlinePlanner.GetCurrentState() == OnlinePlanner::OGS_ONLINE_WALK || 
         onlinePlanner.GetCurrentState() == OnlinePlanner::OGS_ONLINE_GOTO_START_POINT)
     {
@@ -200,10 +211,6 @@ int CGait::RunGait(double timeNow, EGAIT* p_gait,Aris::RT_CONTROL::CMachineData&
         for ( int i = 0; i < AXIS_NUMBER; i++)
         {
             m_commandDataMapped[i].Position = m_commandMotorCounts[i];
-        }
-        if (fabs(fmod(timeNow, 1.0)) < 1.1e-3)
-        {
-            rt_printf("OL cmd: %d\n", m_commandDataMapped[0].Position);
         }
     }
     // m_commandDataMapped -> data.commandData

@@ -34,6 +34,32 @@ namespace RobotHighLevelControl
             double m_destPointPosition[18];
     };
 
+    class ImpedanceSteadyPlanner
+    {
+        public:
+            enum IS_PLANNER_STATE
+            {
+                UNREADY  = -1,
+                READY    = 0,
+                INMOTION = 1,
+                FINISHED = 2
+            };
+                
+            ImpedanceSteadyPlanner();
+            ~ImpedanceSteadyPlanner();
+
+            int GetInitialJointLength(double* jointLength);
+            int Start(double timeNow);
+            int GenerateJointTrajectory(double timeNow, double* currentPoint, Aris::RT_CONTROL::CForceData* forceInput, double* jointLength);
+        private:
+            IS_PLANNER_STATE m_state;
+            // the point when the gait should start with
+            double m_beginPointPosition[18];
+            double m_timeWhenBeginToGo;
+
+            int ForceTransform(double* forceRaw, double* legPositionEstimated, double* forceTransfromed);
+            int ImpedanceControl(double* forceInput, double* forceDesire, double* positionOffset);
+    };
 }
 
 
