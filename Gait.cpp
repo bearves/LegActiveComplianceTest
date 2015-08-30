@@ -83,7 +83,7 @@ int CGait::InitGait(Aris::RT_CONTROL::CSysInitParameters& param)
     std::cout << "Start Reading File" << std::endl;
     std::cout<<"reading file data..."<<std::endl;
 
-    fin.open("../../resource/gait/start.txt");
+    fin.open("../resource/gait/start.txt");
     if(fin.fail())
         goto OPEN_FILE_FAIL;
 
@@ -125,6 +125,7 @@ int CGait::RunGait(double timeNow, EGAIT* p_gait,Aris::RT_CONTROL::CMachineData&
         {
             case GAIT_ONLINE:
                 // it should dealt with in a specific place
+                m_currentGait[i] = p_gait[i];
                 break;
 
             case GAIT_NULL:
@@ -152,7 +153,7 @@ int CGait::RunGait(double timeNow, EGAIT* p_gait,Aris::RT_CONTROL::CMachineData&
             case GAIT_STANDSTILL:
                 if(p_gait[i]!=m_currentGait[i])
                 {
-                    rt_printf("driver %d:   GAIT_STANDSTILL begins\n",i);
+                    rt_printf("driver %d: feedback pos: %d  GAIT_STANDSTILL begins\n",i, m_feedbackDataMapped[motorID]);
                     m_currentGait[i]=p_gait[i];
                     m_gaitStartTime[i]=data.time;
                     m_standStillData[motorID] = m_feedbackDataMapped[motorID];
@@ -192,9 +193,15 @@ int CGait::RunGait(double timeNow, EGAIT* p_gait,Aris::RT_CONTROL::CMachineData&
     }
 
 
-    if (fabs(fmod(timeNow, 1.0)) < 1.1e-3)
+    if (fabs(fmod(timeNow, 0.5)) < 1.1e-3)
     {
-        for( int i = 0; i < FORCE_SENSOR_NUMBER; i++)
+        rt_printf("driver %d: standstill pos: %d \n",0, m_standStillData[0]);
+        for( int i = 0; i < 3; i++)
+        {
+            rt_printf("%9.1f\t", data.forceData[MapAbsToPhyForceSensor[i]].forceValues[0] / 1000.0);
+        }
+        rt_printf("\n");
+        for( int i = 3; i < 6; i++)
         {
             rt_printf("%9.1f\t", data.forceData[MapAbsToPhyForceSensor[i]].forceValues[0] / 1000.0);
         }
