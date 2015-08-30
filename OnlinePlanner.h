@@ -47,8 +47,10 @@ private:
     double initialFeetPosition[18];
     bool m_initialFlag;
     bool m_startOnlineGaitFlag;
+    double m_destPoint[18]; // for PTP planner using
 
     GoToPointPlanner m_gotoPointPlanner;
+    ImpedancePlanner m_impedancePlanner;
     Model::Leg legList[6];
 
     // Assign the position of leg group from the virtual model to the position of acutal legs

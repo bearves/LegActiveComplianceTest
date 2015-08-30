@@ -52,7 +52,7 @@ int OnlinePlanner::Stop(double timeNow)
 {
     if ( olgaitState == OGS_ONLINE_WALK )
     {
-
+        m_impedancePlanner.Stop();
     }
     return 0;
 }
@@ -93,13 +93,21 @@ int OnlinePlanner::GenerateJointTrajectory(double timeNow, double* jointStateInp
     }
     else if ( olgaitState == OGS_ONLINE_WALK)
     {
+        // when the goto to start point command is received, the m_initialFlag will be set ,
+        // afterwards, the trjplanner will check this flag and do the corresponding initialization
+        // works.
         if (m_initialFlag == true){
             m_initialFlag = false;
+            m_impedancePlanner.Initialize();
         }
-        for(int i = 0; i < AXIS_NUMBER; i++)
+        // when the start gait command is received, this flag will be set,
+        // afterwards, the trjplanner will check this flag and start to move
+        if (m_startOnlineGaitFlag == true)
         {
-            jointStateOutput[i] = jointStateInput[i];
+            m_startOnlineGaitFlag = false;
+            m_impedancePlanner.Start(timeNow);
         }
+        m_impedancePlanner.GenerateJointTrajectory(timeNow, jointStateInput, forceData, jointStateOutput);
     }
     else if ( olgaitState == OGS_ONLINE_GOTO_START_POINT)
     {
@@ -108,9 +116,8 @@ int OnlinePlanner::GenerateJointTrajectory(double timeNow, double* jointStateInp
         // works, e.g. set the start and end point of the PTP trj generator
         if (m_initialFlag == true){
             m_initialFlag = false;
-            double destPoint[18];
-            GetInitialJointLength(destPoint);
-            m_gotoPointPlanner.SetStartAndEndPoint(jointStateInput, destPoint);
+            GetInitialJointLength(m_destPoint);
+            m_gotoPointPlanner.SetStartAndEndPoint(jointStateInput, m_destPoint);
         }
         // when the start gait command is received, this flag will be set,
         // afterwards, the trjplanner will check this flag and start to move

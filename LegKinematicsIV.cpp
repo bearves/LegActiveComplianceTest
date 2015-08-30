@@ -161,6 +161,8 @@ int Leg::InverseSolution(double* tipPosition, double* jointLength, bool requireT
     jointLength[0] = s1 / 1000.0;
     jointLength[1] = s2 / 1000.0;
     jointLength[2] = s3 / 1000.0;
+
+    return 0;
 }
 
 // Transform the tip position w.r.t. Body Direction to the Leg Hip Direction
@@ -180,3 +182,12 @@ int Leg::TransformTipPositionToHip(double* tipPositionRaw, double* relativeTipPo
     return 0;
 }
 
+int Leg::InverseSolutionPole(double* tipPositionPole, double* jointLength, bool requireTransformToHip)
+{
+    return 0;
+}
+
+int Leg::TransformFromPoleToCart(double* positionPole, double* positionCart)
+{
+    return 0;
+}
