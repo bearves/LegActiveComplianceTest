@@ -293,6 +293,10 @@ int ImpedancePlanner::ImpedanceControl(double* forceInput, double* forceDesire,
         currentOffset[i] = lastOffset[i] + currentOffsetdot[i] * th;
     }
 
+    for (int i = 0; i < 3; ++i) {
+        currentOffsetdot[i] = 0;
+        currentOffset[i] = 0;
+    }
     return 0;
 }
 

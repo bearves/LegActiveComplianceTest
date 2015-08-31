@@ -126,6 +126,7 @@ int CGait::RunGait(double timeNow, EGAIT* p_gait,Aris::RT_CONTROL::CMachineData&
             case GAIT_ONLINE:
                 // it should dealt with in a specific place
                 m_currentGait[i] = p_gait[i];
+                m_gaitState[i] = EGaitState::GAIT_RUN;
                 break;
 
             case GAIT_NULL:
