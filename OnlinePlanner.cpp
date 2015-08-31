@@ -59,7 +59,7 @@ int OnlinePlanner::Stop(double timeNow)
 
 int OnlinePlanner::Offline()
 {
-    if ( olgaitState == OGS_ONLINE_WALK )
+    if ( olgaitState == OGS_ONLINE_WALK || olgaitState == OGS_ONLINE_GOTO_START_POINT)
     {
         m_initialFlag = false;
         m_startOnlineGaitFlag = false;

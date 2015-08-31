@@ -86,11 +86,11 @@ int tg(Aris::RT_CONTROL::CMachineData& machineData,
 
     if (rtCycleCounter % 50 == 0)
     {
-        for( int i = 0; i < 1; i++ )
-        {
-            rt_printf("No. %d GS. %d MS. %d POS. %d \n",
-                 i, gaitcmd[i], machineData.motorsStates[i], machineData.feedbackData[i].Position);
-        }
+        //for( int i = 0; i < 1; i++ )
+        //{
+            //rt_printf("No. %d GS. %d MS. %d POS. %d \n",
+                 //i, gaitcmd[i], machineData.motorsStates[i], machineData.feedbackData[i].Position);
+        //}
         msgSend.SetMsgID(DATA_REPORT);
         msgSend.SetLength(sizeof(machineData));
         msgSend.Copy((const char *)&machineData, sizeof(machineData));
@@ -119,7 +119,7 @@ int tg(Aris::RT_CONTROL::CMachineData& machineData,
                 machineData.motorsCommands[i]=EMCMD_ENABLE;
                 gaitcmd[i] = GAIT_NULL;
             }
-            rt_printf("ENABLE Command Get in NRT\n" );
+            rt_printf("ENABLE Command Get in NRT ---------------------\n" );
 
             break;
         case POWEROFF:
