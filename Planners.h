@@ -3,6 +3,7 @@
 
 #include "Aris_ControlData.h"
 #include "LegKinematicsIV.h"
+#include <cmath>
 
 namespace RobotHighLevelControl
 {
@@ -87,7 +88,8 @@ namespace RobotHighLevelControl
             double m_forceTransfromed[18];
             double m_forceDesire[18];
 
-            int ForceTransform(double* forceRaw, double* legPositionEstimated, double* forceTransfromed);
+            int ForceTransform(double* forceRaw, double* legPositionEstimated, double* forceTransformed);
+            int SaturateProcess(double* adjustedFootPos);
             int ImpedanceControl(double* forceInput, double* forceDesire,
                                  double* lastOffset, double* lastOffsetdot,
                                  double* currentOffset, double* currentOffsetdot);

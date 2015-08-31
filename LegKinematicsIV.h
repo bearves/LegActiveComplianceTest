@@ -1,6 +1,7 @@
 #ifndef LEG_KINEMATICS_IV_H
 #define LEG_KINEMATICS_IV_H
 
+#include "GeoDefinition.h"
 namespace Model
 {
 class Leg

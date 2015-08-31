@@ -1,7 +1,6 @@
 #include "OnlinePlanner.h"
 
 using namespace RobotHighLevelControl;
-using namespace Model;
 
 OnlinePlanner::OnlinePlanner(void)
 {

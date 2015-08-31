@@ -181,6 +181,8 @@ int ImpedancePlanner::GenerateJointTrajectory(
             m_currentAdjustedFootVel[i]  = 0;
             m_currentOffset[i]    = 0;
             m_currentOffsetdot[i] = 0;
+            m_lastOffset[i] = m_currentOffset[i];
+            m_lastOffsetdot[i] = m_currentOffsetdot[i];
             jointLength[i] = m_currentAdjustedJointPos[i];
         }
     }
@@ -222,6 +224,7 @@ int ImpedancePlanner::GenerateJointTrajectory(
         // Get the joint length
         for(int i = 0; i < 6; i++)
         {
+            SaturateProcess(&m_currentAdjustedFootPos[i*3]);
             m_legList[i].InverseSolutionPole(&m_currentAdjustedFootPos[i*3], &m_currentAdjustedJointPos[i*3], false);
         }
 
@@ -240,18 +243,34 @@ int ImpedancePlanner::GenerateJointTrajectory(
         {
             m_currentOffset[i] = 0;
             m_currentOffsetdot[i] = 0;
+            m_lastOffset[i] = m_currentOffset[i];
+            m_lastOffsetdot[i] = m_currentOffsetdot[i];
             jointLength[i] = m_currentAdjustedJointPos[i];
         }
     }
     return 0;
 }
 
-int ImpedancePlanner::ForceTransform(double* forceRaw, double* legPositionEstimated, double* forceTransfromed)
+int ImpedancePlanner::ForceTransform(double* forceRaw, double* legPositionEstimated, double* forceTransformed)
 {
-    for(int i = 0; i < 3; i++)
-    {
-        forceTransfromed[i] = forceRaw[i];
-    }
+    using namespace Model;
+    // Firstly, the x and z direction on the actual force sensor are opposite to the matlab simulink models
+    double fx = -forceRaw[0];
+    double fy = forceRaw[1];
+    double fz = -forceRaw[2];
+    double l = legPositionEstimated[2];
+    double a0 = (LG1 + LG3)/1000.0;
+    double b0 = LG2 / 1000.0;
+    // Secondly, we need to rotate the z direction towards the hip joint
+    double tmp = (b0*b0-a0*a0-l*l)/(-2 * a0 * l);
+    double alpha = 0;
+    if ( fabs(tmp) < 1.0)
+        alpha = acos(tmp);
+    double sa = std::sin(alpha);
+    double ca = std::cos(alpha);
+    forceTransformed[0] = ca * fz - sa * fx;
+    forceTransformed[1] = (ca * fx + sa * fz) * -l;
+    forceTransformed[2] = fy * l;
     return 0;
 }
 
@@ -259,10 +278,40 @@ int ImpedancePlanner::ImpedanceControl(double* forceInput, double* forceDesire,
         double* lastOffset, double* lastOffsetdot,
         double* currentOffset, double* currentOffsetdot)
 {
-    for(int i = 0; i < 3; i++)
-    {
-        currentOffset[i] = 0;
-        currentOffsetdot[i] = 0;
+    double K_ac[3] = {20, 1e8, 1e8};
+    double B_ac[3] = {1, 1e5, 1e5};
+    double M_ac[3] = {0.00012, 10, 100};
+    double deltaF[3]; 
+    for (int i = 0; i < 3; ++i) {
+        deltaF[i] = forceInput[i] - forceDesire[i];
     }
+    double th = 0.001;
+    double xddot[3];
+    for (int i = 0; i < 3; ++i) {
+        xddot[i] = (deltaF[i] - K_ac[i] * lastOffset[i] - B_ac[i] * lastOffsetdot[i]) / M_ac[i];
+        currentOffsetdot[i] = lastOffsetdot[i] + xddot[i] * th;
+        currentOffset[i] = lastOffset[i] + currentOffsetdot[i] * th;
+    }
+
+    return 0;
+}
+
+int ImpedancePlanner::SaturateProcess(double* adjustedFootPos)
+{
+    using namespace Model;
+    if (adjustedFootPos[0] < -PI/8)
+        adjustedFootPos[0] = -PI/8;
+    else if (adjustedFootPos[0] > PI/8)
+        adjustedFootPos[0] = PI/8;
+
+    if (adjustedFootPos[1] < -PI/36)
+        adjustedFootPos[1] = -PI/36;
+    else if (adjustedFootPos[1] > PI/36)
+        adjustedFootPos[1] = PI/36;
+
+    if (adjustedFootPos[2] < 500)
+        adjustedFootPos[2] = 500;
+    else if (adjustedFootPos[2] > 760)
+        adjustedFootPos[2] = 760;
     return 0;
 }
