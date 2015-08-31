@@ -107,6 +107,10 @@ int GoToPointPlanner::GenerateJointTrajectory(double timeNow, double* currentPoi
 }
 
 
+const double ImpedancePlanner::FOOT_POS_UP_LIMIT[3]  = { Model::PI/9,  Model::PI/36, 500};
+const double ImpedancePlanner::FOOT_POS_LOW_LIMIT[3] = {-Model::PI/9, -Model::PI/36, 760};
+const double ImpedancePlanner::FORCE_DEADZONE[3]     = { 8, 4, 4 };
+
 ImpedancePlanner::ImpedancePlanner()
 {
     for(int i = 0; i < 6; i++)
@@ -203,6 +207,20 @@ int ImpedancePlanner::GenerateJointTrajectory(
                 m_forceRaw[i*3 + j] = forceInput[i].forceValues[j]/1000.0;
             }
             ForceTransform(&m_forceRaw[i*3], &m_currentAdjustedFootPos[i*3], &m_forceTransfromed[i*3]);
+            DeadZone(&m_forceTransfromed[i*3]);
+        }
+
+        if (fmod(timeNow, 0.5) < 1.1e3)
+        {
+            for (int i = 0; i < 6; ++i)
+            {
+                rt_printf("TF: ");
+                for (int j = 0; j < 3; ++j)
+                {
+                    rt_printf("%7.2lf  ", m_forceTransfromed[i*3+j]);
+                }
+                rt_printf("\n");
+            }
         }
         
         // Do the impedance adjustment
@@ -271,6 +289,7 @@ int ImpedancePlanner::ForceTransform(double* forceRaw, double* legPositionEstima
     forceTransformed[0] = ca * fz - sa * fx;
     forceTransformed[1] = (ca * fx + sa * fz) * -l;
     forceTransformed[2] = fy * l;
+
     return 0;
 }
 
@@ -278,9 +297,9 @@ int ImpedancePlanner::ImpedanceControl(double* forceInput, double* forceDesire,
         double* lastOffset, double* lastOffsetdot,
         double* currentOffset, double* currentOffsetdot)
 {
-    double K_ac[3] = {20, 1e8, 1e8};
-    double B_ac[3] = {1, 1e5, 1e5};
-    double M_ac[3] = {0.00012, 10, 100};
+    double K_ac[3] = {2e4, 1e8, 1e8};
+    double B_ac[3] = {1000, 1e5, 1e5};
+    double M_ac[3] = {120, 10, 100};
     double deltaF[3]; 
     for (int i = 0; i < 3; ++i) {
         deltaF[i] = forceInput[i] - forceDesire[i];
@@ -302,20 +321,24 @@ int ImpedancePlanner::ImpedanceControl(double* forceInput, double* forceDesire,
 
 int ImpedancePlanner::SaturateProcess(double* adjustedFootPos)
 {
-    using namespace Model;
-    if (adjustedFootPos[0] < -PI/8)
-        adjustedFootPos[0] = -PI/8;
-    else if (adjustedFootPos[0] > PI/8)
-        adjustedFootPos[0] = PI/8;
+    for (int i = 0; i < 3; ++i) {
+        if (adjustedFootPos[i] < FOOT_POS_LOW_LIMIT[i])
+        {
+            adjustedFootPos[i] = FOOT_POS_LOW_LIMIT[i];
+        }
+        else if (adjustedFootPos[i] > FOOT_POS_UP_LIMIT[i])
+        {
+            adjustedFootPos[i] = FOOT_POS_UP_LIMIT[i];
+        }
+    }
+    return 0;
+}
 
-    if (adjustedFootPos[1] < -PI/36)
-        adjustedFootPos[1] = -PI/36;
-    else if (adjustedFootPos[1] > PI/36)
-        adjustedFootPos[1] = PI/36;
-
-    if (adjustedFootPos[2] < 500)
-        adjustedFootPos[2] = 500;
-    else if (adjustedFootPos[2] > 760)
-        adjustedFootPos[2] = 760;
+int ImpedancePlanner::DeadZone(double* force)
+{
+    for (int i = 0; i < 3; ++i) {
+        if(fabs(force[i]) < FORCE_DEADZONE[i])
+            force[i] = 0;
+    }
     return 0;
 }

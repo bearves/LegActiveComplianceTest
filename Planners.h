@@ -1,6 +1,7 @@
 #ifndef PLANNERS_H
 #define PLANNERS_H
 
+#include <rtdk.h>
 #include "Aris_ControlData.h"
 #include "LegKinematicsIV.h"
 #include <cmath>
@@ -56,6 +57,10 @@ namespace RobotHighLevelControl
             int Stop();
             int GenerateJointTrajectory(double timeNow, double* currentPoint, Aris::RT_CONTROL::CForceData* forceInput, double* jointLength);
         private:
+            static const double FOOT_POS_UP_LIMIT[3];
+            static const double FOOT_POS_LOW_LIMIT[3];
+            static const double FORCE_DEADZONE[3];
+            
             IMPD_PLANNER_STATE m_state;
             Model::Leg m_legList[6];
 
@@ -90,6 +95,7 @@ namespace RobotHighLevelControl
 
             int ForceTransform(double* forceRaw, double* legPositionEstimated, double* forceTransformed);
             int SaturateProcess(double* adjustedFootPos);
+            int DeadZone(double* force);
             int ImpedanceControl(double* forceInput, double* forceDesire,
                                  double* lastOffset, double* lastOffsetdot,
                                  double* currentOffset, double* currentOffsetdot);
