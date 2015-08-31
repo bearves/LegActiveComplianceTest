@@ -40,7 +40,8 @@ enum MACHINE_CMD
     GOHOME_2      = 1006,
     HOME2START_1  = 1007,
     HOME2START_2  = 1008,
-    ONLINEGAIT    = 1016,
+    ONLINEGAIT    = 1016, // Online home to start
+    ONLINEGAIT_2  = 1019, // Online impedance control
     ONLINEBEGIN   = 1017,
     ONLINEEND     = 1018,
     CLEAR_FORCE   = 1034
@@ -86,11 +87,6 @@ int tg(Aris::RT_CONTROL::CMachineData& machineData,
 
     if (rtCycleCounter % 50 == 0)
     {
-        //for( int i = 0; i < 1; i++ )
-        //{
-            //rt_printf("No. %d GS. %d MS. %d POS. %d \n",
-                 //i, gaitcmd[i], machineData.motorsStates[i], machineData.feedbackData[i].Position);
-        //}
         msgSend.SetMsgID(DATA_REPORT);
         msgSend.SetLength(sizeof(machineData));
         msgSend.Copy((const char *)&machineData, sizeof(machineData));
@@ -207,10 +203,8 @@ int tg(Aris::RT_CONTROL::CMachineData& machineData,
             }
             break;
 
-        case ONLINEGAIT:
-            // TODO: add online trj code here
-
-            gait.onlinePlanner.Initialize(2);
+        case ONLINEGAIT: 
+            gait.onlinePlanner.Initialize(2); // online home to start
             if(gait.m_gaitState[MapAbsToPhy[0]]==GAIT_STOP)
             {
                 for(int i=0;i<AXIS_NUMBER;i++)
@@ -222,6 +216,20 @@ int tg(Aris::RT_CONTROL::CMachineData& machineData,
             }
             break;
 
+        case ONLINEGAIT_2:
+            // TODO: add online trj code here
+
+            gait.onlinePlanner.Initialize(1); // online impedance control
+            if(gait.m_gaitState[MapAbsToPhy[0]]==GAIT_STOP)
+            {
+                for(int i=0;i<AXIS_NUMBER;i++)
+                {
+                    machineData.motorsModes[i]=EOperationMode::OM_CYCLICVEL;
+                    gaitcmd[MapAbsToPhy[i]]=EGAIT::GAIT_ONLINE;
+                    machineData.motorsCommands[i]=EMCMD_RUNNING;
+                }
+            }
+            break;
         case ONLINEBEGIN:
             gait.onlinePlanner.Start(timeNow);
             break;
@@ -299,6 +307,10 @@ int OnGetControlCommand(Aris::Core::MSG &msg)
             break;
         case ONLINEGAIT:
             data.SetMsgID(ONLINEGAIT);
+            controlSystem.NRT_PostMsg(data);
+            break;
+        case ONLINEGAIT_2:
+            data.SetMsgID(ONLINEGAIT_2);
             controlSystem.NRT_PostMsg(data);
             break;
         case ONLINEBEGIN:
