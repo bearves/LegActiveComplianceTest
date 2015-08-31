@@ -135,15 +135,17 @@ int Leg::InverseSolution(double* tipPosition, double* jointLength, bool requireT
 // Transform the tip position w.r.t. Body Direction to the Leg Hip Direction
 int Leg::TransformTipPositionToHip(double* tipPositionRaw, double* relativeTipPositionWithHip, bool requireTransformToHip)
 {
-    if ( m_legID == LEG_ID_LB || m_legID == LEG_ID_MB || m_legID == LEG_ID_RB ) 
+    for(int i = 0; i < 3; i++)
     {
-        for(int i = 0; i < 3; i++)
+        relativeTipPositionWithHip[i] = tipPositionRaw[i];
+    }
+    if(requireTransformToHip)
+    {
+        if ( m_legID == LEG_ID_LB || m_legID == LEG_ID_MB || m_legID == LEG_ID_RB ) 
         {
-            relativeTipPositionWithHip[i] = tipPositionRaw[i];
-        }
-        // Reverse the x value when the leg is the back leg
-        if(requireTransformToHip)
+            // Reverse the x value when the leg is the back leg
             relativeTipPositionWithHip[0] = -relativeTipPositionWithHip[0];
+        }
     }
 
     return 0;

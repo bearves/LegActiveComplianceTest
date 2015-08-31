@@ -196,6 +196,11 @@ int CGait::RunGait(double timeNow, EGAIT* p_gait,Aris::RT_CONTROL::CMachineData&
     if (fabs(fmod(timeNow, 0.5)) < 1.1e-3)
     {
         rt_printf("driver %d: standstill pos: %d \n",0, m_standStillData[0]);
+        for( int i = 0; i < 2; i++)
+        {
+            for ( int j = 0; j < 6; j++)
+                data.forceData[MapAbsToPhyForceSensor[i]].forceValues[j] /= 1000.0;
+        }
         for( int i = 0; i < 3; i++)
         {
             rt_printf("%9.1f\t", data.forceData[MapAbsToPhyForceSensor[i]].forceValues[0] / 1000.0);
