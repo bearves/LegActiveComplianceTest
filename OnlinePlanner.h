@@ -2,6 +2,7 @@
 #define ONLINE_PLANNER_H
 
 #include <cmath>
+#include <rtdk.h>
 #include "Aris_ControlData.h"
 #include "Planners.h"
 #include "LegKinematicsIV.h"

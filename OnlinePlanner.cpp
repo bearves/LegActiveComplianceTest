@@ -73,11 +73,18 @@ int OnlinePlanner::GetInitialJointLength(double jointLength[])
     if (jointLength == nullptr)
         return -1;
 
-    double initialFootTipPosition[3] = {0, 0, -0.65};
-    for(int i = 0; i < 6; i++)
+    // CURRENT STAGE: the initial joint length is used for imdepdance planner
+    m_impedancePlanner.GetInitialJointLength(jointLength);
+
+    for( int i = 0; i < 6; i++)
     {
-        legList[i].InverseSolution(initialFootTipPosition, &jointLength[i * 3], false);
+        rt_printf("Joint Length: %d %d %d\n", jointLength[i*3], jointLength[i*3+1], jointLength[i*3+2]);
     }
+    //double initialFootTipPosition[3] = {0, 0, 0.65};
+    //for(int i = 0; i < 6; i++)
+    //{
+        //legList[i].InverseSolutionPole(initialFootTipPosition, &jointLength[i * 3], false);
+    //}
 
     return 0;
 }

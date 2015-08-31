@@ -117,7 +117,7 @@ ImpedancePlanner::ImpedancePlanner()
     {
         m_beginFootPos[i*3] = 0;
         m_beginFootPos[i*3 + 1] = 0;
-        m_beginFootPos[i*3 + 2] = -0.65;
+        m_beginFootPos[i*3 + 2] = 0.65;
     }
     m_state = UNREADY;
 }
@@ -143,7 +143,7 @@ int ImpedancePlanner::GetInitialJointLength(double* jointLength)
 {
     for(int i = 0; i < 6; i++)
     {
-        m_legList[i].InverseSolution(&m_beginFootPos[i*3], &jointLength[i*3], false);
+        m_legList[i].InverseSolutionPole(&m_beginFootPos[i*3], &jointLength[i*3], false);
     }
     return 0;
 }
@@ -222,7 +222,7 @@ int ImpedancePlanner::GenerateJointTrajectory(
         // Get the joint length
         for(int i = 0; i < 6; i++)
         {
-            m_legList[i].InverseSolution(&m_currentAdjustedFootPos[i*3], &m_currentAdjustedJointPos[i*3], false);
+            m_legList[i].InverseSolutionPole(&m_currentAdjustedFootPos[i*3], &m_currentAdjustedJointPos[i*3], false);
         }
 
         // Output

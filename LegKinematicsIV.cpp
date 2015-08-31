@@ -184,10 +184,18 @@ int Leg::TransformTipPositionToHip(double* tipPositionRaw, double* relativeTipPo
 
 int Leg::InverseSolutionPole(double* tipPositionPole, double* jointLength, bool requireTransformToHip)
 {
-    return 0;
+    double tipPositionCart[3];
+    TransformFromPoleToCart(tipPositionPole, tipPositionCart);
+    return InverseSolution(tipPositionCart, jointLength, requireTransformToHip);
 }
 
 int Leg::TransformFromPoleToCart(double* positionPole, double* positionCart)
 {
+    double l = positionPole[2];
+    double ty = positionPole[0];
+    double tx = positionPole[1];
+    positionCart[0] = l * sin(ty);// X direction
+    positionCart[1] = l * sin(tx) * cos(ty); // Y direction
+    positionCart[2] = -l * cos(tx) * cos(ty); // Z direction
     return 0;
 }
