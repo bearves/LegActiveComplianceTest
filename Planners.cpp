@@ -107,8 +107,8 @@ int GoToPointPlanner::GenerateJointTrajectory(double timeNow, double* currentPoi
 }
 
 
-const double ImpedancePlanner::FOOT_POS_UP_LIMIT[3]  = { Model::PI/9,  Model::PI/36, 500};
-const double ImpedancePlanner::FOOT_POS_LOW_LIMIT[3] = {-Model::PI/9, -Model::PI/36, 760};
+const double ImpedancePlanner::FOOT_POS_UP_LIMIT[3]  = { Model::PI/9,  Model::PI/36, 0.76};
+const double ImpedancePlanner::FOOT_POS_LOW_LIMIT[3] = {-Model::PI/9, -Model::PI/36, 0.5};
 const double ImpedancePlanner::FORCE_DEADZONE[3]     = { 8, 4, 4 };
 
 ImpedancePlanner::ImpedancePlanner()
@@ -210,18 +210,6 @@ int ImpedancePlanner::GenerateJointTrajectory(
             DeadZone(&m_forceTransfromed[i*3]);
         }
 
-        if (fmod(timeNow, 0.5) < 1.1e3)
-        {
-            for (int i = 0; i < 6; ++i)
-            {
-                rt_printf("TF: ");
-                for (int j = 0; j < 3; ++j)
-                {
-                    rt_printf("%7.2lf  ", m_forceTransfromed[i*3+j]);
-                }
-                rt_printf("\n");
-            }
-        }
         
         // Do the impedance adjustment
         for( int i = 0; i < 6; i++)
@@ -246,6 +234,19 @@ int ImpedancePlanner::GenerateJointTrajectory(
             m_legList[i].InverseSolutionPole(&m_currentAdjustedFootPos[i*3], &m_currentAdjustedJointPos[i*3], false);
         }
 
+        if (fmod(timeNow, 0.5) < 1.1e-3)
+        {
+            for (int i = 0; i < 6; ++i)
+            {
+                rt_printf("TF: ");
+                for (int j = 0; j < 3; ++j)
+                {
+                    rt_printf("%7.2lf  ", m_forceTransfromed[i*3+j]);
+                }
+                rt_printf("\n");
+            }
+            rt_printf("\n");
+        }
         // Output
         for(int i = 0; i < 18; i++)
         {
@@ -287,7 +288,7 @@ int ImpedancePlanner::ForceTransform(double* forceRaw, double* legPositionEstima
     double sa = std::sin(alpha);
     double ca = std::cos(alpha);
     forceTransformed[0] = ca * fz - sa * fx;
-    forceTransformed[1] = (ca * fx + sa * fz) * -l;
+    forceTransformed[1] = (ca * fx + sa * fz) * l;
     forceTransformed[2] = fy * l;
 
     return 0;
