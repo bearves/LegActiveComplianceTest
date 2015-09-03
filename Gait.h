@@ -50,6 +50,9 @@ const int MapAbsToPhyForceSensor[6]=
     4, 2, 0
 };
 
+const int COUNT_PER_ROT = 65536;
+const double PITCH_PER_ROT = 0.005;
+const double RATIO_REDUCTION = 1.5;
 
 enum EGaitState
 {
