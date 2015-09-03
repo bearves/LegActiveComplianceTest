@@ -241,7 +241,7 @@ void CGait::CalculateModelInputs(
 {
     for(int i = 0; i < AXIS_NUMBER; i++)
     {
-        jointStateInput[i] = m_feedbackDataMapped[i].Position / 65536.0 * 0.005;
+        jointStateInput[i] = m_feedbackDataMapped[i].Position / (double)COUNT_PER_ROT / RATIO_REDUCTION * PITCH_PER_ROT;
     }
     for(int i = 0; i < 6; i++)
     {
@@ -253,7 +253,7 @@ void CGait::CalculateActualMotorCounts( double* screwLength, int* motorCounts)
 {
     for(int i = 0; i < AXIS_NUMBER; i++)
     {
-        motorCounts[i] = screwLength[i] * 65536.0 / 0.005;
+        motorCounts[i] = screwLength[i] * COUNT_PER_ROT / PITCH_PER_ROT * RATIO_REDUCTION;
     }
 }
 }
