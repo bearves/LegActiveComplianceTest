@@ -121,7 +121,7 @@ ImpedancePlanner::ImpedancePlanner()
     {
         m_beginFootPos[i*3] = 0;
         m_beginFootPos[i*3 + 1] = 0;
-        m_beginFootPos[i*3 + 2] = 0.65;
+        m_beginFootPos[i*3 + 2] = 0.7;
     }
     m_state = UNREADY;
 }
