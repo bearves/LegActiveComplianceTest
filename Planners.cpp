@@ -217,6 +217,12 @@ int ImpedancePlanner::GenerateJointTrajectory(
             ImpedanceControl(&m_forceTransfromed[i*3], &m_forceDesire[i*3], 
                              &m_lastOffset[i*3], &m_lastOffsetdot[i*3],
                              &m_currentOffset[i*3], &m_currentOffsetdot[i*3]);
+
+            // Only test the length direction of the legs 
+            for (int j = 0; j < 2; ++j) {
+                m_currentOffsetdot[i*3+j] = 0;
+                m_currentOffset[i*3+j] = 0;
+            }
         }
 
         for( int i = 0; i < 18; i++)
@@ -241,7 +247,7 @@ int ImpedancePlanner::GenerateJointTrajectory(
                 rt_printf("TF: ");
                 for (int j = 0; j < 3; ++j)
                 {
-                    rt_printf("%7.2lf  ", m_forceTransfromed[i*3+j]);
+                    rt_printf("%7.6lf  ", m_currentOffset[i*3+j]);
                 }
                 rt_printf("\n");
             }
@@ -287,9 +293,9 @@ int ImpedancePlanner::ForceTransform(double* forceRaw, double* legPositionEstima
         alpha = acos(tmp);
     double sa = std::sin(alpha);
     double ca = std::cos(alpha);
-    forceTransformed[0] = ca * fz - sa * fx;
-    forceTransformed[1] = (ca * fx + sa * fz) * l;
-    forceTransformed[2] = fy * l;
+    forceTransformed[2] = ca * fz - sa * fx;
+    forceTransformed[0] = (ca * fx + sa * fz) * l;
+    forceTransformed[1] = fy * l;
 
     return 0;
 }
@@ -298,9 +304,9 @@ int ImpedancePlanner::ImpedanceControl(double* forceInput, double* forceDesire,
         double* lastOffset, double* lastOffsetdot,
         double* currentOffset, double* currentOffsetdot)
 {
-    double K_ac[3] = {2e4, 1e8, 1e8};
-    double B_ac[3] = {1000, 1e5, 1e5};
-    double M_ac[3] = {120, 10, 100};
+    double K_ac[3] = {1e8, 1e8, 2e4};
+    double B_ac[3] = {1e5, 1e5, 1000};
+    double M_ac[3] = {100, 100, 120};
     double deltaF[3]; 
     for (int i = 0; i < 3; ++i) {
         deltaF[i] = forceInput[i] - forceDesire[i];
@@ -313,10 +319,6 @@ int ImpedancePlanner::ImpedanceControl(double* forceInput, double* forceDesire,
         currentOffset[i] = lastOffset[i] + currentOffsetdot[i] * th;
     }
 
-    for (int i = 0; i < 3; ++i) {
-        currentOffsetdot[i] = 0;
-        currentOffset[i] = 0;
-    }
     return 0;
 }
 
