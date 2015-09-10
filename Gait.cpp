@@ -132,7 +132,6 @@ int CGait::RunGait(double timeNow, EGAIT* p_gait,Aris::RT_CONTROL::CMachineData&
             case GAIT_ONLINE:
                 // it should dealt with in a specific place
                 m_currentGait[i] = p_gait[i];
-                m_gaitState[i] = EGaitState::GAIT_RUN;
                 break;
 
             case GAIT_NULL:
@@ -212,7 +211,10 @@ int CGait::RunGait(double timeNow, EGAIT* p_gait,Aris::RT_CONTROL::CMachineData&
         {
             rt_printf("%9.1f\t", data.forceData[MapAbsToPhyForceSensor[i]].forceValues[0] / 1000.0);
         }
+        
         rt_printf("\n");
+        rt_printf("Current Robot State: %d\n", m_currentGait[0]);
+        rt_printf("current substate: %d\n", m_gaitState[MapAbsToPhy[0]]);
     }
 
     if (onlinePlanner.GetCurrentState() == OnlinePlanner::OGS_ONLINE_WALK || 

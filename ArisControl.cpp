@@ -241,6 +241,7 @@ int tg(Aris::RT_CONTROL::CMachineData& machineData,
             // TODO: add online trj code here
 
             gait.onlinePlanner.Initialize(1); // online impedance control
+
             if(gait.m_gaitState[MapAbsToPhy[0]]==GAIT_STOP)
             {
                 for(int i=0;i<AXIS_NUMBER;i++)
@@ -248,8 +249,10 @@ int tg(Aris::RT_CONTROL::CMachineData& machineData,
                     machineData.motorsModes[i]=EOperationMode::OM_CYCLICVEL;
                     gaitcmd[MapAbsToPhy[i]]=EGAIT::GAIT_ONLINE;
                     machineData.motorsCommands[i]=EMCMD_RUNNING;
+                    rt_printf("Online Gait2 ready to move\n" );
                 }
             }
+            rt_printf("Online Gait2 ready to move out \n" );
             break;
             
         case ONLINEBEGIN:
@@ -258,6 +261,11 @@ int tg(Aris::RT_CONTROL::CMachineData& machineData,
 
         case ONLINEEND:
             gait.onlinePlanner.Stop(timeNow);
+            for(int i = 0; i < AXIS_NUMBER; i++)
+            {
+                gait.m_gaitState[MapAbsToPhy[i]] = GAIT_STOP;
+            }
+            rt_printf("Online Gait require to stop\n ---------------------- \n\n" );
             break;
 
         case CLEAR_FORCE:
@@ -268,10 +276,10 @@ int tg(Aris::RT_CONTROL::CMachineData& machineData,
 
         case IMU_DATA_TO_RT:
             msgRecv.Paste((void *)&machineData.imuData, sizeof(CIMUData));
-            rt_printf("%f   %f   %f\n", 
-                    machineData.imuData.EulerAngle[0],
-                    machineData.imuData.EulerAngle[1],
-                    machineData.imuData.EulerAngle[2]);
+            //rt_printf("%f   %f   %f\n", 
+                    //machineData.imuData.EulerAngle[0],
+                    //machineData.imuData.EulerAngle[1],
+                    //machineData.imuData.EulerAngle[2]);
             break;
 
         default:

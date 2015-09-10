@@ -109,7 +109,7 @@ int GoToPointPlanner::GenerateJointTrajectory(double timeNow, double* currentPoi
 
 const double ImpedancePlanner::FOOT_POS_UP_LIMIT[3]  = { Model::PI/9,  Model::PI/36, 0.76};
 const double ImpedancePlanner::FOOT_POS_LOW_LIMIT[3] = {-Model::PI/9, -Model::PI/36, 0.5};
-const double ImpedancePlanner::FORCE_DEADZONE[3]     = { 8, 4, 4 };
+const double ImpedancePlanner::FORCE_DEADZONE[3]     = { 8, 1, 1 };
 
 ImpedancePlanner::ImpedancePlanner()
 {
@@ -123,11 +123,11 @@ ImpedancePlanner::ImpedancePlanner()
         m_beginFootPos[i*3 + 1] = 0;
         if ( i % 2 )
         {
-            m_beginFootPos[i*3 + 2] = 0.75;
+            m_beginFootPos[i*3 + 2] = 0.65;
         }
         else
         {
-            m_beginFootPos[i*3 + 2] = 0.75;
+            m_beginFootPos[i*3 + 2] = 0.65;
         }
     }
     m_state = UNREADY;
@@ -226,7 +226,7 @@ int ImpedancePlanner::GenerateJointTrajectory(
                              &m_currentOffset[i*3], &m_currentOffsetdot[i*3], i);
 
             // Only test the length direction of the legs 
-            for (int j = 0; j < 2; ++j) {
+            for (int j = 1; j < 2; ++j) {
                 m_currentOffsetdot[i*3+j] = 0;
                 m_currentOffset[i*3+j] = 0;
             }
@@ -301,7 +301,7 @@ int ImpedancePlanner::ForceTransform(double* forceRaw, double* legPositionEstima
     double sa = std::sin(alpha);
     double ca = std::cos(alpha);
     forceTransformed[2] = ca * fz - sa * fx;
-    forceTransformed[0] = (ca * fx + sa * fz) * l;
+    forceTransformed[0] = -(ca * fx + sa * fz) * l;
     forceTransformed[1] = fy * l;
 
     return 0;
@@ -311,16 +311,16 @@ int ImpedancePlanner::ImpedanceControl(double* forceInput, double* forceDesire,
         double* lastOffset, double* lastOffsetdot,
         double* currentOffset, double* currentOffsetdot, int legID)
 {
-    double K_ac[3] = {1e8, 1e8, 1.6e4};
-    double B_ac[3] = {1e5, 1e5, 3000};
-    double M_ac[3] = {100, 100, 120};
+    double K_ac[3] = {2, 1e8, 1.0e4};
+    double B_ac[3] = {4, 1e5, 6000};
+    double M_ac[3] = {10, 100, 120};
     double deltaF[3]; 
 
-    if (legID == Model::Leg::LEG_ID_MB || legID == Model::Leg::LEG_ID_MF)
-    {
-        K_ac[2] *= 2;
-        B_ac[2] *= 2;
-    }
+    //if (legID == Model::Leg::LEG_ID_MB || legID == Model::Leg::LEG_ID_MF)
+    //{
+        //K_ac[2] *= 2;
+        //B_ac[2] *= 2;
+    //}
     
     for (int i = 0; i < 3; ++i) 
     {
