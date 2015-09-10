@@ -121,7 +121,14 @@ ImpedancePlanner::ImpedancePlanner()
     {
         m_beginFootPos[i*3] = 0;
         m_beginFootPos[i*3 + 1] = 0;
-        m_beginFootPos[i*3 + 2] = 0.7;
+        if ( i % 2 )
+        {
+            m_beginFootPos[i*3 + 2] = 0.75;
+        }
+        else
+        {
+            m_beginFootPos[i*3 + 2] = 0.75;
+        }
     }
     m_state = UNREADY;
 }
@@ -216,7 +223,7 @@ int ImpedancePlanner::GenerateJointTrajectory(
         {
             ImpedanceControl(&m_forceTransfromed[i*3], &m_forceDesire[i*3], 
                              &m_lastOffset[i*3], &m_lastOffsetdot[i*3],
-                             &m_currentOffset[i*3], &m_currentOffsetdot[i*3]);
+                             &m_currentOffset[i*3], &m_currentOffsetdot[i*3], i);
 
             // Only test the length direction of the legs 
             for (int j = 0; j < 2; ++j) {
@@ -302,13 +309,21 @@ int ImpedancePlanner::ForceTransform(double* forceRaw, double* legPositionEstima
 
 int ImpedancePlanner::ImpedanceControl(double* forceInput, double* forceDesire,
         double* lastOffset, double* lastOffsetdot,
-        double* currentOffset, double* currentOffsetdot)
+        double* currentOffset, double* currentOffsetdot, int legID)
 {
-    double K_ac[3] = {1e8, 1e8, 2e4};
-    double B_ac[3] = {1e5, 1e5, 1000};
+    double K_ac[3] = {1e8, 1e8, 0.8e4};
+    double B_ac[3] = {1e5, 1e5, 2500};
     double M_ac[3] = {100, 100, 120};
     double deltaF[3]; 
-    for (int i = 0; i < 3; ++i) {
+
+    //if (legID == Model::Leg::LEG_ID_MB || legID == Model::Leg::LEG_ID_MF)
+    //{
+        //K_ac[2] *= 2;
+        //B_ac[2] *= 2;
+    //}
+    
+    for (int i = 0; i < 3; ++i) 
+    {
         deltaF[i] = forceInput[i] - forceDesire[i];
     }
     double th = 0.001;

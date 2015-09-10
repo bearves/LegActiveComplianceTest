@@ -98,7 +98,7 @@ namespace RobotHighLevelControl
             int DeadZone(double* force);
             int ImpedanceControl(double* forceInput, double* forceDesire,
                                  double* lastOffset, double* lastOffsetdot,
-                                 double* currentOffset, double* currentOffsetdot);
+                                 double* currentOffset, double* currentOffsetdot, int legID);
     };
 }
 
