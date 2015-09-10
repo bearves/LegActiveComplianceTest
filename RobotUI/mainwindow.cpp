@@ -227,19 +227,24 @@ void MainWindow::DisplayDeviceData(Aris::RT_CONTROL::CMachineData &machineData)
                 machineData.forceData[RobotHighLevelControl::MapAbsToPhyForceSensor[i]].forceValues[5]/1.0);
         ui->textBrowserDevStatus->append(txt);
     }
-    //txt.sprintf("IMU:       R       P       Y      WX      WY      WZ          ");
-    //ui->textBrowserDevStatus->append(txt);
-    //ui->textBrowserDevStatus->setTextColor(QColor("blue"));
-    //ui->textBrowserDevStatus->setFontUnderline(false);
-    //ui->textBrowserDevStatus->setFontWeight(QFont::Normal);
-    //txt.sprintf("%12.3lf%8.3lf%8.3lf%8.3lf%8.3lf%8.3lf",
-    //       deviceData.m_imuData.EulerAngle.EulerStruct.roll,
-    //       deviceData.m_imuData.EulerAngle.EulerStruct.pitch,
-    //       deviceData.m_imuData.EulerAngle.EulerStruct.yaw,
-    //       deviceData.m_imuData.AngularVelocity[0],
-    //       deviceData.m_imuData.AngularVelocity[1],
-    //       deviceData.m_imuData.AngularVelocity[2]
-    //       );
+
+    ui->textBrowserDevStatus->setTextColor(QColor("black"));
+    ui->textBrowserDevStatus->setFontUnderline(true);
+    ui->textBrowserDevStatus->setFontWeight(QFont::Bold);
+    txt.sprintf("IMU:       R       P       Y      WX      WY      WZ          ");
+    ui->textBrowserDevStatus->append(txt);
+    ui->textBrowserDevStatus->setTextColor(QColor("blue"));
+    ui->textBrowserDevStatus->setFontUnderline(false);
+    ui->textBrowserDevStatus->setFontWeight(QFont::Normal);
+    txt.sprintf("%12.3lf%8.3lf%8.3lf%8.3lf%8.3lf%8.3lf",
+           machineData.imuData.EulerAngle[0],
+           machineData.imuData.EulerAngle[1],
+           machineData.imuData.EulerAngle[2],
+           machineData.imuData.AngularVel[0],
+           machineData.imuData.AngularVel[1],
+           machineData.imuData.AngularVel[2]
+           );
+    ui->textBrowserDevStatus->append(txt);
 
 }
 
@@ -425,6 +430,10 @@ void MainWindow::ChangePlottingDataSource(QString cmd)
         m_GetSourceData = RetriveOmegaData;
         flag = true;
     }
+    else if(cmd.left(10).compare("show accel", Qt::CaseInsensitive) == 0){
+        m_GetSourceData = RetriveAccelData;
+        flag = true;
+    }
     if (flag)
     {
         ui->plainTextEditMsgLog->appendPlainText("Plotting souce changed");
@@ -485,6 +494,10 @@ int MainWindow::RetriveAngleData(const Aris::RT_CONTROL::CMachineData& source, Q
         result.resize(3);
     }
 
+    for (int i = 0; i < 3; i++)
+    {
+        result[i] = source.imuData.EulerAngle[i];
+    }
     return -1;
 }
 
@@ -494,6 +507,22 @@ int MainWindow::RetriveOmegaData(const Aris::RT_CONTROL::CMachineData& source, Q
         result.resize(3);
     }
 
+    for (int i = 0; i < 3; i++)
+    {
+        result[i] = source.imuData.AngularVel[i];
+    }
     return -1;
 }
 
+int MainWindow::RetriveAccelData(const Aris::RT_CONTROL::CMachineData& source, QVector<double>& result, int index)
+{
+    if (result.length() != 3){
+        result.resize(3);
+    }
+
+    for (int i = 0; i < 3; i++)
+    {
+        result[i] = source.imuData.LinearAcc[i];
+    }
+    return -1;
+}

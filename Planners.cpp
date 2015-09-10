@@ -311,16 +311,16 @@ int ImpedancePlanner::ImpedanceControl(double* forceInput, double* forceDesire,
         double* lastOffset, double* lastOffsetdot,
         double* currentOffset, double* currentOffsetdot, int legID)
 {
-    double K_ac[3] = {1e8, 1e8, 0.8e4};
-    double B_ac[3] = {1e5, 1e5, 2500};
+    double K_ac[3] = {1e8, 1e8, 1.6e4};
+    double B_ac[3] = {1e5, 1e5, 3000};
     double M_ac[3] = {100, 100, 120};
     double deltaF[3]; 
 
-    //if (legID == Model::Leg::LEG_ID_MB || legID == Model::Leg::LEG_ID_MF)
-    //{
-        //K_ac[2] *= 2;
-        //B_ac[2] *= 2;
-    //}
+    if (legID == Model::Leg::LEG_ID_MB || legID == Model::Leg::LEG_ID_MF)
+    {
+        K_ac[2] *= 2;
+        B_ac[2] *= 2;
+    }
     
     for (int i = 0; i < 3; ++i) 
     {
