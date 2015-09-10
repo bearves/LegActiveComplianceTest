@@ -62,6 +62,7 @@ private:
     static int RetriveTorquData(const Aris::RT_CONTROL::CMachineData& source, QVector<double>& result, int index);
     static int RetriveAngleData(const Aris::RT_CONTROL::CMachineData& source, QVector<double>& result, int index);
     static int RetriveOmegaData(const Aris::RT_CONTROL::CMachineData& source, QVector<double>& result, int index);
+    static int RetriveAccelData(const Aris::RT_CONTROL::CMachineData& source, QVector<double>& result, int index);
 
 private slots:
     void OnPushbuttonConnectClicked();

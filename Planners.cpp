@@ -305,7 +305,7 @@ int ImpedancePlanner::ImpedanceControl(double* forceInput, double* forceDesire,
         double* currentOffset, double* currentOffsetdot)
 {
     double K_ac[3] = {1e8, 1e8, 2e4};
-    double B_ac[3] = {1e5, 1e5, 1000};
+    double B_ac[3] = {1e5, 1e5, 3000};
     double M_ac[3] = {100, 100, 120};
     double deltaF[3]; 
     for (int i = 0; i < 3; ++i) {

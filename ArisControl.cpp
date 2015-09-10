@@ -3,6 +3,7 @@
 #include "Aris_Message.h"
 #include "Aris_Thread.h"
 #include "Aris_Socket.h"
+#include "Aris_XSensIMU.h"
 #include "Server.h"
 
 using namespace std;
@@ -15,6 +16,7 @@ static EGAIT gaitcmdtemp[AXIS_NUMBER];
 
 Aris::RT_CONTROL::ACTUATION controlSystem;
 Aris::RT_CONTROL::CSysInitParameters initParam;
+Aris::RT_CONTROL::CIMUDevice imuDevice;
 
 static const char *GS_STRING[] = 
 {
@@ -47,9 +49,10 @@ enum MACHINE_CMD
     CLEAR_FORCE   = 1034
 };
 
-enum REPLY_MSG_ID
+enum MACHINE_DATA
 {
-    DATA_REPORT   = 1050
+    DATA_REPORT   = 1050,
+    IMU_DATA_TO_RT= 1051
 };
 
 int msgLoopCounter;
@@ -63,6 +66,24 @@ void* MessageLoopDaemon(void *)
     return NULL;
 };
 
+// Message loop daemon
+void* IMUDaemon(void *)
+{
+    Aris::Core::MSG imuDataMsg;
+    Aris::RT_CONTROL::CIMUData imuData;
+    imuDataMsg.SetMsgID(IMU_DATA_TO_RT);
+    cout<<"running IMU loop"<<endl;
+    imuDevice.Initialize();
+    while(!controlSystem.IsSysStopped())
+    {
+        imuDevice.UpdateData(imuData);
+        imuDataMsg.SetLength(sizeof(imuData));
+        imuDataMsg.Copy((const char *)&imuData, sizeof(imuData));
+        controlSystem.NRT_PostMsg(imuDataMsg);
+        imuDevice.Sleep(2);
+    }
+    return NULL;
+};
 
 int initFun(Aris::RT_CONTROL::CSysInitParameters& param)
 {
@@ -230,6 +251,7 @@ int tg(Aris::RT_CONTROL::CMachineData& machineData,
                 }
             }
             break;
+            
         case ONLINEBEGIN:
             gait.onlinePlanner.Start(timeNow);
             break;
@@ -237,11 +259,19 @@ int tg(Aris::RT_CONTROL::CMachineData& machineData,
         case ONLINEEND:
             gait.onlinePlanner.Stop(timeNow);
             break;
+
         case CLEAR_FORCE:
             for (int i = 0; i < FORCE_SENSOR_NUMBER; i++){
                 machineData.forceData[i].isZeroingRequest = 1;
             }
             break; 
+
+        case IMU_DATA_TO_RT:
+            msgRecv.Paste((void *)&machineData.imuData, sizeof(CIMUData));
+            for (int j = 0; j < 3; ++j) {
+                rt_printf("%f   %f   %f\n", machineData.imuData.EulerAngle[j]);
+            }
+            break;
 
         default:
             //DO NOTHING, CMD AND TRAJ WILL KEEP STILL
@@ -268,61 +298,61 @@ int OnGetControlCommand(Aris::Core::MSG &msg)
 {
     int CommandID;
     msg.Paste(&CommandID,sizeof(int));
-    Aris::Core::MSG data;
+    Aris::Core::MSG commandMsg;
 
     switch(CommandID)
     {
         case POWEROFF:
-            data.SetMsgID(POWEROFF);
-            controlSystem.NRT_PostMsg(data);
+            commandMsg.SetMsgID(POWEROFF);
+            controlSystem.NRT_PostMsg(commandMsg);
             break;
         case STOP:
-            data.SetMsgID(STOP);
-            controlSystem.NRT_PostMsg(data);
+            commandMsg.SetMsgID(STOP);
+            controlSystem.NRT_PostMsg(commandMsg);
             break;
         case ENABLE:
-            data.SetMsgID(ENABLE);
-            controlSystem.NRT_PostMsg(data);
+            commandMsg.SetMsgID(ENABLE);
+            controlSystem.NRT_PostMsg(commandMsg);
             break;
         case RUNNING:
-            data.SetMsgID(RUNNING);
-            controlSystem.NRT_PostMsg(data);
+            commandMsg.SetMsgID(RUNNING);
+            controlSystem.NRT_PostMsg(commandMsg);
             break;
         case GOHOME_1:
-            data.SetMsgID(GOHOME_1);
-            controlSystem.NRT_PostMsg(data);
+            commandMsg.SetMsgID(GOHOME_1);
+            controlSystem.NRT_PostMsg(commandMsg);
             break;
         case GOHOME_2:
-            data.SetMsgID(GOHOME_2);
-            controlSystem.NRT_PostMsg(data);
+            commandMsg.SetMsgID(GOHOME_2);
+            controlSystem.NRT_PostMsg(commandMsg);
             break;
         case HOME2START_1:
-            data.SetMsgID(HOME2START_1);
-            controlSystem.NRT_PostMsg(data);
+            commandMsg.SetMsgID(HOME2START_1);
+            controlSystem.NRT_PostMsg(commandMsg);
             break;
         case HOME2START_2:
-            data.SetMsgID(HOME2START_2);
-            controlSystem.NRT_PostMsg(data);
+            commandMsg.SetMsgID(HOME2START_2);
+            controlSystem.NRT_PostMsg(commandMsg);
             break;
         case ONLINEGAIT:
-            data.SetMsgID(ONLINEGAIT);
-            controlSystem.NRT_PostMsg(data);
+            commandMsg.SetMsgID(ONLINEGAIT);
+            controlSystem.NRT_PostMsg(commandMsg);
             break;
         case ONLINEGAIT_2:
-            data.SetMsgID(ONLINEGAIT_2);
-            controlSystem.NRT_PostMsg(data);
+            commandMsg.SetMsgID(ONLINEGAIT_2);
+            controlSystem.NRT_PostMsg(commandMsg);
             break;
         case ONLINEBEGIN:
-            data.SetMsgID(ONLINEBEGIN);
-            controlSystem.NRT_PostMsg(data);
+            commandMsg.SetMsgID(ONLINEBEGIN);
+            controlSystem.NRT_PostMsg(commandMsg);
             break;
         case ONLINEEND:
-            data.SetMsgID(ONLINEEND);
-            controlSystem.NRT_PostMsg(data);
+            commandMsg.SetMsgID(ONLINEEND);
+            controlSystem.NRT_PostMsg(commandMsg);
             break;
         case CLEAR_FORCE:
-            data.SetMsgID(CLEAR_FORCE);
-            controlSystem.NRT_PostMsg(data);
+            commandMsg.SetMsgID(CLEAR_FORCE);
+            controlSystem.NRT_PostMsg(commandMsg);
             break;
 
         default:
@@ -358,9 +388,14 @@ int main(int argc, char** argv)
     ControlSystem.SetCallBackOnLoseConnection(On_CS_ConnectionLost);
 
     ControlSystem.StartServer("5690");
+
     Aris::Core::THREAD threadMessageLoop;
     threadMessageLoop.SetFunction(MessageLoopDaemon);
     threadMessageLoop.Start(0);
+
+    Aris::Core::THREAD threadIMU;
+    threadIMU.SetFunction(IMUDaemon);
+    threadIMU.Start(0);
 
     controlSystem.SetSysInitializer(initFun);
 
