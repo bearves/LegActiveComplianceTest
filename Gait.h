@@ -100,11 +100,16 @@ class CGait
         static double m_jointStateInput[AXIS_NUMBER];
         static double m_jointStateOutput[AXIS_NUMBER];
         static Aris::RT_CONTROL::CForceData m_forceData[FSR_NUM]; // must be 6 (legs) 
+        static Aris::RT_CONTROL::CIMUData m_imuData;
 
         static void MapFeedbackDataIn(Aris::RT_CONTROL::CMachineData& data );
         static void MapCommandDataOut(Aris::RT_CONTROL::CMachineData& data );
         static void CalculateActualMotorCounts( double* screwLength, int* motorCounts);
-        static void CalculateModelInputs(Aris::RT_CONTROL::CMachineData& machineData, double* jointStateInput, Aris::RT_CONTROL::CForceData* forceData);
+        static void CalculateModelInputs(
+                Aris::RT_CONTROL::CMachineData& machineData, 
+                double* jointStateInput, 
+                Aris::RT_CONTROL::CForceData* forceData,
+                Aris::RT_CONTROL::CIMUData& imuData);
 };
 
 }

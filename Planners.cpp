@@ -106,10 +106,11 @@ int GoToPointPlanner::GenerateJointTrajectory(double timeNow, double* currentPoi
     return 0;
 }
 
-
 const double ImpedancePlanner::FOOT_POS_UP_LIMIT[3]  = { Model::PI/9,  Model::PI/36, 0.76};
 const double ImpedancePlanner::FOOT_POS_LOW_LIMIT[3] = {-Model::PI/9, -Model::PI/36, 0.5};
 const double ImpedancePlanner::FORCE_DEADZONE[3]     = { 8, 1, 1 };
+const int ImpedancePlanner::LEG_INDEX_GROUP_A[3] = {Model::Leg::LEG_ID_MB, Model::Leg::LEG_ID_RF, Model::Leg::LEG_ID_LF};
+const int ImpedancePlanner::LEG_INDEX_GROUP_B[3] = {Model::Leg::LEG_ID_LB, Model::Leg::LEG_ID_RB, Model::Leg::LEG_ID_MF};
 
 ImpedancePlanner::ImpedancePlanner()
 {
@@ -123,11 +124,11 @@ ImpedancePlanner::ImpedancePlanner()
         m_beginFootPos[i*3 + 1] = 0;
         if ( i % 2 )
         {
-            m_beginFootPos[i*3 + 2] = 0.65;
+            m_beginFootPos[i*3 + 2] = 0.55;
         }
         else
         {
-            m_beginFootPos[i*3 + 2] = 0.65;
+            m_beginFootPos[i*3 + 2] = 0.7;
         }
     }
     m_state = UNREADY;
@@ -179,6 +180,7 @@ int ImpedancePlanner::GenerateJointTrajectory(
         double timeNow, 
         double* currentPoint, 
         Aris::RT_CONTROL::CForceData* forceInput, 
+        Aris::RT_CONTROL::CIMUData& imuFdbk,
         double* jointLength)
 {
     // When the controller has not been started, stay at the initial place
@@ -189,12 +191,21 @@ int ImpedancePlanner::GenerateJointTrajectory(
         {
             m_currentAdjustedJointPos[i] = m_currentTargetJointPos[i];
             m_currentAdjustedFootPos[i]  = m_beginFootPos[i];
+
             m_currentAdjustedFootVel[i]  = 0;
             m_currentOffset[i]    = 0;
             m_currentOffsetdot[i] = 0;
+            m_adjForceBP[i] = 0;
+
             m_lastOffset[i] = m_currentOffset[i];
             m_lastOffsetdot[i] = m_currentOffsetdot[i];
             jointLength[i] = m_currentAdjustedJointPos[i];
+        }
+
+        for(int i = 0; i < 2; i++)
+        {
+            m_currentIntegralValue[i] = 0;
+            m_lastIntegralValue[i] = m_currentIntegralValue[i];
         }
     }
     else if (m_state == INMOTION)
@@ -206,6 +217,7 @@ int ImpedancePlanner::GenerateJointTrajectory(
             m_currentTargetFootVel[i] = 0; 
             m_forceDesire[i] = 0;
         }
+        
         // Do the force transformation
         for( int i = 0; i < 6; i++)
         {
@@ -217,6 +229,35 @@ int ImpedancePlanner::GenerateJointTrajectory(
             DeadZone(&m_forceTransfromed[i*3]);
         }
 
+        // Adjust desire force according to the IMU feedback
+        // CURRENT STAGE: we assume when the 3 legs, aka. Group A legs are on the ground, 
+        // the balancer begins to work
+        if ( bodyPoseBalanceCondition(m_forceTransfromed) == true )
+        {    
+            CalculateAdjForceBP(imuFdbk, m_lastIntegralValue, m_currentIntegralValue, m_adjForceBP);
+            for (int i = 0; i < 18; ++i) 
+            {
+                // adjust the desire force 
+                m_forceDesire[i] += m_adjForceBP[i];
+            }
+            for(int i = 0; i < 2; i++)
+            {
+                m_lastIntegralValue[i] = m_currentIntegralValue[i];
+            }
+        }
+        else
+        {
+            // clear the balancer's state
+            for (int i = 0; i < 18; ++i) 
+            {
+                m_adjForceBP[i] = 0;
+            }
+            for(int i = 0; i < 2; i++)
+            {
+                m_currentIntegralValue[i] = 0;
+                m_lastIntegralValue[i] = m_currentIntegralValue[i];
+            }
+        }
         
         // Do the impedance adjustment
         for( int i = 0; i < 6; i++)
@@ -226,7 +267,7 @@ int ImpedancePlanner::GenerateJointTrajectory(
                              &m_currentOffset[i*3], &m_currentOffsetdot[i*3], i);
 
             // Only test the length direction of the legs 
-            for (int j = 1; j < 2; ++j) {
+            for (int j = 0; j < 2; ++j) {
                 m_currentOffsetdot[i*3+j] = 0;
                 m_currentOffset[i*3+j] = 0;
             }
@@ -239,7 +280,7 @@ int ImpedancePlanner::GenerateJointTrajectory(
             m_lastOffset[i] = m_currentOffset[i];
             m_lastOffsetdot[i] = m_currentOffsetdot[i];
         }
-        //
+        
         // Get the joint length
         for(int i = 0; i < 6; i++)
         {
@@ -258,6 +299,10 @@ int ImpedancePlanner::GenerateJointTrajectory(
                 }
                 rt_printf("\n");
             }
+            rt_printf("POSE: %7.6f  %7.6f  %7.6f\n", 
+                    imuFdbk.EulerAngle[0], 
+                    imuFdbk.EulerAngle[1], 
+                    imuFdbk.EulerAngle[2]);
             rt_printf("\n");
         }
         // Output
@@ -311,16 +356,19 @@ int ImpedancePlanner::ImpedanceControl(double* forceInput, double* forceDesire,
         double* lastOffset, double* lastOffsetdot,
         double* currentOffset, double* currentOffsetdot, int legID)
 {
-    double K_ac[3] = {2, 1e8, 1.0e4};
-    double B_ac[3] = {4, 1e5, 6000};
-    double M_ac[3] = {10, 100, 120};
+    //double K_ac[3] = {2, 1e8, 1.0e4};
+    //double B_ac[3] = {4, 1e5, 6000};
+    //double M_ac[3] = {10, 100, 120};
+    double K_ac[3] = {1e8, 1e8, 1.5e4};
+    double B_ac[3] = {1e5, 1e5, 3000};
+    double M_ac[3] = {100, 100, 120};
     double deltaF[3]; 
 
-    //if (legID == Model::Leg::LEG_ID_MB || legID == Model::Leg::LEG_ID_MF)
-    //{
-        //K_ac[2] *= 2;
-        //B_ac[2] *= 2;
-    //}
+    if (legID == Model::Leg::LEG_ID_MB || legID == Model::Leg::LEG_ID_MF)
+    {
+        K_ac[2] *= 2;
+        B_ac[2] *= 2;
+    }
     
     for (int i = 0; i < 3; ++i) 
     {
@@ -358,5 +406,43 @@ int ImpedancePlanner::DeadZone(double* force)
         if(fabs(force[i]) < FORCE_DEADZONE[i])
             force[i] = 0;
     }
+    return 0;
+}
+
+bool ImpedancePlanner::bodyPoseBalanceCondition(double* forceInput)
+{
+    bool flag = true;
+
+    // when MB, RF, LF legs touches the ground, the condition is satisfied
+    for(int i = 0; i < 3; i++)
+    {
+        flag = flag && (fabs(forceInput[LEG_INDEX_GROUP_A[i]*3 + 0]) > 200);
+    }
+    return true;
+}
+
+int ImpedancePlanner::CalculateAdjForceBP(
+        const Aris::RT_CONTROL::CIMUData &imuFdbk, 
+        double* lastIntegralValue,
+        double* currentIntegralValue,
+        double* adjForceBP)
+{
+    double KP_BP[2] = {10, 10};
+    double KI_BP[2] = {10, 10};
+    double force[2];
+    double th = 0.001;
+
+    // PI control for body pose balance
+    for (int i = 0; i < 2; ++i) 
+    {
+        currentIntegralValue[i] = lastIntegralValue[i] + KI_BP[i] * th * imuFdbk.EulerAngle[i];
+        force[i] = KP_BP[i] * imuFdbk.EulerAngle[i] + currentIntegralValue[i];
+    }
+    
+    using Model::Leg;
+    // assign adjust force to corresponding legs
+    adjForceBP[Leg::LEG_ID_RF*3 + 0] = force[0] + force[1];
+    adjForceBP[Leg::LEG_ID_LF*3 + 0] = -force[0] + force[1];
+
     return 0;
 }

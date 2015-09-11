@@ -71,17 +71,22 @@ void* IMUDaemon(void *)
 {
     Aris::Core::MSG imuDataMsg;
     Aris::RT_CONTROL::CIMUData imuData;
+
     imuDataMsg.SetMsgID(IMU_DATA_TO_RT);
     cout<<"running IMU loop"<<endl;
     imuDevice.Initialize();
+
     while(!controlSystem.IsSysStopped())
     {
         imuDevice.UpdateData(imuData);
         imuDataMsg.SetLength(sizeof(imuData));
         imuDataMsg.Copy((const char *)&imuData, sizeof(imuData));
         controlSystem.NRT_PostMsg(imuDataMsg);
-        imuDevice.Sleep(2);
+        imuDevice.Sleep(6);
     }
+
+    imuDevice.Close();
+    cout << "IMU thread exited" << endl;
     return NULL;
 };
 
@@ -265,7 +270,8 @@ int tg(Aris::RT_CONTROL::CMachineData& machineData,
             {
                 gait.m_gaitState[MapAbsToPhy[i]] = GAIT_STOP;
             }
-            rt_printf("Online Gait require to stop\n ---------------------- \n\n" );
+            rt_printf("Online Gait require to stop\n\
+                    ---------------------- \n\n" );
             break;
 
         case CLEAR_FORCE:
@@ -276,10 +282,6 @@ int tg(Aris::RT_CONTROL::CMachineData& machineData,
 
         case IMU_DATA_TO_RT:
             msgRecv.Paste((void *)&machineData.imuData, sizeof(CIMUData));
-            //rt_printf("%f   %f   %f\n", 
-                    //machineData.imuData.EulerAngle[0],
-                    //machineData.imuData.EulerAngle[1],
-                    //machineData.imuData.EulerAngle[2]);
             break;
 
         default:

@@ -36,7 +36,12 @@ public:
     int Offline();
 
     // Generate the joint trajectory due to the external force, should be called in each cycle.
-    int GenerateJointTrajectory(double timeNow, double* jointStateInput, Aris::RT_CONTROL::CForceData* forceData, double* jointStateOutput);
+    int GenerateJointTrajectory(
+            double timeNow, 
+            double* jointStateInput, 
+            Aris::RT_CONTROL::CForceData* forceData, 
+            Aris::RT_CONTROL::CIMUData& imuFdbk,
+            double* jointStateOutput);
     // Get the joint length of initial position, used for go to initial position before starting
     int GetInitialJointLength(double jointLengthList[]);
 

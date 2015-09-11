@@ -55,11 +55,19 @@ namespace RobotHighLevelControl
             int GetInitialJointLength(double* jointLength);
             int Start(double timeNow);
             int Stop();
-            int GenerateJointTrajectory(double timeNow, double* currentPoint, Aris::RT_CONTROL::CForceData* forceInput, double* jointLength);
+            int GenerateJointTrajectory(
+                    double timeNow,
+                    double* currentPoint, 
+                    Aris::RT_CONTROL::CForceData* forceInput, 
+                    Aris::RT_CONTROL::CIMUData& imuFdbk,
+                    double* jointLength);
+
         private:
             static const double FOOT_POS_UP_LIMIT[3];
             static const double FOOT_POS_LOW_LIMIT[3];
             static const double FORCE_DEADZONE[3];
+            static const int LEG_INDEX_GROUP_A[3];
+            static const int LEG_INDEX_GROUP_B[3];
             
             IMPD_PLANNER_STATE m_state;
             Model::Leg m_legList[6];
@@ -83,6 +91,11 @@ namespace RobotHighLevelControl
 
             double m_timeWhenBeginToGo;
 
+            // The following are states of the body pose balancer
+            double m_lastIntegralValue[2]; // for Roll and Pitch adjustment
+            double m_currentIntegralValue[2];
+            double m_adjForceBP[18];
+
             // The following are states of impedance controller, defined for the foot tip state
             double m_lastOffset[18];
             double m_lastOffsetdot[18];
@@ -99,6 +112,13 @@ namespace RobotHighLevelControl
             int ImpedanceControl(double* forceInput, double* forceDesire,
                                  double* lastOffset, double* lastOffsetdot,
                                  double* currentOffset, double* currentOffsetdot, int legID);
+
+            bool bodyPoseBalanceCondition(double* forceInput);
+            int CalculateAdjForceBP(
+                    const Aris::RT_CONTROL::CIMUData &imuFdbk, 
+                    double* lastIntegralValue,
+                    double* currentIntegralValue,
+                    double* adjForceBP);
     };
 }
 

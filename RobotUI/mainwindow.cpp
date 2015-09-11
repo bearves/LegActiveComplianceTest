@@ -245,7 +245,6 @@ void MainWindow::DisplayDeviceData(Aris::RT_CONTROL::CMachineData &machineData)
            machineData.imuData.AngularVel[2]
            );
     ui->textBrowserDevStatus->append(txt);
-
 }
 
 void MainWindow::ProcessCommand(QString cmd)

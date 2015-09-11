@@ -27,6 +27,7 @@ int CGait::m_commandMotorCounts[AXIS_NUMBER];
 double CGait::m_jointStateInput[AXIS_NUMBER];
 double CGait::m_jointStateOutput[AXIS_NUMBER];
 Aris::RT_CONTROL::CForceData CGait::m_forceData[FSR_NUM]; // must be 6 (legs) 
+Aris::RT_CONTROL::CIMUData CGait::m_imuData; // we assume one imu is connected by default
 
 int GaitHome2Start[GAIT_HOME2START_LEN][GAIT_WIDTH];
 
@@ -220,8 +221,13 @@ int CGait::RunGait(double timeNow, EGAIT* p_gait,Aris::RT_CONTROL::CMachineData&
     if (onlinePlanner.GetCurrentState() == OnlinePlanner::OGS_ONLINE_WALK || 
         onlinePlanner.GetCurrentState() == OnlinePlanner::OGS_ONLINE_GOTO_START_POINT)
     {
-        CalculateModelInputs(data, m_jointStateInput, m_forceData);
-        onlinePlanner.GenerateJointTrajectory( timeNow, m_jointStateInput, m_forceData, m_jointStateOutput);
+        CalculateModelInputs(data, m_jointStateInput, m_forceData, m_imuData);
+        onlinePlanner.GenerateJointTrajectory( 
+                timeNow, 
+                m_jointStateInput, 
+                m_forceData, 
+                m_imuData,
+                m_jointStateOutput);
         CalculateActualMotorCounts(m_jointStateOutput, m_commandMotorCounts);
 
         for ( int i = 0; i < AXIS_NUMBER; i++)
@@ -239,7 +245,8 @@ int CGait::RunGait(double timeNow, EGAIT* p_gait,Aris::RT_CONTROL::CMachineData&
 void CGait::CalculateModelInputs(
         Aris::RT_CONTROL::CMachineData& machineData, 
         double* jointStateInput, 
-        Aris::RT_CONTROL::CForceData* forceData)
+        Aris::RT_CONTROL::CForceData* forceData,
+        Aris::RT_CONTROL::CIMUData& imuData)
 {
     for(int i = 0; i < AXIS_NUMBER; i++)
     {
@@ -249,6 +256,7 @@ void CGait::CalculateModelInputs(
     {
         forceData[i] = machineData.forceData[MapAbsToPhyForceSensor[i]];
     }
+    imuData = machineData.imuData; // simply copy
 }
 
 void CGait::CalculateActualMotorCounts( double* screwLength, int* motorCounts)
