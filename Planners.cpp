@@ -122,13 +122,15 @@ ImpedancePlanner::ImpedancePlanner()
     {
         m_beginFootPos[i*3] = 0;
         m_beginFootPos[i*3 + 1] = 0;
-        if ( i % 2 )
+        if ( i == Model::Leg::LEG_ID_MB ||
+             i == Model::Leg::LEG_ID_RF ||
+             i == Model::Leg::LEG_ID_LF )
         {
-            m_beginFootPos[i*3 + 2] = 0.55;
+            m_beginFootPos[i*3 + 2] = 0.7;
         }
         else
         {
-            m_beginFootPos[i*3 + 2] = 0.7;
+            m_beginFootPos[i*3 + 2] = 0.55;
         }
     }
     m_state = UNREADY;
@@ -366,9 +368,9 @@ int ImpedancePlanner::ImpedanceControl(double* forceInput, double* forceDesire,
     //double K_ac[3] = {2, 1e8, 1.0e4};
     //double B_ac[3] = {4, 1e5, 6000};
     //double M_ac[3] = {10, 100, 120};
-    double K_ac[3] = {1e8, 1e8, 1.5e4};
+    double K_ac[3] = {1e8, 1e8, 2e4};
     double B_ac[3] = {1e5, 1e5, 3000};
-    double M_ac[3] = {100, 100, 120};
+    double M_ac[3] = {100, 100, 100};
     double deltaF[3]; 
 
     if (legID == Model::Leg::LEG_ID_MB || legID == Model::Leg::LEG_ID_MF)
@@ -425,7 +427,7 @@ bool ImpedancePlanner::bodyPoseBalanceCondition(double* forceInput)
     {
         flag = flag && (fabs(forceInput[LEG_INDEX_GROUP_A[i]*3 + 2]) > 200);
     }
-    return true;
+    return flag;
 }
 
 int ImpedancePlanner::CalculateAdjForceBP(
@@ -434,8 +436,8 @@ int ImpedancePlanner::CalculateAdjForceBP(
         double* currentIntegralValue,
         double* adjForceBP)
 {
-    double KP_BP[2] = {100, 100};
-    double KI_BP[2] = {100, 100};
+    double KP_BP[2] = {1600, 2200};
+    double KI_BP[2] = {3600, 7200};
     double force[2];
     double th = 0.001;
 
@@ -448,8 +450,8 @@ int ImpedancePlanner::CalculateAdjForceBP(
     
     using Model::Leg;
     // assign adjust force to corresponding legs
-    adjForceBP[Leg::LEG_ID_RF*3 + 2] = force[0] + force[1];
-    adjForceBP[Leg::LEG_ID_LF*3 + 2] = -force[0] + force[1];
+    adjForceBP[Leg::LEG_ID_RF*3 + 2] = -force[0] - force[1];
+    adjForceBP[Leg::LEG_ID_LF*3 + 2] = force[0] - force[1];
 
     return 0;
 }
