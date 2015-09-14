@@ -334,20 +334,20 @@ void MainWindow::ProcessCommand(QString cmd)
 
     if (cmd.left(4) == "move")
     {
-        if (cmd.mid(5, 7) == "default")
+        if (cmd.mid(5, 3) == "dft")
         {
             // use default param and start
             m_robotMsgToSend.SetMsgID(RMID_SET_PARA_CXB);
             RobotHighLevelControl::ParamCXB param;
 
             param.gaitCommand      = RobotHighLevelControl::GAIT_SUB_COMMAND::GSC_START;
-            param.totalPeriodCount = 10;
+            param.totalPeriodCount = 6;
             param.stepLength       = 0;
             param.Lside            = 0;
             param.rotationAngle    = 0;
             param.duty             = 0.52;
-            param.stepHeight       = 60; //positive value
-            param.T                = 1.0;
+            param.stepHeight       = 70; //positive value
+            param.T                = 1.25;
             param.standHeight      = 700;
             param.tdDeltaMidLeg    = 3;
             param.tdDeltaSideLeg   = 3;

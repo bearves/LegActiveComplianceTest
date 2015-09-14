@@ -546,7 +546,7 @@ int ImpedancePlanner::SetGaitParameter(const void* param, int dataLength)
 
     if (p_paramCXB->gaitCommand == GAIT_SUB_COMMAND::GSC_START)
     {
-        if (m_state == INMOTION && m_subState == HOLD_INIT_POS) // only in this state, the command can be accepted
+        if (m_state == INMOTION && m_subState == HOLD_INIT_POS) // only in this state, the command can be accepted to start walking
         {
             m_trjGeneratorParam = *p_paramCXB;
             m_subState = WALKING;
