@@ -10,7 +10,7 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 include_directories(../)
 
 # Tell CMake to create the RobotUI executable
-add_executable(RobotUI main.cpp mainwindow.cpp qcustomplot.cpp)
+add_executable(RobotUI main.cpp mainwindow.cpp qcustomplot.cpp ParamSetWindow.cpp)
 
 # Use the Widgets module from Qt 5.
 target_link_libraries(RobotUI Qt5::Widgets Qt5::Network Qt5::PrintSupport ${ARIS_NORT_LINK_LIBS})

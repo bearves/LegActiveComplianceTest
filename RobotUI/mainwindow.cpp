@@ -56,6 +56,8 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->lineEditCmd->setFocus();
 
     InitializePloting();
+
+    m_paramSetWindow = new ParamSetWindow(this);
 }
 
 
@@ -101,6 +103,7 @@ MainWindow::~MainWindow()
     delete ui;
     delete m_tcpSocket;
     delete m_timer;
+    delete m_paramSetWindow;
 }
 
 void MainWindow::OnCommandLineReturned()
@@ -332,9 +335,14 @@ void MainWindow::ProcessCommand(QString cmd)
         ChangePlottingDataSource(cmd);
     }
 
+    if (cmd.left(4) == "setp")
+    {
+        m_paramSetWindow->show();
+    }
+
     if (cmd.left(4) == "move")
     {
-        if (cmd.mid(5, 7) == "default")
+        if (cmd.mid(5, 3) == "dft")
         {
             // use default param and start
             m_robotMsgToSend.SetMsgID(RMID_SET_PARA_CXB);
@@ -359,6 +367,15 @@ void MainWindow::ProcessCommand(QString cmd)
         else 
         {
             // get new param
+            m_robotMsgToSend.SetMsgID(RMID_SET_PARA_CXB);
+            RobotHighLevelControl::ParamCXB param = m_paramSetWindow->GetParamData();
+
+            param.gaitCommand      = RobotHighLevelControl::GAIT_SUB_COMMAND::GSC_START;
+            param.rotationAngle    = 0;
+
+            m_robotMsgToSend.SetLength(sizeof(param));
+            m_robotMsgToSend.Copy(&param, sizeof(param));
+            hasMessageToSend = true;
         }
     }
 
