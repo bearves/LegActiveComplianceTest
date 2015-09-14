@@ -4,6 +4,7 @@
 #include <rtdk.h>
 #include "Aris_ControlData.h"
 #include "LegKinematicsIV.h"
+#include "GaitTrjGenerator.h"
 #include <cmath>
 
 namespace RobotHighLevelControl
@@ -37,6 +38,45 @@ namespace RobotHighLevelControl
             double m_destPointPosition[18];
     };
 
+    enum class GAIT_SUB_COMMAND : int
+    {
+        GSC_NOCMD  =  0,
+        GSC_START  =  1,
+        GSC_STOP   =  2,
+        GSC_CHANGE =  3
+    };
+
+    struct ParamCXB
+    {
+        GAIT_SUB_COMMAND gaitCommand;
+        unsigned int totalPeriodCount;
+        double stepLength;
+        double Lside;
+        double rotationAngle;
+        double duty;
+        double stepHeight; //positive value
+        double T;
+        double standHeight;
+        double tdDeltaMidLeg;
+        double tdDeltaSideLeg;
+
+        ParamCXB()
+        {
+            // default values
+            gaitCommand      = GAIT_SUB_COMMAND::GSC_NOCMD;
+            totalPeriodCount = 10;
+            stepLength       = 0;
+            Lside            = 0;
+            rotationAngle    = 0;
+            duty             = 0.6;
+            stepHeight       = 70; 
+            T                = 1.2;
+            standHeight      = 680;
+            tdDeltaMidLeg    = 0;
+            tdDeltaSideLeg   = 0;
+        }
+    };
+
     class ImpedancePlanner
     {
         public:
@@ -47,14 +87,23 @@ namespace RobotHighLevelControl
                 INMOTION = 1,
                 FINISHED = 2
             };
+
+            enum GAIT_SUB_STATE // for trj generator
+            {
+                HOLD_INIT_POS = 0,
+                WALKING       = 1,
+                HOLD_END_POS  = 2
+            };
                 
             ImpedancePlanner();
             ~ImpedancePlanner();
 
             int Initialize();
             int GetInitialJointLength(double* jointLength);
+            int ResetInitialFootPos();
             int Start(double timeNow);
             int Stop();
+            int SetGaitParameter(const void* param, int dataLength);
             int GenerateJointTrajectory(
                     double timeNow,
                     double* currentPoint, 
@@ -70,6 +119,12 @@ namespace RobotHighLevelControl
             static const int LEG_INDEX_GROUP_B[3];
             
             IMPD_PLANNER_STATE m_state;
+            GAIT_SUB_STATE m_subState;
+
+            double m_walkStartTime;
+            double m_walkStopTime;
+            ParamCXB m_trjGeneratorParam;
+
             Model::Leg m_legList[6];
 
             // the point when the gait should start with

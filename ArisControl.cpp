@@ -46,7 +46,8 @@ enum MACHINE_CMD
     ONLINEGAIT_2  = 1019, // Online impedance control
     ONLINEBEGIN   = 1017,
     ONLINEEND     = 1018,
-    CLEAR_FORCE   = 1034
+    CLEAR_FORCE   = 1034,
+    SET_PARA_CXB  = 1035
 };
 
 enum MACHINE_DATA
@@ -280,6 +281,12 @@ int tg(Aris::RT_CONTROL::CMachineData& machineData,
             }
             break; 
 
+        case SET_PARA_CXB:
+            rt_printf("Got param setting msg from the remote\n");
+            gait.onlinePlanner.SetGaitParameter(msgRecv.GetDataAddress(), msgRecv.GetLength(), 1);
+            
+            break;
+
         case IMU_DATA_TO_RT:
             msgRecv.Paste((void *)&machineData.imuData, sizeof(CIMUData));
             break;
@@ -363,6 +370,13 @@ int OnGetControlCommand(Aris::Core::MSG &msg)
             break;
         case CLEAR_FORCE:
             commandMsg.SetMsgID(CLEAR_FORCE);
+            controlSystem.NRT_PostMsg(commandMsg);
+            break;
+
+        case SET_PARA_CXB:
+            commandMsg.SetMsgID(SET_PARA_CXB);
+            commandMsg.SetLength(msg.GetLength());
+            commandMsg.Copy(msg.GetDataAddress(), msg.GetLength());
             controlSystem.NRT_PostMsg(commandMsg);
             break;
 

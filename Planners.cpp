@@ -118,21 +118,9 @@ ImpedancePlanner::ImpedancePlanner()
     {
         m_legList[i].SetID(i);
     }
-    for(int i = 0; i < 6; i++)
-    {
-        m_beginFootPos[i*3] = 0;
-        m_beginFootPos[i*3 + 1] = 0;
-        if ( i == Model::Leg::LEG_ID_MB ||
-             i == Model::Leg::LEG_ID_RF ||
-             i == Model::Leg::LEG_ID_LF )
-        {
-            m_beginFootPos[i*3 + 2] = 0.7;
-        }
-        else
-        {
-            m_beginFootPos[i*3 + 2] = 0.55;
-        }
-    }
+
+    ResetInitialFootPos();
+
     m_state = UNREADY;
 }
 
@@ -144,6 +132,7 @@ int ImpedancePlanner::Initialize()
 {
     if (m_state == UNREADY || m_state == FINISHED)
     {
+        ResetInitialFootPos();
         m_state = READY;
         return 0;
     }
@@ -151,6 +140,25 @@ int ImpedancePlanner::Initialize()
     {
         return -1;
     }
+}
+
+int ImpedancePlanner::ResetInitialFootPos()
+{
+    Model::walk_cxb(
+            0,
+            m_trjGeneratorParam.totalPeriodCount,
+            m_trjGeneratorParam.stepLength,
+            m_trjGeneratorParam.Lside,
+            m_trjGeneratorParam.rotationAngle,
+            m_trjGeneratorParam.duty,
+            m_trjGeneratorParam.stepHeight,
+            m_trjGeneratorParam.T,
+            m_trjGeneratorParam.standHeight,
+            m_trjGeneratorParam.tdDeltaMidLeg,
+            m_trjGeneratorParam.tdDeltaSideLeg,
+            m_beginFootPos);
+
+    return 0;
 }
 
 int ImpedancePlanner::GetInitialJointLength(double* jointLength)
@@ -167,6 +175,7 @@ int ImpedancePlanner::Start(double timeNow)
     if (m_state == READY)
     {
         m_state = INMOTION;
+        m_subState = HOLD_INIT_POS;
         m_timeWhenBeginToGo = timeNow;
     }
     return 0;
@@ -212,14 +221,78 @@ int ImpedancePlanner::GenerateJointTrajectory(
     }
     else if (m_state == INMOTION)
     {
-        // The legs are asked to stay at the initial position in current stage
-        for( int i = 0; i < 18; i++)
+        //// The legs are asked to stay at the initial position in current stage
+        //for( int i = 0; i < 18; i++)
+        //{
+            //m_currentTargetFootPos[i] = m_beginFootPos[i];
+            //m_currentTargetFootVel[i] = 0; 
+        //}
+        
+        if (m_subState == HOLD_INIT_POS)
         {
-            m_currentTargetFootPos[i] = m_beginFootPos[i];
-            m_currentTargetFootVel[i] = 0; 
-            m_forceDesire[i] = 0;
+            m_walkStartTime = timeNow; 
+
+            Model::walk_cxb(
+                    0,
+                    m_trjGeneratorParam.totalPeriodCount,
+                    m_trjGeneratorParam.stepLength,
+                    m_trjGeneratorParam.Lside,
+                    m_trjGeneratorParam.rotationAngle,
+                    m_trjGeneratorParam.duty,
+                    m_trjGeneratorParam.stepHeight,
+                    m_trjGeneratorParam.T,
+                    m_trjGeneratorParam.standHeight,
+                    m_trjGeneratorParam.tdDeltaMidLeg,
+                    m_trjGeneratorParam.tdDeltaSideLeg,
+                    m_currentTargetFootPos);
+        }
+        else if (m_subState == WALKING)
+        {
+            double timeFromStart = timeNow - m_walkStartTime;
+            m_walkStopTime = timeNow;
+
+            // when trj planning finished, switch to next state
+            if (timeFromStart >= m_trjGeneratorParam.totalPeriodCount * m_trjGeneratorParam.T)
+            {
+                m_subState = HOLD_END_POS;
+            }
+
+            Model::walk_cxb(
+                    timeFromStart,
+                    m_trjGeneratorParam.totalPeriodCount,
+                    m_trjGeneratorParam.stepLength,
+                    m_trjGeneratorParam.Lside,
+                    m_trjGeneratorParam.rotationAngle,
+                    m_trjGeneratorParam.duty,
+                    m_trjGeneratorParam.stepHeight,
+                    m_trjGeneratorParam.T,
+                    m_trjGeneratorParam.standHeight,
+                    m_trjGeneratorParam.tdDeltaMidLeg,
+                    m_trjGeneratorParam.tdDeltaSideLeg,
+                    m_currentTargetFootPos);
+        }
+        else if (m_subState == HOLD_END_POS)
+        {
+            Model::walk_cxb(
+                    m_walkStopTime - m_walkStartTime,
+                    m_trjGeneratorParam.totalPeriodCount,
+                    m_trjGeneratorParam.stepLength,
+                    m_trjGeneratorParam.Lside,
+                    m_trjGeneratorParam.rotationAngle,
+                    m_trjGeneratorParam.duty,
+                    m_trjGeneratorParam.stepHeight,
+                    m_trjGeneratorParam.T,
+                    m_trjGeneratorParam.standHeight,
+                    m_trjGeneratorParam.tdDeltaMidLeg,
+                    m_trjGeneratorParam.tdDeltaSideLeg,
+                    m_currentTargetFootPos);
         }
         
+        // re-initial desire force
+        for( int i = 0; i < 18; i++)
+        {
+            m_forceDesire[i] = 0;
+        }
         // Do the force transformation
         for( int i = 0; i < 6; i++)
         {
@@ -453,5 +526,38 @@ int ImpedancePlanner::CalculateAdjForceBP(
     adjForceBP[Leg::LEG_ID_RF*3 + 2] = -force[0] - force[1];
     adjForceBP[Leg::LEG_ID_LF*3 + 2] = force[0] - force[1];
 
+    return 0;
+}
+
+int ImpedancePlanner::SetGaitParameter(const void* param, int dataLength)
+{
+    if (param == NULL || dataLength < sizeof(ParamCXB))
+    {
+        rt_printf("Wrong param data received\n");
+        return -1;
+    }
+
+    const ParamCXB *p_paramCXB = (const ParamCXB *)param;
+    rt_printf("Set Param: %d  %.2lf  %.2lf  %.2lf\n", 
+            p_paramCXB->gaitCommand, 
+            p_paramCXB->duty, 
+            p_paramCXB->stepHeight,
+            p_paramCXB->standHeight);
+
+    if (p_paramCXB->gaitCommand == GAIT_SUB_COMMAND::GSC_START)
+    {
+        if (m_state == INMOTION && m_subState == HOLD_INIT_POS) // only in this state, the command can be accepted
+        {
+            m_trjGeneratorParam = *p_paramCXB;
+            m_subState = WALKING;
+            ResetInitialFootPos();
+        }
+        else if (m_state != INMOTION)
+        {
+            m_trjGeneratorParam = *p_paramCXB;  // Just set the parameter
+            ResetInitialFootPos();
+        }
+    }
+   
     return 0;
 }

@@ -5,7 +5,7 @@
 #include <rtdk.h>
 #include "Aris_ControlData.h"
 #include "Planners.h"
-#include "LegKinematicsIV.h"
+#include "Aris_Message.h"
 
 namespace RobotHighLevelControl
 {
@@ -34,6 +34,9 @@ public:
     int Stop(double timeNow);
     // Set offline to stop the online programming process
     int Offline();
+
+    // Set gait parameter with the data
+    int SetGaitParameter(const void* paramData, int dataLength, int gaitMod);
 
     // Generate the joint trajectory due to the external force, should be called in each cycle.
     int GenerateJointTrajectory(

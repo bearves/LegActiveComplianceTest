@@ -24,6 +24,7 @@
 #define RMID_ONLINEBEGIN  (1017)
 #define RMID_ONLINEEND    (1018)
 #define RMID_CLEAR_FORCE  (1034)
+#define RMID_SET_PARA_CXB (1035)
 
 typedef union HEAD
 {

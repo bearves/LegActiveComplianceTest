@@ -41,9 +41,10 @@ plt.xlim([0, 18])
 
 plt.subplot(3,1, 3)
 for i in range(18):
-    plt.plot(tplt[:-2:], numpy.diff(numpy.diff( (axis[i]))/0.001)/0.001)
+    #plt.plot(axis[0][0:1000], axis[2][0:1000])
+    plt.plot(axis[3], axis[3+2])
     plt.hold(True)
 plt.hold(False)
 plt.grid(True)
-plt.axis([0, 18, -2, 2])
+#plt.axis([0, 18, -20, 20])
 plt.show()

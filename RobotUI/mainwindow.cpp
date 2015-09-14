@@ -332,6 +332,36 @@ void MainWindow::ProcessCommand(QString cmd)
         ChangePlottingDataSource(cmd);
     }
 
+    if (cmd.left(4) == "move")
+    {
+        if (cmd.mid(5, 7) == "default")
+        {
+            // use default param and start
+            m_robotMsgToSend.SetMsgID(RMID_SET_PARA_CXB);
+            RobotHighLevelControl::ParamCXB param;
+
+            param.gaitCommand      = RobotHighLevelControl::GAIT_SUB_COMMAND::GSC_START;
+            param.totalPeriodCount = 10;
+            param.stepLength       = 0;
+            param.Lside            = 0;
+            param.rotationAngle    = 0;
+            param.duty             = 0.52;
+            param.stepHeight       = 60; //positive value
+            param.T                = 1.0;
+            param.standHeight      = 700;
+            param.tdDeltaMidLeg    = 3;
+            param.tdDeltaSideLeg   = 3;
+
+            m_robotMsgToSend.SetLength(sizeof(param));
+            m_robotMsgToSend.Copy(&param, sizeof(param));
+            hasMessageToSend = true;
+        }
+        else 
+        {
+            // get new param
+        }
+    }
+
     
     if (hasMessageToSend){
         if (m_tcpSocket->state() == QAbstractSocket::ConnectedState){

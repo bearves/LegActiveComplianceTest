@@ -144,3 +144,11 @@ int OnlinePlanner::GenerateJointTrajectory(
     return 0;
 }
 
+int OnlinePlanner::SetGaitParameter(const void* paramData, int dataLength, int gaitMod)
+{
+    if (gaitMod == 1)
+    {
+        m_impedancePlanner.SetGaitParameter(paramData, dataLength);
+    }
+    return 0;
+}
