@@ -282,7 +282,8 @@ int tg(Aris::RT_CONTROL::CMachineData& machineData,
             break; 
 
         case SET_PARA_CXB:
-            rt_printf("Got param setting msg from the remote\n");
+            rt_printf("Got param setting msg from the remote:\n sz = %d\n",
+                    msgRecv.GetLength());
             gait.onlinePlanner.SetGaitParameter(msgRecv.GetDataAddress(), msgRecv.GetLength(), 1);
             
             break;
@@ -375,8 +376,8 @@ int OnGetControlCommand(Aris::Core::MSG &msg)
 
         case SET_PARA_CXB:
             commandMsg.SetMsgID(SET_PARA_CXB);
-            commandMsg.SetLength(msg.GetLength());
-            commandMsg.Copy(msg.GetDataAddress(), msg.GetLength());
+            commandMsg.SetLength(msg.GetLength() - sizeof(int));
+            commandMsg.Copy(msg.GetDataAddress() + sizeof(int), msg.GetLength() - sizeof(int)); // repost the true data to RT side
             controlSystem.NRT_PostMsg(commandMsg);
             break;
 

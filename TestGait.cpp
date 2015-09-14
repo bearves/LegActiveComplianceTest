@@ -1,5 +1,6 @@
 #include <iostream>
 #include "GaitTrjGenerator.h"
+#include "Planners.h"
 
 using namespace Model;
 using namespace std;
@@ -41,7 +42,6 @@ int main(int argc, char *argv[])
             cout << legTipPoints[i] << "   ";
         }
         cout << endl;
-
     }
 
     return 0;

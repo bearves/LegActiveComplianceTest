@@ -28,12 +28,12 @@ int On_CS_DataReceived(Aris::Core::CONN *pConn, Aris::Core::MSG &data)
     Aris::Core::MSG CMD;
     CMD.SetMsgID(CS_CMD_Received);
     CMD.SetLength(sizeof(int));
-    //add control matrix
-    bool IsCMDExecutable=true;
-
     CMD.Copy(&cmd_id,sizeof(int));
+    
+    // if the cmd has data, it should be repost together
+    CMD.CopyMore(data.GetDataAddress(), data.GetLength());
 
-    cout<<"received CMD is"<<cmd_id<<endl;
+    cout<<"received CMD is "<<cmd_id<<endl;
 
     PostMsg(CMD);
     return 0;
