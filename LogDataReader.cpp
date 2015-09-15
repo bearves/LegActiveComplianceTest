@@ -31,9 +31,12 @@ int main(int argc, char** argv)
     while( fin.read((char *)&data, sizeof(data)))
     {
         fout << data.time << "  ";
-        for(int i = 0; i < 6; i++)
+        for(int j = 0; j < 6; j++)
         {
-            fout << data.forceData[0].forceValues[i] << "  ";
+            for(int i = 0; i < 3; i++)
+            {
+                fout << data.forceData[j].forceValues[i] << "  ";
+            }
         }
 
         for(int i = 0; i < 18; i++)
@@ -52,7 +55,7 @@ int main(int argc, char** argv)
     fout.flush();
     fout.close();
 
-    cout << "Log file reading finishing" << endl;
+    cout << "Log file reading finished" << endl;
 
     return 0;
 }
