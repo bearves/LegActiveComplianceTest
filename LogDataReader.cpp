@@ -33,7 +33,7 @@ int main(int argc, char** argv)
         fout << data.time << "  ";
         for(int j = 0; j < 6; j++)
         {
-            for(int i = 0; i < 3; i++)
+            for(int i = 0; i < 6; i++)
             {
                 fout << data.forceData[j].forceValues[i] << "  ";
             }
