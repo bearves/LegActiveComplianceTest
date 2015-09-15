@@ -13,6 +13,7 @@
 #include "qcustomplot.h"
 #include <vector>
 #include <memory>
+#include "ParamSetWindow.h"
 
 namespace Ui {
 class MainWindow;
@@ -31,6 +32,7 @@ private:
     Ui::MainWindow *ui;
     QTimer *m_timer;
     QTcpSocket *m_tcpSocket;
+    ParamSetWindow *m_paramSetWindow;
     QHostAddress m_remoteAddr;
     QVector<QCustomPlot *> m_plotWidgets;
 
