@@ -307,11 +307,11 @@ int ImpedancePlanner::GenerateJointTrajectory(
         // Adjust desire force according to the IMU feedback
         // CURRENT STAGE: we assume when the 3 legs, aka. Group A legs are on the ground, 
         // the balancer begins to work
-        
-        bool isBodyPoseBalanceOn = bodyPoseBalanceCondition(m_forceTransfromed);
+        int activeGroup;
+        bool isBodyPoseBalanceOn = bodyPoseBalanceCondition(m_forceTransfromed, activeGroup);
         if ( isBodyPoseBalanceOn)
         {    
-            CalculateAdjForceBP(imuFdbk, m_lastIntegralValue, m_currentIntegralValue, m_adjForceBP);
+            CalculateAdjForceBP(imuFdbk, m_lastIntegralValue, m_currentIntegralValue, m_adjForceBP, activeGroup);
             for (int i = 0; i < 18; ++i) 
             {
                 // adjust the desire force 
@@ -441,9 +441,9 @@ int ImpedancePlanner::ImpedanceControl(double* forceInput, double* forceDesire,
     //double K_ac[3] = {2, 1e8, 1.0e4};
     //double B_ac[3] = {4, 1e5, 6000};
     //double M_ac[3] = {10, 100, 120};
-    double K_ac[3] = {1e8, 1e8, 2e4};
-    double B_ac[3] = {1e5, 1e5, 3000};
-    double M_ac[3] = {100, 100, 100};
+    double K_ac[3] = {1e8, 1e8, 3e4};
+    double B_ac[3] = {1e5, 1e5, 6000};
+    double M_ac[3] = {100, 100, 80};
     double deltaF[3]; 
 
     if (legID == Model::Leg::LEG_ID_MB || legID == Model::Leg::LEG_ID_MF)
@@ -491,14 +491,30 @@ int ImpedancePlanner::DeadZone(double* force)
     return 0;
 }
 
-bool ImpedancePlanner::bodyPoseBalanceCondition(double* forceInput)
+bool ImpedancePlanner::bodyPoseBalanceCondition(double* forceInput, int& activeGroup)
 {
     bool flag = true;
 
     // when MB, RF, LF legs touches the ground, the condition is satisfied
     for(int i = 0; i < 3; i++)
     {
-        flag = flag && (fabs(forceInput[LEG_INDEX_GROUP_A[i]*3 + 2]) > 200);
+        flag = flag && (fabs(forceInput[LEG_INDEX_GROUP_A[i]*3 + 2]) > 200) && (fabs(forceInput[LEG_INDEX_GROUP_B[i]*3 + 2]) < 200);
+    }
+    if (flag)
+    {
+        activeGroup = 0;
+    }
+    else // it means group A is not active, now test group B
+    {
+        flag = true;
+        for(int i = 0; i < 3; i++)
+        {
+            flag = flag && (fabs(forceInput[LEG_INDEX_GROUP_B[i]*3 + 2]) > 200) && (fabs(forceInput[LEG_INDEX_GROUP_A[i]*3 + 2]) < 200);
+        }
+        if (flag) // B is active
+        {
+            activeGroup = 1;
+        }
     }
     return flag;
 }
@@ -507,9 +523,10 @@ int ImpedancePlanner::CalculateAdjForceBP(
         const Aris::RT_CONTROL::CIMUData &imuFdbk, 
         double* lastIntegralValue,
         double* currentIntegralValue,
-        double* adjForceBP)
+        double* adjForceBP,
+        int activeGroup)
 {
-    double KP_BP[2] = {1600, 2200};
+    double KP_BP[2] = {2000, 4500};
     double KI_BP[2] = {3600, 7200};
     double force[2];
     double th = 0.001;
@@ -523,8 +540,16 @@ int ImpedancePlanner::CalculateAdjForceBP(
     
     using Model::Leg;
     // assign adjust force to corresponding legs
-    adjForceBP[Leg::LEG_ID_RF*3 + 2] = -force[0] - force[1];
-    adjForceBP[Leg::LEG_ID_LF*3 + 2] = force[0] - force[1];
+    if (activeGroup == 0) // Group A
+    {
+        adjForceBP[Leg::LEG_ID_RF*3 + 2] = -force[0] - force[1];
+        adjForceBP[Leg::LEG_ID_LF*3 + 2] = force[0] - force[1];
+    }
+    else  // Group B
+    {
+        adjForceBP[Leg::LEG_ID_RB*3 + 2] = -force[0] + force[1];
+        adjForceBP[Leg::LEG_ID_LB*3 + 2] = force[0] + force[1];
+    }
 
     return 0;
 }
@@ -556,6 +581,10 @@ int ImpedancePlanner::SetGaitParameter(const void* param, int dataLength)
         {
             m_trjGeneratorParam = *p_paramCXB;  // Just set the parameter
             ResetInitialFootPos();
+            for(int i = 0; i < 18; i++)
+            {
+                rt_printf("New init pos: %.3lf\n", m_beginFootPos[i]);
+            }
         }
     }
    
