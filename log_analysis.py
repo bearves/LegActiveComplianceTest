@@ -19,7 +19,7 @@ file.close()
 dataArr = numpy.array(data)
 time = dataArr[:,0]/1000.0
 axis = []
-for i in range(1, 55+18):
+for i in range(1, 55):
     print i
     axis.append(dataArr[:,i])
 
@@ -29,17 +29,20 @@ tplt = time / 1.0
 plt.subplot(3,1,1)
 
 for i in range(6):
-    plt.plot(tplt, axis[i*6 + 3 + 0]/1000.0)
-    plt.plot(tplt, axis[i*6 + 3 + 1]/1000.0)
-    plt.plot(tplt, axis[i*6 + 3 + 2]/1000.0)
+    plt.plot(tplt, axis[i*3 + 0]/1000.0)
+    plt.plot(tplt, axis[i*3 + 1]/1000.0)
+    plt.plot(tplt, axis[i*3 + 2]/1000.0)
+plt.xlim([325, 335])
 
 plt.subplot(3,1,2)
 for i in range(18):
     plt.plot(tplt, axis[i+18]/65536.0/3*2*0.005)
+plt.xlim([325, 335])
 
 plt.subplot(3,1,3)
 for i in range(18):
     plt.plot(tplt, axis[i+18+18]/65536.0/3*2*0.005)
+plt.xlim([325, 335])
 
 plt.show()
 
