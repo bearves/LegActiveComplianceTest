@@ -168,12 +168,13 @@ namespace RobotHighLevelControl
                                  double* lastOffset, double* lastOffsetdot,
                                  double* currentOffset, double* currentOffsetdot, int legID);
 
-            bool bodyPoseBalanceCondition(double* forceInput);
+            bool bodyPoseBalanceCondition(double* forceInput, int& activeGroup);
             int CalculateAdjForceBP(
                     const Aris::RT_CONTROL::CIMUData &imuFdbk, 
                     double* lastIntegralValue,
                     double* currentIntegralValue,
-                    double* adjForceBP);
+                    double* adjForceBP,
+                    int activeGroup);
     };
 }
 

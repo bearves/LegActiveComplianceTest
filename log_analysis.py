@@ -32,17 +32,14 @@ for i in range(6):
     plt.plot(tplt, axis[i*6 + 3 + 0]/1000.0)
     plt.plot(tplt, axis[i*6 + 3 + 1]/1000.0)
     plt.plot(tplt, axis[i*6 + 3 + 2]/1000.0)
-plt.xlim([225, 245])
 
 plt.subplot(3,1,2)
 for i in range(18):
-    plt.plot(tplt, axis[i+36]/350.0/65536.0)
-plt.xlim([225, 245])
+    plt.plot(tplt, axis[i+18]/65536.0/3*2*0.005)
 
 plt.subplot(3,1,3)
 for i in range(18):
-    plt.plot(tplt, axis[i+36+18]/350.0/65536.0)
-plt.xlim([225, 245])
+    plt.plot(tplt, axis[i+18+18]/65536.0/3*2*0.005)
 
 plt.show()
 

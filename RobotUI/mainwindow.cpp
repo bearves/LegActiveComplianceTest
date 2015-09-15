@@ -353,12 +353,12 @@ void MainWindow::ProcessCommand(QString cmd)
             param.stepLength       = 0;
             param.Lside            = 0;
             param.rotationAngle    = 0;
-            param.duty             = 0.52;
-            param.stepHeight       = 70; //positive value
-            param.T                = 1.25;
-            param.standHeight      = 700;
-            param.tdDeltaMidLeg    = 3;
-            param.tdDeltaSideLeg   = 3;
+            param.duty             = 0.502;
+            param.stepHeight       = 60; //positive value
+            param.T                = 1.2;
+            param.standHeight      = 710;
+            param.tdDeltaMidLeg    = 9;
+            param.tdDeltaSideLeg   = 9;
 
             m_robotMsgToSend.SetLength(sizeof(param));
             m_robotMsgToSend.Copy(&param, sizeof(param));
