@@ -121,6 +121,8 @@ ImpedancePlanner::ImpedancePlanner()
 
     ResetInitialFootPos();
 
+    ResetImpedanceParam(IM_SOFT_LANDING);
+
     m_state = UNREADY;
 }
 
@@ -172,6 +174,50 @@ int ImpedancePlanner::ResetInitialFootPos()
         //}
     //}
 
+    return 0;
+}
+
+int ImpedancePlanner::ResetImpedanceParam(int impedanceMode)
+{
+    double K_SOFT_LANDING[3] = {1e8, 1e8, 8000};
+    double B_SOFT_LANDING[3] = {1e5, 1e5, 2000};
+    double M_SOFT_LANDING[3] = {100, 100, 80};
+
+    double K_SUPER_HARD[3] = {1e8, 1e8, 1e5};
+    double B_SUPER_HARD[3] = {1e5, 1e5, 9000};
+    double M_SUPER_HARD[3] = {100, 100, 80};
+
+    double K_MEDIUM_SOFT[3] = {1e8, 1e8, 20000};
+    double B_MEDIUM_SOFT[3] = {1e5, 1e5, 6000};
+    double M_MEDIUM_SOFT[3] = {100, 100, 80};
+
+    switch (impedanceMode)
+    {
+        case IM_SOFT_LANDING:
+            for (int i = 0; i < 3; ++i)
+            {
+                K_ac[i] = K_SOFT_LANDING[i];
+                B_ac[i] = B_SOFT_LANDING[i];
+                M_ac[i] = M_SOFT_LANDING[i];
+            }
+            break;
+        case IM_SUPER_HARD:
+            for (int i = 0; i < 3; ++i)
+            {
+                K_ac[i] = K_SUPER_HARD[i];
+                B_ac[i] = B_SUPER_HARD[i];
+                M_ac[i] = M_SUPER_HARD[i];
+            }
+            break;
+        case IM_MEDIUM_SOFT:
+            for (int i = 0; i < 3; ++i)
+            {
+                K_ac[i] = K_MEDIUM_SOFT[i];
+                B_ac[i] = B_MEDIUM_SOFT[i];
+                M_ac[i] = M_MEDIUM_SOFT[i];
+            }
+            break;
+    }
     return 0;
 }
 
@@ -235,13 +281,6 @@ int ImpedancePlanner::GenerateJointTrajectory(
     }
     else if (m_state == INMOTION)
     {
-        //// The legs are asked to stay at the initial position in current stage
-        //for( int i = 0; i < 18; i++)
-        //{
-            //m_currentTargetFootPos[i] = m_beginFootPos[i];
-            //m_currentTargetFootVel[i] = 0; 
-        //}
-        
         if (m_subState == HOLD_INIT_POS)
         {
             m_walkStartTime = timeNow; 
@@ -325,8 +364,6 @@ int ImpedancePlanner::GenerateJointTrajectory(
         }
 
         // Adjust desire force according to the IMU feedback
-        // CURRENT STAGE: we assume when the 3 legs, aka. Group A legs are on the ground, 
-        // the balancer begins to work
         int activeGroup;
         bool isBodyPoseBalanceOn = bodyPoseBalanceCondition(m_forceTransfromed, activeGroup);
         if ( isBodyPoseBalanceOn)
@@ -461,9 +498,6 @@ int ImpedancePlanner::ImpedanceControl(double* forceInput, double* forceDesire,
     //double K_ac[3] = {2, 1e8, 1.0e4};
     //double B_ac[3] = {4, 1e5, 6000};
     //double M_ac[3] = {10, 100, 120};
-    double K_ac[3] = {1e8, 1e8, 20000};
-    double B_ac[3] = {1e5, 1e5, 6000};
-    double M_ac[3] = {100, 100, 80};
     double deltaF[3]; 
 
     if (legID == Model::Leg::LEG_ID_MB || legID == Model::Leg::LEG_ID_MF)
@@ -606,6 +640,14 @@ int ImpedancePlanner::SetGaitParameter(const void* param, int dataLength)
                 rt_printf("New init pos: %.3lf\n", m_beginFootPos[i]);
             }
         }
+    }
+    else if (p_paramCXB->gaitCommand == GAIT_SUB_COMMAND::GSC_BEHARD)
+    {
+        ResetImpedanceParam(IM_SUPER_HARD);
+    }
+    else if (p_paramCXB->gaitCommand == GAIT_SUB_COMMAND::GSC_BESOFT)
+    {
+        ResetImpedanceParam(IM_MEDIUM_SOFT);
     }
    
     return 0;

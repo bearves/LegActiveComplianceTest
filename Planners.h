@@ -40,10 +40,12 @@ namespace RobotHighLevelControl
 
     enum class GAIT_SUB_COMMAND : int
     {
-        GSC_NOCMD  =  0,
-        GSC_START  =  1,
-        GSC_STOP   =  2,
-        GSC_CHANGE =  3
+        GSC_NOCMD  =  0, 
+        GSC_START  =  1, // start move
+        GSC_STOP   =  2, // not implemented
+        GSC_CHANGE =  3, // not implemented
+        GSC_BEHARD =  4, // used to ask the robot to switch from flexible leg to hard leg
+        GSC_BESOFT =  5  // used to ask the robot to switch from hard leg to flexible leg
     };
 
     struct ParamCXB
@@ -68,10 +70,10 @@ namespace RobotHighLevelControl
             stepLength       = 0;
             Lside            = 0;
             rotationAngle    = 0;
-            duty             = 0.6;
-            stepHeight       = 70; 
+            duty             = 0.52;
+            stepHeight       = 60; 
             T                = 1.2;
-            standHeight      = 680;
+            standHeight      = 710;
             tdDeltaMidLeg    = 0;
             tdDeltaSideLeg   = 0;
         }
@@ -94,13 +96,19 @@ namespace RobotHighLevelControl
                 WALKING       = 1,
                 HOLD_END_POS  = 2
             };
+
+            enum IMPD_MODE
+            {
+                IM_SOFT_LANDING = 0,  // Used for landing from high place
+                IM_MEDIUM_SOFT  = 1,  // Medium deformation
+                IM_SUPER_HARD   = 2   // Nearly no deformation
+            };
                 
             ImpedancePlanner();
             ~ImpedancePlanner();
 
             int Initialize();
             int GetInitialJointLength(double* jointLength);
-            int ResetInitialFootPos();
             int Start(double timeNow);
             int Stop();
             int SetGaitParameter(const void* param, int dataLength);
@@ -117,6 +125,11 @@ namespace RobotHighLevelControl
             static const double FORCE_DEADZONE[3];
             static const int LEG_INDEX_GROUP_A[3];
             static const int LEG_INDEX_GROUP_B[3];
+
+            // following M_ac, B_ac and K_ac is used for ImpedancePlanner 
+            double M_ac[3];
+            double B_ac[3];
+            double K_ac[3];
             
             IMPD_PLANNER_STATE m_state;
             GAIT_SUB_STATE m_subState;
@@ -161,6 +174,8 @@ namespace RobotHighLevelControl
             double m_forceTransfromed[18];
             double m_forceDesire[18];
 
+            int ResetInitialFootPos();
+            int ResetImpedanceParam(int impedanceMode);
             int ForceTransform(double* forceRaw, double* legPositionEstimated, double* forceTransformed);
             int SaturateProcess(double* adjustedFootPos);
             int DeadZone(double* force);

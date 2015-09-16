@@ -58,6 +58,9 @@ public:
     QHBoxLayout *horizontalLayout_3;
     QLabel *labelStepDpSide;
     QLineEdit *lineEditStepDpSide;
+    QHBoxLayout *horizontalLayout_12;
+    QLabel *labelRotationAngle;
+    QLineEdit *lineRotationAngle;
     QHBoxLayout *horizontalLayout;
     QPushButton *pushButton_OK;
     QPushButton *pushButton_cancel;
@@ -263,6 +266,26 @@ public:
 
         verticalLayout->addLayout(horizontalLayout_3);
 
+        horizontalLayout_12 = new QHBoxLayout();
+        horizontalLayout_12->setSpacing(6);
+        horizontalLayout_12->setObjectName(QStringLiteral("horizontalLayout_12"));
+        labelRotationAngle = new QLabel(horizontalLayoutWidget);
+        labelRotationAngle->setObjectName(QStringLiteral("labelRotationAngle"));
+        labelRotationAngle->setMinimumSize(QSize(150, 0));
+        labelRotationAngle->setMaximumSize(QSize(150, 16777215));
+        labelRotationAngle->setFont(font);
+
+        horizontalLayout_12->addWidget(labelRotationAngle);
+
+        lineRotationAngle = new QLineEdit(horizontalLayoutWidget);
+        lineRotationAngle->setObjectName(QStringLiteral("lineRotationAngle"));
+        lineRotationAngle->setFont(font);
+
+        horizontalLayout_12->addWidget(lineRotationAngle);
+
+
+        verticalLayout->addLayout(horizontalLayout_12);
+
         horizontalLayout = new QHBoxLayout();
         horizontalLayout->setSpacing(6);
         horizontalLayout->setObjectName(QStringLiteral("horizontalLayout"));
@@ -301,6 +324,7 @@ public:
         labelLSide->setText(QApplication::translate("ParamSetWindow", "LSide:", 0));
         labelStepDpMid->setText(QApplication::translate("ParamSetWindow", "Step Depth (Mid):", 0));
         labelStepDpSide->setText(QApplication::translate("ParamSetWindow", "Step Depth (Side):", 0));
+        labelRotationAngle->setText(QApplication::translate("ParamSetWindow", "RotationAngle:", 0));
         pushButton_OK->setText(QApplication::translate("ParamSetWindow", "OK", 0));
         pushButton_cancel->setText(QApplication::translate("ParamSetWindow", "Cancel", 0));
     } // retranslateUi

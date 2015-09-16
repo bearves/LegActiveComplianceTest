@@ -379,6 +379,32 @@ void MainWindow::ProcessCommand(QString cmd)
         }
     }
 
+    if (cmd.left(4) == "impd")
+    {
+        if (cmd.mid(5, 4) == "hard")
+        {
+            // use default param and start
+            m_robotMsgToSend.SetMsgID(RMID_SET_PARA_CXB);
+            RobotHighLevelControl::ParamCXB param;
+
+            param.gaitCommand      = RobotHighLevelControl::GAIT_SUB_COMMAND::GSC_BEHARD;
+            m_robotMsgToSend.SetLength(sizeof(param));
+            m_robotMsgToSend.Copy(&param, sizeof(param));
+            hasMessageToSend = true;
+        }
+        else if (cmd.mid(5,4) == "soft")
+        {
+            // get new param
+            m_robotMsgToSend.SetMsgID(RMID_SET_PARA_CXB);
+            RobotHighLevelControl::ParamCXB param = m_paramSetWindow->GetParamData();
+
+            param.gaitCommand      = RobotHighLevelControl::GAIT_SUB_COMMAND::GSC_BESOFT;
+
+            m_robotMsgToSend.SetLength(sizeof(param));
+            m_robotMsgToSend.Copy(&param, sizeof(param));
+            hasMessageToSend = true;
+        }
+    }
     
     if (hasMessageToSend){
         if (m_tcpSocket->state() == QAbstractSocket::ConnectedState){

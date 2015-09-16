@@ -41,7 +41,7 @@ void ParamSetWindow::OnPushbuttonOKClicked()
         return;
     }
     temp.stepLength       = ui->lineEditStepLength->text().toDouble(&flag);
-    if (!flag || temp.stepLength < 0)
+    if (!flag || temp.stepLength < -400 || temp.stepLength > 400)
     {
         ShowMessageBox("Wrong stepLength setting!");
         return;
@@ -83,6 +83,12 @@ void ParamSetWindow::OnPushbuttonOKClicked()
         return;
     }
 
+    temp.rotationAngle    = ui->lineRotationAngle->text().toDouble(&flag);
+    if (!flag)
+    {
+        ShowMessageBox("Wrong rotation angle setting!");
+        return;
+    }
     m_param = temp;
     
     this->close();
@@ -112,6 +118,7 @@ void ParamSetWindow::show()
     ui->lineEditStepLength->setText(QString::number(m_param.stepLength));
     ui->lineEditStandHeight->setText(QString::number(m_param.standHeight));
     ui->lineEditPeriodCount->setText(QString::number(m_param.totalPeriodCount));
+    ui->lineRotationAngle->setText(QString::number(m_param.rotationAngle));
 }
 
 void ParamSetWindow::SetParamData(RobotHighLevelControl::ParamCXB param)
