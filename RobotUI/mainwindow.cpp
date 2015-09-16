@@ -514,7 +514,7 @@ int MainWindow::RetriveForceData(const Aris::RT_CONTROL::CMachineData& source, Q
 
     for (int i = 0; i < 3; i++)
     {
-        result[i] = source.forceData[RobotHighLevelControl::MapAbsToPhyForceSensor[i]].forceValues[i]/1000.0;
+        result[i] = source.forceData[RobotHighLevelControl::MapAbsToPhyForceSensor[index]].forceValues[i]/1000.0;
     }
     return 0;
 }
@@ -529,7 +529,7 @@ int MainWindow::RetriveTorquData(const Aris::RT_CONTROL::CMachineData& source, Q
 
     for (int i = 0; i < 3; i++)
     {
-        result[i] = source.forceData[RobotHighLevelControl::MapAbsToPhyForceSensor[i]].forceValues[i+3];
+        result[i] = source.forceData[RobotHighLevelControl::MapAbsToPhyForceSensor[index]].forceValues[i+3];
     }
     return 0;
 }

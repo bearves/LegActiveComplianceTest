@@ -158,6 +158,20 @@ int ImpedancePlanner::ResetInitialFootPos()
             m_trjGeneratorParam.tdDeltaSideLeg,
             m_beginFootPos);
 
+    //for(int i = 0; i < 6; i++)
+    //{
+        //m_beginFootPos[i*3+0] = 0;
+        //m_beginFootPos[i*3+1] = 0;
+        //if (i % 2)
+        //{
+            //m_beginFootPos[i*3+2] = 0.55;
+        //}
+        //else
+        //{
+            //m_beginFootPos[i*3+2] = 0.71;
+        //}
+    //}
+
     return 0;
 }
 
@@ -245,6 +259,12 @@ int ImpedancePlanner::GenerateJointTrajectory(
                     m_trjGeneratorParam.tdDeltaMidLeg,
                     m_trjGeneratorParam.tdDeltaSideLeg,
                     m_currentTargetFootPos);
+
+            //for( int i = 0; i < 18; i++)
+            //{
+                //m_currentTargetFootPos[i] = m_beginFootPos[i];
+                //m_currentTargetFootVel[i] = 0; 
+            //}
         }
         else if (m_subState == WALKING)
         {
@@ -441,7 +461,7 @@ int ImpedancePlanner::ImpedanceControl(double* forceInput, double* forceDesire,
     //double K_ac[3] = {2, 1e8, 1.0e4};
     //double B_ac[3] = {4, 1e5, 6000};
     //double M_ac[3] = {10, 100, 120};
-    double K_ac[3] = {1e8, 1e8, 3e4};
+    double K_ac[3] = {1e8, 1e8, 20000};
     double B_ac[3] = {1e5, 1e5, 6000};
     double M_ac[3] = {100, 100, 80};
     double deltaF[3]; 
@@ -526,7 +546,7 @@ int ImpedancePlanner::CalculateAdjForceBP(
         double* adjForceBP,
         int activeGroup)
 {
-    double KP_BP[2] = {2000, 4500};
+    double KP_BP[2] = {4000, 12000};
     double KI_BP[2] = {3600, 7200};
     double force[2];
     double th = 0.001;
