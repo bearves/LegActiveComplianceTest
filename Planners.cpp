@@ -441,6 +441,18 @@ int ImpedancePlanner::GenerateJointTrajectory(
                     imuFdbk.EulerAngle[0], 
                     imuFdbk.EulerAngle[1], 
                     imuFdbk.EulerAngle[2]);
+            rt_printf("K: %9f  %9f  %9f\n", 
+                    K_ac[0], 
+                    K_ac[1], 
+                    K_ac[2]);
+            rt_printf("B: %9f  %9f  %9f\n", 
+                    B_ac[0], 
+                    B_ac[1], 
+                    B_ac[2]);
+            rt_printf("M: %9f  %9f  %9f\n", 
+                    M_ac[0], 
+                    M_ac[1], 
+                    M_ac[2]);
             rt_printf("Body Pose Balancing: %s\n", isBodyPoseBalanceOn ? "TRUE" : "FALSE");
             rt_printf("\n");
         }
@@ -498,12 +510,22 @@ int ImpedancePlanner::ImpedanceControl(double* forceInput, double* forceDesire,
     //double K_ac[3] = {2, 1e8, 1.0e4};
     //double B_ac[3] = {4, 1e5, 6000};
     //double M_ac[3] = {10, 100, 120};
+    double K_use[3];
+    double B_use[3];
+    double M_use[3];
     double deltaF[3]; 
+
+    for (int i = 0; i < 3; i++)
+    {
+        K_use[i] = K_ac[i];
+        B_use[i] = B_ac[i];
+        M_use[i] = M_ac[i];
+    }
 
     if (legID == Model::Leg::LEG_ID_MB || legID == Model::Leg::LEG_ID_MF)
     {
-        K_ac[2] *= 2;
-        B_ac[2] *= 2;
+        K_use[2] *= 2;
+        B_use[2] *= 2;
     }
     
     for (int i = 0; i < 3; ++i) 
@@ -513,7 +535,7 @@ int ImpedancePlanner::ImpedanceControl(double* forceInput, double* forceDesire,
     double th = 0.001;
     double xddot[3];
     for (int i = 0; i < 3; ++i) {
-        xddot[i] = (deltaF[i] - K_ac[i] * lastOffset[i] - B_ac[i] * lastOffsetdot[i]) / M_ac[i];
+        xddot[i] = (deltaF[i] - K_use[i] * lastOffset[i] - B_use[i] * lastOffsetdot[i]) / M_use[i];
         currentOffsetdot[i] = lastOffsetdot[i] + xddot[i] * th;
         currentOffset[i] = lastOffset[i] + currentOffsetdot[i] * th;
     }
@@ -552,7 +574,8 @@ bool ImpedancePlanner::bodyPoseBalanceCondition(double* forceInput, int& activeG
     // when MB, RF, LF legs touches the ground, the condition is satisfied
     for(int i = 0; i < 3; i++)
     {
-        flag = flag && (fabs(forceInput[LEG_INDEX_GROUP_A[i]*3 + 2]) > 200) && (fabs(forceInput[LEG_INDEX_GROUP_B[i]*3 + 2]) < 200);
+        flag = flag && (fabs(forceInput[LEG_INDEX_GROUP_A[i]*3 + 2]) > 200) 
+                    && (fabs(forceInput[LEG_INDEX_GROUP_B[i]*3 + 2]) < 200);
     }
     if (flag)
     {
@@ -563,11 +586,25 @@ bool ImpedancePlanner::bodyPoseBalanceCondition(double* forceInput, int& activeG
         flag = true;
         for(int i = 0; i < 3; i++)
         {
-            flag = flag && (fabs(forceInput[LEG_INDEX_GROUP_B[i]*3 + 2]) > 200) && (fabs(forceInput[LEG_INDEX_GROUP_A[i]*3 + 2]) < 200);
+            flag = flag && (fabs(forceInput[LEG_INDEX_GROUP_B[i]*3 + 2]) > 200)
+                        && (fabs(forceInput[LEG_INDEX_GROUP_A[i]*3 + 2]) < 200);
         }
         if (flag) // B is active
         {
             activeGroup = 1;
+        }
+        else // check if all legs are on the ground
+        {
+            flag = true;
+            for(int i = 0; i < 3; i++)
+            {
+                flag = flag && (fabs(forceInput[LEG_INDEX_GROUP_B[i]*3 + 2]) > 200) 
+                            && (fabs(forceInput[LEG_INDEX_GROUP_A[i]*3 + 2]) > 200);
+            }
+            if (flag)
+            {
+                activeGroup = 2;
+            }
         }
     }
     return flag;
@@ -599,10 +636,17 @@ int ImpedancePlanner::CalculateAdjForceBP(
         adjForceBP[Leg::LEG_ID_RF*3 + 2] = -force[0] - force[1];
         adjForceBP[Leg::LEG_ID_LF*3 + 2] = force[0] - force[1];
     }
-    else  // Group B
+    else if (activeGroup == 1) // Group B
     {
         adjForceBP[Leg::LEG_ID_RB*3 + 2] = -force[0] + force[1];
         adjForceBP[Leg::LEG_ID_LB*3 + 2] = force[0] + force[1];
+    }
+    else if (activeGroup == 2)// Both Group A and B, but we only balance roll for this situation
+    {
+        adjForceBP[Leg::LEG_ID_RB*3 + 2] = -force[0];
+        adjForceBP[Leg::LEG_ID_LB*3 + 2] = force[0] ;
+        adjForceBP[Leg::LEG_ID_RF*3 + 2] = -force[0];
+        adjForceBP[Leg::LEG_ID_LF*3 + 2] = force[0] ;
     }
 
     return 0;
@@ -643,10 +687,12 @@ int ImpedancePlanner::SetGaitParameter(const void* param, int dataLength)
     }
     else if (p_paramCXB->gaitCommand == GAIT_SUB_COMMAND::GSC_BEHARD)
     {
+        rt_printf("Leg impedance mode changed to SUPER HARD\n");
         ResetImpedanceParam(IM_SUPER_HARD);
     }
     else if (p_paramCXB->gaitCommand == GAIT_SUB_COMMAND::GSC_BESOFT)
     {
+        rt_printf("Leg impedance mode changed to MEDIUM_SOFT\n");
         ResetImpedanceParam(IM_MEDIUM_SOFT);
     }
    
