@@ -28,7 +28,7 @@ set(LIBRARY_OUTPUT_PATH "${PROJECT_SOURCE_DIR}/lib")
 
 # set include and lib folders
 if(UNIX)
-    set(ARIS_SOURCE_LOCATION "/home/hex/Aris_with_force")
+    set(ARIS_SOURCE_LOCATION "/home/sun/Projects/Aris")
     include_directories("/usr/lapack/include")
     include_directories(${ARIS_SOURCE_LOCATION}/src/Aris_Control)
     include_directories(${ARIS_SOURCE_LOCATION}/src/Aris_Core)
@@ -75,7 +75,7 @@ target_link_libraries(ClientPRT ${ROBOTS_LINK_LIBS} ${ARIS_NORT_LINK_LIBS} ${LAP
 set(SOURCE_FILES ./LogDataReader.cpp)
 PREPEND(FULL_SRC PRT ${SOURCE_FILES})
 add_executable(LogDataReader ${SOURCE_FILES})
-target_link_libraries(LogDataReader ${ROBOTS_LINK_LIBS} ${ARIS_LINK_LIBS} ${LAPACK_LINK_LIBS} ${ETHERLAB_LINK_LIBS} ${XENOMAI_LINK_LIBS} ${SYSTEM_LINK_LIBS} ${IMU_LINK_LIBS})
+target_link_libraries(LogDataReader ${ROBOTS_LINK_LIBS} ${ARIS_NORT_LINK_LIBS} ${LAPACK_LINK_LIBS} ${SYSTEM_LINK_LIBS} ${IMU_LINK_LIBS})
 
 set(SOURCE_FILES ./GaitTrjGenerator.cpp ./TestGait.cpp)
 PREPEND(FULL_SRC PRT ${SOURCE_FILES})

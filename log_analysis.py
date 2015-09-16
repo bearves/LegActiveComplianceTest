@@ -27,20 +27,22 @@ print len(time)
 tplt = time / 1.0
 
 plt.subplot(3,1,1)
-plt.plot(tplt, axis[0]/1000.0)
-plt.plot(tplt, axis[1]/1000.0)
-plt.plot(tplt, axis[2]/1000.0)
-plt.axis([230, 255, -120, 120])
+
+for i in range(6):
+    plt.plot(tplt, axis[i*3 + 0]/1000.0)
+    plt.plot(tplt, axis[i*3 + 1]/1000.0)
+    plt.plot(tplt, axis[i*3 + 2]/1000.0)
+plt.xlim([325, 335])
 
 plt.subplot(3,1,2)
 for i in range(18):
-    plt.plot(tplt, axis[i+18]/350.0/65536.0)
-plt.axis([230, 255, 0.7, 0.9])
+    plt.plot(tplt, axis[i+18]/65536.0/3*2*0.005)
+plt.xlim([325, 335])
 
 plt.subplot(3,1,3)
 for i in range(18):
-    plt.plot(tplt, axis[i+18+18]/350.0/65536.0)
-plt.axis([230, 255, 0.7, 0.9])
+    plt.plot(tplt, axis[i+18+18]/65536.0/3*2*0.005)
+plt.xlim([325, 335])
 
 plt.show()
 
