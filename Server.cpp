@@ -1,6 +1,7 @@
 #include "Server.h"
 #include "iostream"
 #include <cstring>
+#include "unistd.h"
 
 using namespace std;
 
@@ -71,6 +72,7 @@ int On_CS_CMD_Received(Aris::Core::MSG &msg)
 int On_CS_Lost(Aris::Core::MSG &msg)
 {
     cout << "Control system connection lost" << endl;
+    sleep(3);
     ControlSystem.StartServer("5690");
     return 0;
 }

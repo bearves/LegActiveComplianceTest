@@ -19,7 +19,7 @@ double walk_cxb(
 {
     rotationAngle=rotationAngle*PI/180;
 
-    int accPeriodCount = 3;
+    int accPeriodCount = 2;
     int decPeriodCount = 1;// acceleration and deceleration periods
 
     double totalTimeSpan = totalPeriodCount * T;
@@ -156,7 +156,7 @@ double walk_cxb(
 
     pp = T * (duty - 0.5);
 
-    Tcs=sqrt(-z0/998);
+    Tcs=sqrt(-z0/980);
 
     tacs=(T*(1-duty))/Tcs;
 
@@ -166,20 +166,20 @@ double walk_cxb(
 
     ep=exp(T*(1-duty)/Tcs);
 
-    xtdwn_pi=(stepLength)/(2-1*998.0*pp*pp/(3*z0)+2*pp*((ep+1)/(Tcs*ep-Tcs)));//stepLength/2;
+    xtdwn_pi=(stepLength)/(2-1*980.0*pp*pp/(3*z0)+2*pp*((ep+1)/(Tcs*ep-Tcs)));//stepLength/2;
 
-    ytdwn_pi=(Lside)/(2-1*998*pp*pp/(3*z0)+2*pp*((ep+1)/(Tcs*ep-Tcs)));//stepLength/2;
+    ytdwn_pi=(Lside)/(2-1*980*pp*pp/(3*z0)+2*pp*((ep+1)/(Tcs*ep-Tcs)));//stepLength/2;
 
     vx_ini=(xtdwn_pi/Tcs*sinp)/(1-cosp);
     vy_ini=(ytdwn_pi/Tcs*sinp)/(1-cosp);
 
-    par_bx=998*(xtdwn_pi)/z0;
+    par_bx=980*(xtdwn_pi)/z0;
 
     par_cx=vx_ini;
 
     par_ax=-par_bx/(T*(duty-0.5));
 
-    par_by=998*(ytdwn_pi)/z0;
+    par_by=980*(ytdwn_pi)/z0;
 
     par_cy=vy_ini;
 
