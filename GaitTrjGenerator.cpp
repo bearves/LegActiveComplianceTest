@@ -19,7 +19,7 @@ double walk_cxb(
 {
     rotationAngle=rotationAngle*PI/180;
 
-    int accPeriodCount = 3;
+    int accPeriodCount = 2;
     int decPeriodCount = 1;// acceleration and deceleration periods
 
     double totalTimeSpan = totalPeriodCount * T;
@@ -156,7 +156,7 @@ double walk_cxb(
 
     pp = T * (duty - 0.5);
 
-    Tcs=sqrt(-z0/9800);
+    Tcs=sqrt(-z0/980);
 
     tacs=(T*(1-duty))/Tcs;
 
@@ -166,20 +166,20 @@ double walk_cxb(
 
     ep=exp(T*(1-duty)/Tcs);
 
-    xtdwn_pi=(stepLength)/(2-1*9800.0*pp*pp/(3*z0)+2*pp*((ep+1)/(Tcs*ep-Tcs)));//stepLength/2;
+    xtdwn_pi=(stepLength)/(2-1*980.0*pp*pp/(3*z0)+2*pp*((ep+1)/(Tcs*ep-Tcs)));//stepLength/2;
 
-    ytdwn_pi=(Lside)/(2-1*9800*pp*pp/(3*z0)+2*pp*((ep+1)/(Tcs*ep-Tcs)));//stepLength/2;
+    ytdwn_pi=(Lside)/(2-1*980*pp*pp/(3*z0)+2*pp*((ep+1)/(Tcs*ep-Tcs)));//stepLength/2;
 
     vx_ini=(xtdwn_pi/Tcs*sinp)/(1-cosp);
     vy_ini=(ytdwn_pi/Tcs*sinp)/(1-cosp);
 
-    par_bx=9800*(xtdwn_pi)/z0;
+    par_bx=980*(xtdwn_pi)/z0;
 
     par_cx=vx_ini;
 
     par_ax=-par_bx/(T*(duty-0.5));
 
-    par_by=9800*(ytdwn_pi)/z0;
+    par_by=980*(ytdwn_pi)/z0;
 
     par_cy=vy_ini;
 
@@ -225,8 +225,8 @@ double walk_cxb(
             tpara=(t_leg[legid]-phi_td)/(T*(duty));
 
             Bz=5*pow((1-tpara),4)*tpara*para1
-                +5*pow((1-tpara),3)*pow((tpara),2)*para2
-                +5*pow((1-tpara),2)*pow((tpara),3)*para2
+                +10*pow((1-tpara),3)*pow((tpara),2)*para2
+                +10*pow((1-tpara),2)*pow((tpara),3)*para2
                 +5*(1-tpara)*pow((tpara),4)*para1;
 
             if ((legid == 1) || (legid == 4))
@@ -331,8 +331,8 @@ double walk_cxb(
 
             // Planning Z trajectory in swing phase
 
-            double secpt1=phi_td/2;
-            double secpt2=phi_td*1/2;
+            double secpt1=phi_td/2.0;
+            double secpt2=phi_td*1/2.0;
             double secpt3=phi_td;
 
             if (t_leg[legid]<=secpt1)

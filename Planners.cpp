@@ -180,15 +180,15 @@ int ImpedancePlanner::ResetInitialFootPos()
 int ImpedancePlanner::ResetImpedanceParam(int impedanceMode)
 {
     double K_SOFT_LANDING[3] = {1e8, 1e8, 8000};
-    double B_SOFT_LANDING[3] = {1e5, 1e5, 2000};
+    double B_SOFT_LANDING[3] = {1e5, 1e5, 3000};
     double M_SOFT_LANDING[3] = {100, 100, 80};
 
-    double K_SUPER_HARD[3] = {1e8, 1e8, 1e5};
-    double B_SUPER_HARD[3] = {1e5, 1e5, 9000};
+    double K_SUPER_HARD[3] = {1e8, 1e8, 2e5};
+    double B_SUPER_HARD[3] = {1e5, 1e5, 12000};
     double M_SUPER_HARD[3] = {100, 100, 80};
 
-    double K_MEDIUM_SOFT[3] = {1e8, 1e8, 20000};
-    double B_MEDIUM_SOFT[3] = {1e5, 1e5, 6000};
+    double K_MEDIUM_SOFT[3] = {1e8, 1e8, 40000};
+    double B_MEDIUM_SOFT[3] = {1e5, 1e5, 9000};
     double M_MEDIUM_SOFT[3] = {100, 100, 80};
 
     switch (impedanceMode)
@@ -622,11 +622,20 @@ int ImpedancePlanner::CalculateAdjForceBP(
     double force[2];
     double th = 0.001;
 
+    if (activeGroup == 0 || activeGroup == 1) // Single Group
+    {
+        KP_BP[0] = 12000;
+        KI_BP[0] = 20000;
+    }
+
     // PI control for body pose balance
     for (int i = 0; i < 2; ++i) 
     {
         currentIntegralValue[i] = lastIntegralValue[i] + KI_BP[i] * th * imuFdbk.EulerAngle[i];
         force[i] = KP_BP[i] * imuFdbk.EulerAngle[i] + currentIntegralValue[i];
+
+        //currentIntegralValue[i] = 0; 
+        //force[i] = 0; 
     }
     
     using Model::Leg;
