@@ -162,6 +162,7 @@ namespace RobotHighLevelControl
             // The following are states of the body pose balancer
             double m_lastIntegralValue[2]; // for Roll and Pitch adjustment
             double m_currentIntegralValue[2];
+            double m_lastFdbkValue[2];
             double m_adjForceBP[18];
 
             // The following are states of impedance controller, defined for the foot tip state
@@ -186,6 +187,7 @@ namespace RobotHighLevelControl
             bool bodyPoseBalanceCondition(double* forceInput, int& activeGroup);
             int CalculateAdjForceBP(
                     const Aris::RT_CONTROL::CIMUData &imuFdbk, 
+                    double* lastFdbkValue,
                     double* lastIntegralValue,
                     double* currentIntegralValue,
                     double* adjForceBP,

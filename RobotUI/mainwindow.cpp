@@ -158,6 +158,7 @@ void MainWindow::OnDatagramReceived()
     {
         // read msg header
         byteRead = m_tcpSocket->read(msgHead.header, MSG_HEADER_LENGTH);
+        
         m_robotMsgReceive.SetLength(msgHead.dataLength);
         m_robotMsgReceive.SetMsgID(msgHead.msgID);
         m_recvCount++;

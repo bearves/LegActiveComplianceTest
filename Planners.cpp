@@ -368,7 +368,13 @@ int ImpedancePlanner::GenerateJointTrajectory(
         bool isBodyPoseBalanceOn = bodyPoseBalanceCondition(m_forceTransfromed, activeGroup);
         if ( isBodyPoseBalanceOn)
         {    
-            CalculateAdjForceBP(imuFdbk, m_lastIntegralValue, m_currentIntegralValue, m_adjForceBP, activeGroup);
+            CalculateAdjForceBP(imuFdbk, 
+                                m_lastFdbkValue,
+                                m_lastIntegralValue,
+                                m_currentIntegralValue, 
+                                m_adjForceBP,
+                                activeGroup);
+
             for (int i = 0; i < 18; ++i) 
             {
                 // adjust the desire force 
@@ -575,6 +581,7 @@ bool ImpedancePlanner::bodyPoseBalanceCondition(double* forceInput, int& activeG
 
 int ImpedancePlanner::CalculateAdjForceBP(
         const Aris::RT_CONTROL::CIMUData &imuFdbk, 
+        double* lastFdbkValue,
         double* lastIntegralValue,
         double* currentIntegralValue,
         double* adjForceBP,
@@ -582,6 +589,7 @@ int ImpedancePlanner::CalculateAdjForceBP(
 {
     double KP_BP[2] = {4000, 12000};
     double KI_BP[2] = {3600, 7200};
+    double KD_BP[2] = { 600, 2000};
     double force[2];
     double th = 0.001;
 
@@ -589,7 +597,10 @@ int ImpedancePlanner::CalculateAdjForceBP(
     for (int i = 0; i < 2; ++i) 
     {
         currentIntegralValue[i] = lastIntegralValue[i] + KI_BP[i] * th * imuFdbk.EulerAngle[i];
-        force[i] = KP_BP[i] * imuFdbk.EulerAngle[i] + currentIntegralValue[i];
+        force[i] = KP_BP[i] * imuFdbk.EulerAngle[i]
+                   + currentIntegralValue[i]
+                   + KD_BP[i] * (imuFdbk.EulerAngle[i] - lastFdbkValue[i])/th;
+        lastFdbkValue[i] = imuFdbk.EulerAngle[i];
     }
     
     using Model::Leg;
@@ -626,6 +637,12 @@ int ImpedancePlanner::SetGaitParameter(const void* param, int dataLength)
     if (p_paramCXB->gaitCommand == GAIT_SUB_COMMAND::GSC_START)
     {
         if (m_state == INMOTION && m_subState == HOLD_INIT_POS) // only in this state, the command can be accepted to start walking
+        {
+            m_trjGeneratorParam = *p_paramCXB;
+            m_subState = WALKING;
+            ResetInitialFootPos();
+        }
+        if (m_state == INMOTION && m_subState == HOLD_END_POS) // only in this state, the command can be accepted to start walking
         {
             m_trjGeneratorParam = *p_paramCXB;
             m_subState = WALKING;
