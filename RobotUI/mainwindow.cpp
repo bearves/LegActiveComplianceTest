@@ -54,7 +54,7 @@ MainWindow::MainWindow(QWidget *parent) :
     QString txt;
     ui->lineEditPort->setText(txt.sprintf("%d", REMOTE_PORT));
     ui->lineEditCmd->setFocus();
-
+	
     InitializePloting();
 
     m_paramSetWindow = new ParamSetWindow(this);

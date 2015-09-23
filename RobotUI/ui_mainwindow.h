@@ -73,8 +73,8 @@ public:
         textBrowserDevStatus = new QTextBrowser(horizontalLayoutWidget);
         textBrowserDevStatus->setObjectName(QStringLiteral("textBrowserDevStatus"));
         QFont font;
-        font.setFamily(QStringLiteral("Droid Sans Mono"));
-        font.setPointSize(12);
+        font.setFamily(QStringLiteral("Consolas"));
+        font.setPointSize(11);
         textBrowserDevStatus->setFont(font);
 
         verticalLayout->addWidget(textBrowserDevStatus);

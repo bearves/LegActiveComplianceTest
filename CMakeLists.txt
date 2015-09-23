@@ -11,7 +11,7 @@ FUNCTION(PREPEND var prefix)
    SET(${var} "${listVar}" PARENT_SCOPE)
 ENDFUNCTION(PREPEND)
 
-project(PushRecoveryTest)
+project(LegActiveCompliance)
 
 set(CMAKE_CXX_FLAGS "-std=c++11")
 set(CMAKE_AUTOMOC ON)
@@ -49,6 +49,15 @@ if(UNIX)
     link_directories(/usr/IMU/lib)
 endif(UNIX)
 
+if(WIN32)
+    set(ARIS_SOURCE_LOCATION "D:/Projects/Hexpod/Aris_with_force")
+    include_directories(${ARIS_SOURCE_LOCATION}/src/Aris_Control)
+    include_directories(${ARIS_SOURCE_LOCATION}/src/Aris_Core)
+    include_directories(${ARIS_SOURCE_LOCATION}/src)
+    link_directories(D:/Projects/Hexpod/Aris_with_force/build/lib/)
+endif(WIN32)
+
+if(UNIX)
 # set link files
 set(SYSTEM_LINK_LIBS pthread gfortran)
 set(XENOMAI_LINK_LIBS native rtdm xenomai)
@@ -60,7 +69,13 @@ set(ARIS_LINK_LIBS Aris_Plan Aris_DynKer Aris_ExpCal Aris_Control Aris_Core)
 set(ARIS_NORT_LINK_LIBS Aris_Plan Aris_DynKer Aris_ExpCal Aris_Core)
 set(IMU_LINK_LIBS IMU xcommunication xstypes) # IMU depends on xcommunication and xstypes, so it must be put at the first place
 set(ROBOTS_LINK_LIBS  HexapodIII)
+endif(UNIX)
 
+if(WIN32)
+set(ARIS_NORT_LINK_LIBS Aris_Core)
+endif(WIN32)
+
+if(UNIX)
 # build programs
 set(SOURCE_FILES ArisControl.cpp OnlinePlanner.cpp Server.cpp Gait.cpp Planners.cpp LegKinematicsIV.cpp GaitTrjGenerator.cpp)
 PREPEND(FULL_SRC PRT ${SOURCE_FILES})
@@ -81,5 +96,6 @@ set(SOURCE_FILES ./GaitTrjGenerator.cpp ./TestGait.cpp)
 PREPEND(FULL_SRC PRT ${SOURCE_FILES})
 add_executable(TestGait ${SOURCE_FILES})
 target_link_libraries(TestGait ${SYSTEM_LINK_LIBS})
+endif(UNIX)
 
 add_subdirectory(RobotUI)

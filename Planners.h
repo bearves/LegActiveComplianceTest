@@ -1,7 +1,7 @@
 #ifndef PLANNERS_H
 #define PLANNERS_H
 
-#include <rtdk.h>
+//#include <rtdk.h>
 #include "Aris_ControlData.h"
 #include "LegKinematicsIV.h"
 #include "GaitTrjGenerator.h"

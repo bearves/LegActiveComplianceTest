@@ -30,8 +30,8 @@
         <widget class="QTextBrowser" name="textBrowserDevStatus">
          <property name="font">
           <font>
-           <family>Droid Sans Mono</family>
-           <pointsize>12</pointsize>
+           <family>Consolas</family>
+           <pointsize>11</pointsize>
           </font>
          </property>
         </widget>

@@ -1,4 +1,10 @@
 # Find the QtWidgets library
+
+if(WIN32)
+set (CMAKE_PREFIX_PATH "C:\\Qt\\5.3\\mingw482_32\\")
+endif(WIN32)
+
+find_package(Qt5Core)
 find_package(Qt5Widgets)
 find_package(Qt5Gui)
 find_package(Qt5Network)
@@ -13,4 +19,4 @@ include_directories(../)
 add_executable(RobotUI main.cpp mainwindow.cpp qcustomplot.cpp ParamSetWindow.cpp)
 
 # Use the Widgets module from Qt 5.
-target_link_libraries(RobotUI Qt5::Widgets Qt5::Network Qt5::PrintSupport ${ARIS_NORT_LINK_LIBS})
+target_link_libraries(RobotUI Qt5::Core Qt5::Widgets Qt5::Network Qt5::PrintSupport ${ARIS_NORT_LINK_LIBS})
