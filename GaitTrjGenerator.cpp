@@ -1,7 +1,28 @@
 #include "GaitTrjGenerator.h"
+#include "Planners.h"
 
 namespace Model
 {
+
+double walk_cxb(
+        double timeFromStart,
+        const RobotHighLevelControl::ParamCXB& param,
+        double *legTipPositionPole)
+{
+    return walk_cxb(
+            timeFromStart,
+            param.totalPeriodCount,
+            param.stepLength,
+            param.Lside,
+            param.rotationAngle,
+            param.duty,
+            param.stepHeight,
+            param.T,
+            param.standHeight,
+            param.tdDeltaMidLeg,
+            param.tdDeltaSideLeg,
+            legTipPositionPole);
+}
 
 double walk_cxb(
         double timeFromStart,

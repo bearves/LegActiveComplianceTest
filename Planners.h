@@ -48,8 +48,9 @@ namespace RobotHighLevelControl
         GSC_BESOFT =  5  // used to ask the robot to switch from hard leg to flexible leg
     };
 
-    struct ParamCXB
+    class ParamCXB
     {
+    public:
         GAIT_SUB_COMMAND gaitCommand;
         unsigned int totalPeriodCount;
         double stepLength;

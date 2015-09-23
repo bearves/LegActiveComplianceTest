@@ -4,8 +4,18 @@
 #include <cmath>
 #include "GeoDefinition.h"
 
+namespace RobotHighLevelControl
+{
+    class ParamCXB;
+}
+
 namespace Model
 {
+
+double walk_cxb(
+        double timeFromStart,
+        const RobotHighLevelControl::ParamCXB& param,
+        double *legTipPositionPole);
 
 double walk_cxb(
         double timeFromStart,

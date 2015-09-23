@@ -19,6 +19,7 @@ int main(int argc, char** argv)
     }
 
     cout << "Opening log file:" << argv[1] << endl;
+    cout << "Data point size: " << sizeof(data) << endl;
 
     ifstream fin(argv[1]);
     ofstream fout("ParsedFile.txt");
@@ -37,6 +38,18 @@ int main(int argc, char** argv)
             {
                 fout << data.forceData[j].forceValues[i] << "  ";
             }
+        }
+
+        for (int i = 0; i < 3; ++i) {
+            fout << data.imuData.EulerAngle[i] << "  ";
+        }
+
+        for (int i = 0; i < 3; ++i) {
+            fout << data.imuData.AngularVel[i] << "  ";
+        }
+
+        for (int i = 0; i < 3; ++i) {
+            fout << data.imuData.LinearAcc[i] << "  ";
         }
 
         for(int i = 0; i < 18; i++)

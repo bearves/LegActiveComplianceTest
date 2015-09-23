@@ -148,16 +148,7 @@ int ImpedancePlanner::ResetInitialFootPos()
 {
     Model::walk_cxb(
             0,
-            m_trjGeneratorParam.totalPeriodCount,
-            m_trjGeneratorParam.stepLength,
-            m_trjGeneratorParam.Lside,
-            m_trjGeneratorParam.rotationAngle,
-            m_trjGeneratorParam.duty,
-            m_trjGeneratorParam.stepHeight,
-            m_trjGeneratorParam.T,
-            m_trjGeneratorParam.standHeight,
-            m_trjGeneratorParam.tdDeltaMidLeg,
-            m_trjGeneratorParam.tdDeltaSideLeg,
+            m_trjGeneratorParam,
             m_beginFootPos);
 
     //for(int i = 0; i < 6; i++)
@@ -188,7 +179,7 @@ int ImpedancePlanner::ResetImpedanceParam(int impedanceMode)
     double M_SUPER_HARD[3] = {100, 100, 80};
 
     double K_MEDIUM_SOFT[3] = {1e8, 1e8, 40000};
-    double B_MEDIUM_SOFT[3] = {1e5, 1e5, 9000};
+    double B_MEDIUM_SOFT[3] = {1e5, 1e5, 9000}; // actual damping ratio is much smaller than the desired
     double M_MEDIUM_SOFT[3] = {100, 100, 80};
 
     switch (impedanceMode)
@@ -287,16 +278,7 @@ int ImpedancePlanner::GenerateJointTrajectory(
 
             Model::walk_cxb(
                     0,
-                    m_trjGeneratorParam.totalPeriodCount,
-                    m_trjGeneratorParam.stepLength,
-                    m_trjGeneratorParam.Lside,
-                    m_trjGeneratorParam.rotationAngle,
-                    m_trjGeneratorParam.duty,
-                    m_trjGeneratorParam.stepHeight,
-                    m_trjGeneratorParam.T,
-                    m_trjGeneratorParam.standHeight,
-                    m_trjGeneratorParam.tdDeltaMidLeg,
-                    m_trjGeneratorParam.tdDeltaSideLeg,
+                    m_trjGeneratorParam,
                     m_currentTargetFootPos);
 
             //for( int i = 0; i < 18; i++)
@@ -318,32 +300,14 @@ int ImpedancePlanner::GenerateJointTrajectory(
 
             Model::walk_cxb(
                     timeFromStart,
-                    m_trjGeneratorParam.totalPeriodCount,
-                    m_trjGeneratorParam.stepLength,
-                    m_trjGeneratorParam.Lside,
-                    m_trjGeneratorParam.rotationAngle,
-                    m_trjGeneratorParam.duty,
-                    m_trjGeneratorParam.stepHeight,
-                    m_trjGeneratorParam.T,
-                    m_trjGeneratorParam.standHeight,
-                    m_trjGeneratorParam.tdDeltaMidLeg,
-                    m_trjGeneratorParam.tdDeltaSideLeg,
+                    m_trjGeneratorParam,
                     m_currentTargetFootPos);
         }
         else if (m_subState == HOLD_END_POS)
         {
             Model::walk_cxb(
                     m_walkStopTime - m_walkStartTime,
-                    m_trjGeneratorParam.totalPeriodCount,
-                    m_trjGeneratorParam.stepLength,
-                    m_trjGeneratorParam.Lside,
-                    m_trjGeneratorParam.rotationAngle,
-                    m_trjGeneratorParam.duty,
-                    m_trjGeneratorParam.stepHeight,
-                    m_trjGeneratorParam.T,
-                    m_trjGeneratorParam.standHeight,
-                    m_trjGeneratorParam.tdDeltaMidLeg,
-                    m_trjGeneratorParam.tdDeltaSideLeg,
+                    m_trjGeneratorParam,
                     m_currentTargetFootPos);
         }
         
@@ -637,13 +601,14 @@ int ImpedancePlanner::CalculateAdjForceBP(
         KD_BP[0] = 2000;
     }
 
-    // PI control for body pose balance
+    // PID control for body pose balance
     for (int i = 0; i < 2; ++i) 
     {
-        currentIntegralValue[i] = lastIntegralValue[i] + KI_BP[i] * th * imuFdbk.EulerAngle[i];
+        // trapezoidal integration
+        currentIntegralValue[i] = lastIntegralValue[i] + KI_BP[i] * th * (lastFdbkValue[i] + imuFdbk.EulerAngle[i]) /2;
         force[i] = KP_BP[i] * imuFdbk.EulerAngle[i]
                    + currentIntegralValue[i]
-                   + KD_BP[i] * (imuFdbk.EulerAngle[i] - lastFdbkValue[i])/th;
+                   + KD_BP[i] * imuFdbk.AngularVel[i]; // use angular velocity as the derivative since it has been filtered
         lastFdbkValue[i] = imuFdbk.EulerAngle[i];
     }
     
