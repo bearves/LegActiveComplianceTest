@@ -118,7 +118,8 @@ namespace RobotHighLevelControl
                     double* currentPoint, 
                     Aris::RT_CONTROL::CForceData* forceInput, 
                     Aris::RT_CONTROL::CIMUData& imuFdbk,
-                    double* jointLength);
+                    double* jointLength,
+                    char* controlDataForLog);
 
         private:
             static const double FOOT_POS_UP_LIMIT[3];

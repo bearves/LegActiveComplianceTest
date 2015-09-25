@@ -170,9 +170,9 @@ int ImpedancePlanner::ResetInitialFootPos()
 
 int ImpedancePlanner::ResetImpedanceParam(int impedanceMode)
 {
-    double K_SOFT_LANDING[3] = {1e8, 1e8, 8000};
-    double B_SOFT_LANDING[3] = {1e5, 1e5, 3000};
-    double M_SOFT_LANDING[3] = {100, 100, 80};
+    double K_SOFT_LANDING[3] = {1e8, 1e8, 500};
+    double B_SOFT_LANDING[3] = {1e5, 1e5, 1500};
+    double M_SOFT_LANDING[3] = {100, 100, 30};
 
     double K_SUPER_HARD[3] = {1e8, 1e8, 2e5};
     double B_SUPER_HARD[3] = {1e5, 1e5, 12000};
@@ -243,7 +243,8 @@ int ImpedancePlanner::GenerateJointTrajectory(
         double* currentPoint, 
         Aris::RT_CONTROL::CForceData* forceInput, 
         Aris::RT_CONTROL::CIMUData& imuFdbk,
-        double* jointLength)
+        double* jointLength,
+        char* controlDataForLog)
 {
     // When the controller has not been started, stay at the initial place
     if (m_state == UNREADY || m_state == READY)

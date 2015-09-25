@@ -93,7 +93,8 @@ int OnlinePlanner::GenerateJointTrajectory(
         double* jointStateInput, 
         Aris::RT_CONTROL::CForceData* forceData, 
         Aris::RT_CONTROL::CIMUData& imuFdbk,
-        double* jointStateOutput)
+        double* jointStateOutput,
+        char* controlDataForLog)
 {
     if ( olgaitState == OGS_OFFLINE){
         for(int i = 0; i < AXIS_NUMBER; i++)
@@ -118,7 +119,7 @@ int OnlinePlanner::GenerateJointTrajectory(
             m_startOnlineGaitFlag = false;
             m_impedancePlanner.Start(timeNow);
         }
-        m_impedancePlanner.GenerateJointTrajectory(timeNow, jointStateInput, forceData, imuFdbk, jointStateOutput);
+        m_impedancePlanner.GenerateJointTrajectory(timeNow, jointStateInput, forceData, imuFdbk, jointStateOutput, controlDataForLog);
     }
     else if ( olgaitState == OGS_ONLINE_GOTO_START_POINT)
     {
