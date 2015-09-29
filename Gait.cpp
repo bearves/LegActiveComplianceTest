@@ -227,7 +227,8 @@ int CGait::RunGait(double timeNow, EGAIT* p_gait,Aris::RT_CONTROL::CMachineData&
                 m_jointStateInput, 
                 m_forceData, 
                 m_imuData,
-                m_jointStateOutput);
+                m_jointStateOutput,
+                data.controlData);
         CalculateActualMotorCounts(m_jointStateOutput, m_commandMotorCounts);
 
         for ( int i = 0; i < AXIS_NUMBER; i++)

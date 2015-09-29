@@ -240,7 +240,8 @@ int ImpedancePlanner::GenerateJointTrajectory(
         double* currentPoint, 
         Aris::RT_CONTROL::CForceData* forceInput, 
         Aris::RT_CONTROL::CIMUData& imuFdbk,
-        double* jointLength)
+        double* jointLength,
+        char* controlDataForLog)
 {
     // When the controller has not been started, stay at the initial place
     if (m_state == UNREADY || m_state == READY)
