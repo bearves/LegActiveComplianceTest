@@ -127,6 +127,8 @@ namespace RobotHighLevelControl
             static const int LEG_INDEX_GROUP_A[3];
             static const int LEG_INDEX_GROUP_B[3];
 
+            bool isOnGround;
+
             // following M_ac, B_ac and K_ac is used for ImpedancePlanner 
             double M_ac[3];
             double B_ac[3];

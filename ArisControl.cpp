@@ -112,7 +112,7 @@ int tg(Aris::RT_CONTROL::CMachineData& machineData,
 
     double timeNow = rtCycleCounter * 0.001;
 
-    if (rtCycleCounter % 500 == 0)
+    if (rtCycleCounter % 50 == 0)
     {
         msgSend.SetMsgID(DATA_REPORT);
         msgSend.SetLength(sizeof(machineData));

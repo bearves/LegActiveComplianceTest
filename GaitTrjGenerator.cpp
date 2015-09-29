@@ -53,6 +53,10 @@ double walk_cxb(
 
     double legTipPoints[18]; // in cart coordinate
 
+    double xComOffset = 100;
+    double yComOffset = 0;
+    double xComOffsetUse = 100;
+
 
     if (timeFromStart < accTimeSpan)
     {
@@ -130,6 +134,7 @@ double walk_cxb(
 
     for(legid=0; legid<6; legid++)
     {
+
 
         for(int i=0;i<3;i++)
         {
@@ -209,6 +214,15 @@ double walk_cxb(
 
     for ( legid=0;legid<6;legid++)
     {
+        if (legid % 2 == 0) //LEG_GROUP_B
+        {
+            xComOffsetUse = -xComOffset;
+        }
+        else
+        {
+            xComOffsetUse = xComOffset;
+        }
+
         con=phi[legid]+duty-int(phi[legid]+duty);
 
         if ( t_re<=con)
@@ -267,11 +281,11 @@ double walk_cxb(
                 legTipPoints[0+legid*3]=
                     par_ax*pow(tmc,3)/3
                     +par_bx*pow(tmc,2)/2
-                    +par_cx*tmc+stepLength/2;
+                    +par_cx*tmc+stepLength/2 + xComOffsetUse;
                 legTipPoints[1+legid*3]=
                     par_ay*pow(tmc,3)/3
                     +par_by*pow(tmc,2)/2
-                    +par_cy*tmc+Lside/2;
+                    +par_cy*tmc+Lside/2 + yComOffset;
 
             }
 
@@ -283,15 +297,15 @@ double walk_cxb(
                 double snh;
                 snh=(exp(tmc)-exp(-tmc))/2;
 
-                legTipPoints[0+legid*3]=xtdwn_pi*csh+Tcs*vx_ini*snh;
-                legTipPoints[1+legid*3]=ytdwn_pi*csh+Tcs*vy_ini*snh;
+                legTipPoints[0+legid*3]=xtdwn_pi*csh+Tcs*vx_ini*snh + xComOffsetUse;
+                legTipPoints[1+legid*3]=ytdwn_pi*csh+Tcs*vy_ini*snh + yComOffset;
             }
 
             if (t_leg[legid]>T-(duty-0.5)*T)
             {
                 tmc=(t_leg[legid]-(T-T*(duty-0.5)));
-                legTipPoints[0+legid*3]=par_ax*pow(tmc,3)/3+par_bx*pow(tmc,2)/2+par_cx*tmc-xtdwn_pi;
-                legTipPoints[1+legid*3]=par_ay*pow(tmc,3)/3+par_by*pow(tmc,2)/2+par_cy*tmc-ytdwn_pi;
+                legTipPoints[0+legid*3]=par_ax*pow(tmc,3)/3+par_bx*pow(tmc,2)/2+par_cx*tmc-xtdwn_pi + xComOffsetUse;
+                legTipPoints[1+legid*3]=par_ay*pow(tmc,3)/3+par_by*pow(tmc,2)/2+par_cy*tmc-ytdwn_pi + yComOffset;
             }
 
             // Add rotational shifts to the XY trajectory
@@ -330,7 +344,7 @@ double walk_cxb(
                 3*(1-tpara)*pow((tpara),2)*p2 +
                 pow((tpara),3)*p3;
 
-            legTipPoints[0+legid*3]=Bx;
+            legTipPoints[0+legid*3]=Bx + xComOffsetUse;
 
             // Planning Y trajectory in swing phase
             ky1=vy_ini;
@@ -348,7 +362,7 @@ double walk_cxb(
                 +3*(1-tpara)*pow((tpara),2)*p2
                 +pow((tpara),3)*p3;
 
-            legTipPoints[1+legid*3] = By;
+            legTipPoints[1+legid*3] = By + yComOffset;
 
             // Planning Z trajectory in swing phase
 

@@ -151,18 +151,15 @@ int ImpedancePlanner::ResetInitialFootPos()
             m_trjGeneratorParam,
             m_beginFootPos);
 
-    //for(int i = 0; i < 6; i++)
-    //{
+    //for(int i = 0; i < 6; i++) {
         //m_beginFootPos[i*3+0] = 0;
         //m_beginFootPos[i*3+1] = 0;
-        //if (i % 2)
-        //{
-            //m_beginFootPos[i*3+2] = 0.55;
-        //}
-        //else
-        //{
-            //m_beginFootPos[i*3+2] = 0.71;
-        //}
+        //m_beginFootPos[i*3+2] = 0.55;
+    //}
+
+    //for (int i = 0; i < 3; i++)
+    //{
+        //m_beginFootPos[LEG_INDEX_GROUP_B[i]*3+2] = 0.71;
     //}
 
     return 0;
@@ -170,9 +167,9 @@ int ImpedancePlanner::ResetInitialFootPos()
 
 int ImpedancePlanner::ResetImpedanceParam(int impedanceMode)
 {
-    double K_SOFT_LANDING[3] = {1e8, 1e8, 8000};
-    double B_SOFT_LANDING[3] = {1e5, 1e5, 3000};
-    double M_SOFT_LANDING[3] = {100, 100, 80};
+    double K_SOFT_LANDING[3] = {1e8, 1e8, 500};
+    double B_SOFT_LANDING[3] = {1e5, 1e5, 1500};
+    double M_SOFT_LANDING[3] = {100, 100, 30};
 
     double K_SUPER_HARD[3] = {1e8, 1e8, 2e5};
     double B_SUPER_HARD[3] = {1e5, 1e5, 12000};
@@ -269,6 +266,7 @@ int ImpedancePlanner::GenerateJointTrajectory(
             m_currentIntegralValue[i] = 0;
             m_lastIntegralValue[i] = m_currentIntegralValue[i];
         }
+        isOnGround = false;
     }
     else if (m_state == INMOTION)
     {
@@ -288,6 +286,7 @@ int ImpedancePlanner::GenerateJointTrajectory(
             //}
         }
         else if (m_subState == WALKING)
+
         {
             double timeFromStart = timeNow - m_walkStartTime;
             m_walkStopTime = timeNow;
@@ -332,6 +331,8 @@ int ImpedancePlanner::GenerateJointTrajectory(
         bool isBodyPoseBalanceOn = bodyPoseBalanceCondition(m_forceTransfromed, activeGroup);
         if ( isBodyPoseBalanceOn)
         {    
+            isOnGround = true;
+
             CalculateAdjForceBP(imuFdbk, 
                                 m_lastFdbkValue,
                                 m_lastIntegralValue,
@@ -339,6 +340,10 @@ int ImpedancePlanner::GenerateJointTrajectory(
                                 m_adjForceBP,
                                 activeGroup);
 
+            //for (int i = 0; i < 18; ++i) 
+            //{
+                //m_adjForceBP[i] = 0;
+            //}
             for (int i = 0; i < 18; ++i) 
             {
                 // adjust the desire force 
@@ -403,7 +408,7 @@ int ImpedancePlanner::GenerateJointTrajectory(
                 }
                 for (int j = 2; j < 3; ++j)
                 {
-                    rt_printf("OF: %7.6lf  ", m_currentOffset[i*3+j]);
+                    rt_printf("OF: %7.6lf  ", m_forceTransfromed[i*3+j]);
                 }
                 rt_printf("\n");
             }
@@ -423,7 +428,7 @@ int ImpedancePlanner::GenerateJointTrajectory(
                     M_ac[0], 
                     M_ac[1], 
                     M_ac[2]);
-            rt_printf("Body Pose Balancing: %s\n", isBodyPoseBalanceOn ? "TRUE" : "FALSE");
+            rt_printf("Body Pose Balancing: %s\n", isOnGround ? "TRUE" : "FALSE");
             rt_printf("\n");
         }
         // Output
@@ -544,8 +549,8 @@ bool ImpedancePlanner::bodyPoseBalanceCondition(double* forceInput, int& activeG
     // when MB, RF, LF legs touches the ground, the condition is satisfied
     for(int i = 0; i < 3; i++)
     {
-        flag = flag && (fabs(forceInput[LEG_INDEX_GROUP_A[i]*3 + 2]) > 200) 
-                    && (fabs(forceInput[LEG_INDEX_GROUP_B[i]*3 + 2]) < 200);
+        flag = flag && (fabs(forceInput[LEG_INDEX_GROUP_A[i]*3 + 2]) > 20)
+                    && (fabs(forceInput[LEG_INDEX_GROUP_B[i]*3 + 2]) < 20);
     }
     if (flag)
     {
@@ -556,8 +561,8 @@ bool ImpedancePlanner::bodyPoseBalanceCondition(double* forceInput, int& activeG
         flag = true;
         for(int i = 0; i < 3; i++)
         {
-            flag = flag && (fabs(forceInput[LEG_INDEX_GROUP_B[i]*3 + 2]) > 200)
-                        && (fabs(forceInput[LEG_INDEX_GROUP_A[i]*3 + 2]) < 200);
+            flag = flag && (fabs(forceInput[LEG_INDEX_GROUP_B[i]*3 + 2]) > 20)
+                        && (fabs(forceInput[LEG_INDEX_GROUP_A[i]*3 + 2]) < 20);
         }
         if (flag) // B is active
         {
@@ -568,8 +573,8 @@ bool ImpedancePlanner::bodyPoseBalanceCondition(double* forceInput, int& activeG
             flag = true;
             for(int i = 0; i < 3; i++)
             {
-                flag = flag && (fabs(forceInput[LEG_INDEX_GROUP_B[i]*3 + 2]) > 200) 
-                            && (fabs(forceInput[LEG_INDEX_GROUP_A[i]*3 + 2]) > 200);
+                flag = flag && (fabs(forceInput[LEG_INDEX_GROUP_B[i]*3 + 2]) > 30) 
+                            && (fabs(forceInput[LEG_INDEX_GROUP_A[i]*3 + 2]) > 30);
             }
             if (flag)
             {
