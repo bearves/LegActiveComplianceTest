@@ -10,18 +10,32 @@ using namespace Aris::RT_CONTROL;
 int main(int argc, char** argv)
 {
     CMachineData data;
+    int fileNameIndex = 1;
+    int dataSize = 0;
 
     if (argc < 2)
     {
         cout << "Wrong parameter" << endl;
-        cout << "Usage: LogDataRead [PATH_TO_LOGFILE]" << endl;
+        cout << "Usage: LogDataRead [-l] <PATH_TO_LOGFILE>" << endl;
         return -200;
     }
+    
+    if (strcmp(argv[1], "-l") == 0)
+    {
+        fileNameIndex = 2;
+        // we use legacyData
+        dataSize = sizeof(CMachineDataLegacy);
+    }
+    else
+    {
+        fileNameIndex = 1;
+        dataSize = sizeof(CMachineData);
+    }
 
-    cout << "Opening log file:" << argv[1] << endl;
-    cout << "Data point size: " << sizeof(data) << endl;
+    cout << "Opening log file:" << argv[fileNameIndex] << endl;
+    cout << "Data point size: " << dataSize << endl;
 
-    ifstream fin(argv[1]);
+    ifstream fin(argv[fileNameIndex]);
     ofstream fout("ParsedFile.txt");
 
     if (fin.fail())
@@ -29,7 +43,7 @@ int main(int argc, char** argv)
         cout << "Open file error: " << strerror(errno) << endl;
         return errno;
     }
-    while( fin.read((char *)&data, sizeof(data)))
+    while( fin.read((char *)&data, dataSize))
     {
         fout << data.time << "  ";
         for(int j = 0; j < 6; j++)
