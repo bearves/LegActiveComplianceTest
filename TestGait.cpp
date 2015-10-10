@@ -10,13 +10,13 @@ int main(int argc, char *argv[])
 {
     double timeNow;
     unsigned int totalPeriodCount = 20;
-    double stepLength = 270;
+    double stepLength = 0;
     double Lside = 0;
     double rotationAngle = 0;
-    double duty = 0.52;
-    double stepHeight = 180; //positive value
+    double duty = 0.51;
+    double stepHeight = 80; //positive value
     double T = 3;
-    double standHeight = 720;
+    double standHeight = 710;
     double legTipPoints[18];
     double screwLength[3];
     double tdDeltaMidLeg = 0;
