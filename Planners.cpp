@@ -1,4 +1,5 @@
 #include "Planners.h"
+#include <algorithm>
 
 using namespace RobotHighLevelControl;
 
@@ -146,21 +147,21 @@ int ImpedancePlanner::Initialize()
 
 int ImpedancePlanner::ResetInitialFootPos()
 {
-    Model::walk_cxb(
-            0,
-            m_trjGeneratorParam,
-            m_beginFootPos);
+    //Model::walk_cxb(
+            //0,
+            //m_trjGeneratorParam,
+            //m_beginFootPos);
 
-    //for(int i = 0; i < 6; i++) {
-        //m_beginFootPos[i*3+0] = 0;
-        //m_beginFootPos[i*3+1] = 0;
-        //m_beginFootPos[i*3+2] = 0.55;
-    //}
+    for(int i = 0; i < 6; i++) {
+        m_beginFootPos[i*3+0] = 0;
+        m_beginFootPos[i*3+1] = 0;
+        m_beginFootPos[i*3+2] = 0.55;
+    }
 
-    //for (int i = 0; i < 3; i++)
-    //{
-        //m_beginFootPos[LEG_INDEX_GROUP_B[i]*3+2] = 0.71;
-    //}
+    for (int i = 0; i < 3; i++)
+    {
+        m_beginFootPos[LEG_INDEX_GROUP_B[i]*3+2] = 0.71;
+    }
 
     return 0;
 }
@@ -275,16 +276,16 @@ int ImpedancePlanner::GenerateJointTrajectory(
         {
             m_walkStartTime = timeNow; 
 
-            Model::walk_cxb(
-                    0,
-                    m_trjGeneratorParam,
-                    m_currentTargetFootPos);
+            //Model::walk_cxb(
+                    //0,
+                    //m_trjGeneratorParam,
+                    //m_currentTargetFootPos);
 
-            //for( int i = 0; i < 18; i++)
-            //{
-                //m_currentTargetFootPos[i] = m_beginFootPos[i];
-                //m_currentTargetFootVel[i] = 0; 
-            //}
+            for( int i = 0; i < 18; i++)
+            {
+                m_currentTargetFootPos[i] = m_beginFootPos[i];
+                m_currentTargetFootVel[i] = 0; 
+            }
         }
         else if (m_subState == WALKING)
 
@@ -330,12 +331,13 @@ int ImpedancePlanner::GenerateJointTrajectory(
         // Adjust desire force according to the IMU feedback
         int activeGroup;
         bool isBodyPoseBalanceOn = bodyPoseBalanceCondition(m_forceTransfromed, activeGroup);
-        if ( isBodyPoseBalanceOn)
+        if ( isBodyPoseBalanceOn && (activeGroup == 1 || activeGroup == 0))
         {    
             isOnGround = true;
 
             CalculateAdjForceBP(imuFdbk, 
-                                m_lastFdbkValue,
+                                m_currentAdjustedFootPos,
+                                m_lastErrValue,
                                 m_lastIntegralValue,
                                 m_currentIntegralValue, 
                                 m_adjForceBP,
@@ -588,57 +590,101 @@ bool ImpedancePlanner::bodyPoseBalanceCondition(double* forceInput, int& activeG
 
 int ImpedancePlanner::CalculateAdjForceBP(
         const Aris::RT_CONTROL::CIMUData &imuFdbk, 
-        double* lastFdbkValue,
+        double* currentFootPos,
+        double* lastErrorValue,
         double* lastIntegralValue,
         double* currentIntegralValue,
         double* adjForceBP,
         int activeGroup)
 {
-    double KP_BP[2] = {4000, 12000};
-    double KI_BP[2] = {3600, 7200};
-    double KD_BP[2] = { 600, 2000};
-    double force[2];
+                      //Roll, Pitch, Height
+    double KP_BP[3] = {  200,   200,   2e4};
+    double KI_BP[3] = {  200,   200,     0};
+    double KD_BP[3] = {  200,   200,  4000};
+    double force[3];
     double th = 0.001;
 
-    if (activeGroup == 0 || activeGroup == 1) // Single Group
+    //if (activeGroup == 0 || activeGroup == 1) // Single Group, adjust gains of roll
+    //{
+        //KP_BP[0] = 12000;
+        //KI_BP[0] = 20000;
+        //KD_BP[0] = 2000;
+    //}
+
+
+    double currentErrorValue[3];
+    double currentErrorDotValue[3];
+    // Firstly calcualte the errors
+    double crtHeight, errHeight, errHeightDot;
+    crtHeight = CalculateCurrentHeight(currentFootPos, activeGroup);
+
+    errHeight = crtHeight - 0.71; // CURRENT STAGE: We fix the body height to 0.71m
+    errHeightDot = (errHeight - lastErrorValue[2]) / th;
+
+    currentErrorValue[2] = errHeight;
+    currentErrorDotValue[2] = errHeightDot;
+
+    for(int i = 0; i < 3; i++)
     {
-        KP_BP[0] = 12000;
-        KI_BP[0] = 20000;
-        KD_BP[0] = 2000;
+        currentErrorValue[i] = imuFdbk.EulerAngle[i]; 
+        currentErrorDotValue[i] = imuFdbk.AngularVel[i];
     }
 
     // PID control for body pose balance
-    for (int i = 0; i < 2; ++i) 
+    for (int i = 0; i < 3; ++i) 
     {
         // trapezoidal integration
-        currentIntegralValue[i] = lastIntegralValue[i] + KI_BP[i] * th * (lastFdbkValue[i] + imuFdbk.EulerAngle[i]) /2;
-        force[i] = KP_BP[i] * imuFdbk.EulerAngle[i]
-                   + currentIntegralValue[i]
-                   + KD_BP[i] * imuFdbk.AngularVel[i]; // use angular velocity as the derivative since it has been filtered
-        lastFdbkValue[i] = imuFdbk.EulerAngle[i];
+        currentIntegralValue[i] = lastIntegralValue[i] + th * (lastErrorValue[i] + currentErrorValue[i]) /2;
+        force[i] =   KP_BP[i] * currentErrorValue[i] 
+                   + KI_BP[i] * currentIntegralValue[i]
+                   + KD_BP[i] * currentErrorDotValue[i];
+        lastErrorValue[i] = currentErrorValue[i]; 
     }
-    
+
+    // Gravity Compensation of body height
+    force[2] += -9.81 * 260;
+
+    // Force distribution
     using Model::Leg;
     // assign adjust force to corresponding legs
     if (activeGroup == 0) // Group A
     {
-        adjForceBP[Leg::LEG_ID_RF*3 + 2] = -force[0] - force[1];
-        adjForceBP[Leg::LEG_ID_LF*3 + 2] = force[0] - force[1];
+        adjForceBP[Leg::LEG_ID_RF*3 + 2] = -1.401 * force[0] - 0.535 * force[1] - 0.288 * force[2];
+        adjForceBP[Leg::LEG_ID_LF*3 + 2] =  1.401 * force[0] - 0.535 * force[1] - 0.288 * force[2];
+        adjForceBP[Leg::LEG_ID_MB*3 + 2] =      0 * force[0] + 1.070 * force[1] - 0.426 * force[2];
     }
     else if (activeGroup == 1) // Group B
     {
-        adjForceBP[Leg::LEG_ID_RB*3 + 2] = -force[0] + force[1];
-        adjForceBP[Leg::LEG_ID_LB*3 + 2] = force[0] + force[1];
-    }
-    else if (activeGroup == 2)// Both Group A and B, but we only balance roll for this situation
-    {
-        adjForceBP[Leg::LEG_ID_RB*3 + 2] = -force[0];
-        adjForceBP[Leg::LEG_ID_LB*3 + 2] = force[0] ;
-        adjForceBP[Leg::LEG_ID_RF*3 + 2] = -force[0];
-        adjForceBP[Leg::LEG_ID_LF*3 + 2] = force[0] ;
+        adjForceBP[Leg::LEG_ID_RB*3 + 2] = -1.401 * force[0] + 0.535 * force[1] - 0.288 * force[2];
+        adjForceBP[Leg::LEG_ID_LB*3 + 2] =  1.401 * force[0] + 0.535 * force[1] - 0.288 * force[2];
+        adjForceBP[Leg::LEG_ID_MF*3 + 2] =      0 * force[0] - 1.070 * force[1] - 0.426 * force[2];
     }
 
     return 0;
+}
+
+double ImpedancePlanner::CalculateCurrentHeight(double* currentFootPos, int activeGroup)
+{
+    using Model::Leg;
+    double height = 0;
+    if (activeGroup == 0) // Group A
+    {
+        for(int i = 0; i < 3; i++)
+        {
+            height = std::max(currentFootPos[LEG_INDEX_GROUP_A[i] * 3 + 2], height);
+        }
+    }
+    else if (activeGroup == 1) // Group B
+    {
+        for(int i = 0; i < 3; i++)
+        {
+            height = std::max(currentFootPos[LEG_INDEX_GROUP_B[i] * 3 + 2], height);
+        }
+    }
+    else
+    {
+        return 0.71;
+    }
 }
 
 int ImpedancePlanner::SetGaitParameter(const void* param, int dataLength)
