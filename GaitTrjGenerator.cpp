@@ -497,13 +497,13 @@ int HopTrjGenerator::Initialize()
     m_currentState = HopTrjGenerator::HOLD;
     m_lastStateShiftTime = 0;
     
-    m_holdingTime = 5;
-    m_thrustingTime = 0.3;
-    m_retractingTime = 0.2;
+    m_holdingTime    = 5;
+    m_thrustingTime  = 0.25;
+    m_retractingTime = 0.32;
 
-    m_holdLength = 0.6;
-    m_thrustLength = 0.72;
-    m_retractLength = 0.64;
+    m_holdLength     = 0.6;
+    m_thrustLength   = 0.72;
+    m_retractLength  = 0.6;
 
     return 0;
 }
@@ -527,7 +527,7 @@ double HopTrjGenerator::HopOnce(
             break;
 
         case THRUST:
-            if ( retractTrigger )
+            if ( timeFromStart - m_lastStateShiftTime > m_thrustingTime )
             {
                 nextState = RETRACT;
                 m_lastStateShiftTime = timeFromStart;

@@ -166,9 +166,9 @@ int ImpedancePlanner::ResetImpedanceParam(int impedanceMode)
     double B_SUPER_HARD[3] = {1e5, 1e5, 12000};
     double M_SUPER_HARD[3] = {100, 100, 80};
 
-    double K_MEDIUM_SOFT[3] = {1e8, 1e8, 40000};
-    double B_MEDIUM_SOFT[3] = {1e5, 1e5, 9000}; // actual damping ratio is much smaller than the desired
-    double M_MEDIUM_SOFT[3] = {100, 100, 80};
+    double K_MEDIUM_SOFT[3] = {1e8, 1e8, 15000};
+    double B_MEDIUM_SOFT[3] = {1e5, 1e5, 3000}; // actual damping ratio is much smaller than the desired
+    double M_MEDIUM_SOFT[3] = {100, 100, 30};
 
     switch (impedanceMode)
     {
