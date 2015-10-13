@@ -9,38 +9,22 @@ using namespace std;
 int main(int argc, char *argv[])
 {
     double timeNow;
-    unsigned int totalPeriodCount = 20;
-    double stepLength = 0;
-    double Lside = 0;
-    double rotationAngle = 0;
-    double duty = 0.51;
-    double stepHeight = 80; //positive value
-    double T = 3;
-    double standHeight = 710;
     double legTipPoints[18];
     double screwLength[3];
-    double tdDeltaMidLeg = 0;
-    double tdDeltaSideLeg = 0;
     Model::Leg leg;
+    Model::HopTrjGenerator hopGenerator;
+
+    hopGenerator.Initialize();
 
     leg.SetID(0);
 
-    for(int timeCounter = 0; timeCounter < 20000; timeCounter++)
+    for(int timeCounter = 0; timeCounter < 6000; timeCounter++)
     {
         timeNow = timeCounter / 1000.0;
-        walk_cxb(
-                timeNow,
-                totalPeriodCount,
-                stepLength,
-                Lside,
-                rotationAngle,
-                duty,
-                stepHeight,
-                T,
-                standHeight,
-                tdDeltaMidLeg,
-                tdDeltaSideLeg,
-                legTipPoints);
+        hopGenerator.HopOnce
+            ( timeNow,
+              false,
+              legTipPoints);
 
         cout << timeNow << "  "; 
         for (int i = 0; i < 6; ++i) {

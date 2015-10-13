@@ -4,12 +4,12 @@
 namespace Model
 {
 
-double walk_cxb(
+double WalkCxb(
         double timeFromStart,
         const RobotHighLevelControl::ParamCXB& param,
         double *legTipPositionPole)
 {
-    return walk_cxb(
+    return WalkCxb(
             timeFromStart,
             param.totalPeriodCount,
             param.stepLength,
@@ -24,7 +24,7 @@ double walk_cxb(
             legTipPositionPole);
 }
 
-double walk_cxb(
+double WalkCxb(
         double timeFromStart,
         unsigned int totalPeriodCount,
         double stepLength,
@@ -481,5 +481,136 @@ double walk_cxb(
 
     return totalPeriodCount * T - timeFromStart;
 }
+
+}
+
+namespace Model
+{
+
+HopTrjGenerator::HopTrjGenerator()
+{
+    Initialize();
+}
+
+int HopTrjGenerator::Initialize()
+{
+    m_currentState = HopTrjGenerator::HOLD;
+    m_lastStateShiftTime = 0;
+    
+    m_holdingTime = 5;
+    m_thrustingTime = 0.3;
+    m_retractingTime = 0.2;
+
+    m_holdLength = 0.6;
+    m_thrustLength = 0.72;
+    m_retractLength = 0.64;
+
+    return 0;
+}
+
+double HopTrjGenerator::HopOnce(
+        double timeFromStart,
+        bool   retractTrigger,
+        double* legTipPositionPole)
+{
+    HOP_STATE nextState = m_currentState;
+    
+    // State Machine
+    switch (m_currentState)
+    {
+        case HOLD:
+            if ( timeFromStart - m_lastStateShiftTime > m_holdingTime)
+            {
+                nextState = THRUST;
+                m_lastStateShiftTime = timeFromStart;
+            }
+            break;
+
+        case THRUST:
+            if ( retractTrigger )
+            {
+                nextState = RETRACT;
+                m_lastStateShiftTime = timeFromStart;
+            }
+            break;
+
+        case RETRACT:
+            if ( timeFromStart - m_lastStateShiftTime > m_retractingTime)
+            {
+                nextState = LANDING;
+                m_lastStateShiftTime = timeFromStart;
+            }
+            break;
+
+        case LANDING:
+            break;
+    }
+
+    m_currentState = nextState;
+
+
+    // Trj generator according to current state
+    switch (m_currentState)
+    {
+        case HOLD:
+            
+            for(int i = 0; i < 6; i++) {
+                legTipPositionPole[i*3+0] = 0;
+                legTipPositionPole[i*3+1] = 0;
+                legTipPositionPole[i*3+2] = m_holdLength;
+            }
+
+            break;
+
+        case THRUST:
+            if (timeFromStart - m_lastStateShiftTime < m_thrustingTime)
+            {
+
+                for(int i = 0; i < 6; i++) {
+                    legTipPositionPole[i*3+0] = 0;
+                    legTipPositionPole[i*3+1] = 0;
+                    legTipPositionPole[i*3+2] = 
+                        m_holdLength + 
+                        (m_thrustLength - m_holdLength)/2.0 * 
+                        (1 - cos(PI * (timeFromStart - m_lastStateShiftTime)/m_thrustingTime));
+
+                }
+            }
+            else
+            {
+                for(int i = 0; i < 6; i++) {
+                    legTipPositionPole[i*3+0] = 0;
+                    legTipPositionPole[i*3+1] = 0;
+                    legTipPositionPole[i*3+2] = m_thrustLength; 
+
+                }
+            }
+            break;
+
+        case RETRACT:
+            for(int i = 0; i < 6; i++) {
+                legTipPositionPole[i*3+0] = 0;
+                legTipPositionPole[i*3+1] = 0;
+                legTipPositionPole[i*3+2] = 
+                    m_thrustLength + 
+                    (m_retractLength - m_thrustLength)/2.0 * 
+                    (1 - cos(PI * (timeFromStart - m_lastStateShiftTime)/m_retractingTime));
+
+            }
+            break;
+
+        case LANDING:
+            for(int i = 0; i < 6; i++) {
+                legTipPositionPole[i*3+0] = 0;
+                legTipPositionPole[i*3+1] = 0;
+                legTipPositionPole[i*3+2] = m_retractLength;
+
+            }
+            break;
+    }
+
+    return 0;
+}
+
 
 }

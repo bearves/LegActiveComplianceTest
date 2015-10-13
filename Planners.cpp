@@ -147,21 +147,11 @@ int ImpedancePlanner::Initialize()
 
 int ImpedancePlanner::ResetInitialFootPos()
 {
-    //Model::walk_cxb(
-            //0,
-            //m_trjGeneratorParam,
-            //m_beginFootPos);
-
-    for(int i = 0; i < 6; i++) {
-        m_beginFootPos[i*3+0] = 0;
-        m_beginFootPos[i*3+1] = 0;
-        m_beginFootPos[i*3+2] = 0.55;
-    }
-
-    for (int i = 0; i < 3; i++)
-    {
-        m_beginFootPos[LEG_INDEX_GROUP_B[i]*3+2] = 0.71;
-    }
+    m_hopGenerator.Initialize();    
+    m_hopGenerator.HopOnce(
+            0,
+            false,
+            m_beginFootPos);
 
     return 0;
 }
@@ -276,16 +266,10 @@ int ImpedancePlanner::GenerateJointTrajectory(
         {
             m_walkStartTime = timeNow; 
 
-            //Model::walk_cxb(
-                    //0,
-                    //m_trjGeneratorParam,
-                    //m_currentTargetFootPos);
-
-            for( int i = 0; i < 18; i++)
-            {
-                m_currentTargetFootPos[i] = m_beginFootPos[i];
-                m_currentTargetFootVel[i] = 0; 
-            }
+            m_hopGenerator.HopOnce(
+                    0,
+                    false,
+                    m_currentTargetFootPos);
         }
         else if (m_subState == WALKING)
 
@@ -299,16 +283,16 @@ int ImpedancePlanner::GenerateJointTrajectory(
                 m_subState = HOLD_END_POS;
             }
 
-            Model::walk_cxb(
+            m_hopGenerator.HopOnce(
                     timeFromStart,
-                    m_trjGeneratorParam,
+                    false,
                     m_currentTargetFootPos);
         }
         else if (m_subState == HOLD_END_POS)
         {
-            Model::walk_cxb(
+            m_hopGenerator.HopOnce(
                     m_walkStopTime - m_walkStartTime,
-                    m_trjGeneratorParam,
+                    false,
                     m_currentTargetFootPos);
         }
         
@@ -343,10 +327,11 @@ int ImpedancePlanner::GenerateJointTrajectory(
                                 m_adjForceBP,
                                 activeGroup);
 
-            //for (int i = 0; i < 18; ++i) 
-            //{
-                //m_adjForceBP[i] = 0;
-            //}
+            // Forbid using IMU
+            for (int i = 0; i < 18; ++i) 
+            {
+                m_adjForceBP[i] = 0;
+            }
             for (int i = 0; i < 18; ++i) 
             {
                 // adjust the desire force 
@@ -502,8 +487,8 @@ int ImpedancePlanner::ImpedanceControl(double* forceInput, double* forceDesire,
 
     if (legID == Model::Leg::LEG_ID_MB || legID == Model::Leg::LEG_ID_MF)
     {
-        K_use[2] *= 2;
-        B_use[2] *= 2;
+        K_use[2] *= 1.7;
+        B_use[2] *= 1.7;
     }
     
     for (int i = 0; i < 3; ++i) 
@@ -598,9 +583,9 @@ int ImpedancePlanner::CalculateAdjForceBP(
         int activeGroup)
 {
                       //Roll, Pitch, Height
-    double KP_BP[3] = {  200,   200,   2e4};
+    double KP_BP[3] = {  200,   200,     0};
     double KI_BP[3] = {  200,   200,     0};
-    double KD_BP[3] = {  200,   200,  4000};
+    double KD_BP[3] = {   20,    20,     0};
     double force[3];
     double th = 0.001;
 
@@ -685,6 +670,7 @@ double ImpedancePlanner::CalculateCurrentHeight(double* currentFootPos, int acti
     {
         return 0.71;
     }
+    return height;
 }
 
 int ImpedancePlanner::SetGaitParameter(const void* param, int dataLength)

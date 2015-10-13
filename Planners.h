@@ -143,6 +143,7 @@ namespace RobotHighLevelControl
             ParamCXB m_trjGeneratorParam;
 
             Model::Leg m_legList[6];
+            Model::HopTrjGenerator m_hopGenerator;
 
             // the point when the gait should start with
             double m_beginFootPos[18];

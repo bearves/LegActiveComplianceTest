@@ -31,21 +31,21 @@ for i in range(18):
     plt.plot(tplt[::], (axis[i]))
     plt.hold(True)
 plt.hold(False)
-#plt.xlim([0, 18])
+plt.xlim([4.8, 5.4])
 
 plt.subplot(3,1, 2)
 for i in range(18):
     plt.plot(tplt[:-1:], numpy.diff( (axis[i]))/0.001)
     plt.hold(True)
-#plt.xlim([0, 18])
+plt.xlim([4.8, 5.4])
 
 plt.subplot(3,1, 3)
-for i in range(18):
-    #plt.plot(tplt[:-2:], numpy.diff(numpy.diff( (axis[i]))/0.001)/0.001)
-    #plt.hold(True)
-    plt.plot(axis[3], axis[3+2])
+for i in range(18,21):
+    plt.plot(tplt[:-2:], numpy.diff(numpy.diff( (axis[i]))/0.001)/0.001)
     plt.hold(True)
+    #plt.plot(axis[3], axis[3+2])
+    #plt.hold(True)
 plt.hold(False)
 plt.grid(True)
-#plt.axis([0, 18, -20, 20])
+plt.xlim([4.8, 5.4])
 plt.show()
