@@ -46,6 +46,8 @@ int main(int argc, char** argv)
     while( fin.read((char *)&data, dataSize))
     {
         fout << data.time << "  ";
+
+        // col 1 -> 36 ForceData
         for(int j = 0; j < 6; j++)
         {
             for(int i = 0; i < 6; i++)
@@ -54,6 +56,7 @@ int main(int argc, char** argv)
             }
         }
 
+        // col 37 -> 45 ForceData
         for (int i = 0; i < 3; ++i) {
             fout << data.imuData.EulerAngle[i] << "  ";
         }
@@ -66,11 +69,13 @@ int main(int argc, char** argv)
             fout << data.imuData.LinearAcc[i] << "  ";
         }
 
+        // col 46 -> 63 fdbk motor position
         for(int i = 0; i < 18; i++)
         {
             fout << data.feedbackData[i].Position << "  ";
         }
 
+        // col 64 -> 81 command motor position
         for(int i = 0; i < 17; i++)
         {
             fout << data.commandData[i].Position << "  ";
