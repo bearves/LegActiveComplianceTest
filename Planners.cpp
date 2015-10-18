@@ -166,9 +166,9 @@ int ImpedancePlanner::ResetImpedanceParam(int impedanceMode)
     double B_SUPER_HARD[3] = {1e5, 1e5, 12000};
     double M_SUPER_HARD[3] = {100, 100, 80};
 
-    double K_MEDIUM_SOFT[3] = {1e8, 1e8, 15000};
-    double B_MEDIUM_SOFT[3] = {1e5, 1e5, 3000}; // actual damping ratio is much smaller than the desired
-    double M_MEDIUM_SOFT[3] = {100, 100, 30};
+    double K_MEDIUM_SOFT[3] = {1e8, 1e8, 12500};
+    double B_MEDIUM_SOFT[3] = {1e5, 1e5, 1000}; // actual damping ratio is much smaller than the desired
+    double M_MEDIUM_SOFT[3] = {100, 100, 10};
 
     switch (impedanceMode)
     {
@@ -253,7 +253,7 @@ int ImpedancePlanner::GenerateJointTrajectory(
             jointLength[i] = m_currentAdjustedJointPos[i];
         }
 
-        for(int i = 0; i < 2; i++)
+        for(int i = 0; i < 3; i++)
         {
             m_currentIntegralValue[i] = 0;
             m_lastIntegralValue[i] = m_currentIntegralValue[i];
@@ -315,7 +315,7 @@ int ImpedancePlanner::GenerateJointTrajectory(
         // Adjust desire force according to the IMU feedback
         int activeGroup;
         bool isBodyPoseBalanceOn = bodyPoseBalanceCondition(m_forceTransfromed, activeGroup);
-        if ( isBodyPoseBalanceOn && (activeGroup == 1 || activeGroup == 0))
+        if ( isBodyPoseBalanceOn )
         {    
             isOnGround = true;
 
@@ -337,7 +337,7 @@ int ImpedancePlanner::GenerateJointTrajectory(
                 // adjust the desire force 
                 m_forceDesire[i] += m_adjForceBP[i];
             }
-            for(int i = 0; i < 2; i++)
+            for(int i = 0; i < 3; i++)
             {
                 m_lastIntegralValue[i] = m_currentIntegralValue[i];
             }
@@ -349,7 +349,7 @@ int ImpedancePlanner::GenerateJointTrajectory(
             {
                 m_adjForceBP[i] = 0;
             }
-            for(int i = 0; i < 2; i++)
+            for(int i = 0; i < 3; i++)
             {
                 m_currentIntegralValue[i] = 0;
                 m_lastIntegralValue[i] = m_currentIntegralValue[i];
@@ -537,8 +537,8 @@ bool ImpedancePlanner::bodyPoseBalanceCondition(double* forceInput, int& activeG
     // when MB, RF, LF legs touches the ground, the condition is satisfied
     for(int i = 0; i < 3; i++)
     {
-        flag = flag && (fabs(forceInput[LEG_INDEX_GROUP_A[i]*3 + 2]) > 20)
-                    && (fabs(forceInput[LEG_INDEX_GROUP_B[i]*3 + 2]) < 20);
+        flag = flag && (fabs(forceInput[LEG_INDEX_GROUP_A[i]*3 + 2]) > 100)
+                    && (fabs(forceInput[LEG_INDEX_GROUP_B[i]*3 + 2]) < 100);
     }
     if (flag)
     {
@@ -549,8 +549,8 @@ bool ImpedancePlanner::bodyPoseBalanceCondition(double* forceInput, int& activeG
         flag = true;
         for(int i = 0; i < 3; i++)
         {
-            flag = flag && (fabs(forceInput[LEG_INDEX_GROUP_B[i]*3 + 2]) > 20)
-                        && (fabs(forceInput[LEG_INDEX_GROUP_A[i]*3 + 2]) < 20);
+            flag = flag && (fabs(forceInput[LEG_INDEX_GROUP_B[i]*3 + 2]) > 100)
+                        && (fabs(forceInput[LEG_INDEX_GROUP_A[i]*3 + 2]) < 100);
         }
         if (flag) // B is active
         {
@@ -561,8 +561,8 @@ bool ImpedancePlanner::bodyPoseBalanceCondition(double* forceInput, int& activeG
             flag = true;
             for(int i = 0; i < 3; i++)
             {
-                flag = flag && (fabs(forceInput[LEG_INDEX_GROUP_B[i]*3 + 2]) > 30) 
-                            && (fabs(forceInput[LEG_INDEX_GROUP_A[i]*3 + 2]) > 30);
+                flag = flag && (fabs(forceInput[LEG_INDEX_GROUP_B[i]*3 + 2]) > 100) 
+                            && (fabs(forceInput[LEG_INDEX_GROUP_A[i]*3 + 2]) > 100);
             }
             if (flag)
             {
@@ -609,7 +609,7 @@ int ImpedancePlanner::CalculateAdjForceBP(
     currentErrorValue[2] = errHeight;
     currentErrorDotValue[2] = errHeightDot;
 
-    for(int i = 0; i < 3; i++)
+    for(int i = 0; i < 2; i++) // Get the error and dot error from IMU data
     {
         currentErrorValue[i] = imuFdbk.EulerAngle[i]; 
         currentErrorDotValue[i] = imuFdbk.AngularVel[i];
@@ -619,7 +619,9 @@ int ImpedancePlanner::CalculateAdjForceBP(
     for (int i = 0; i < 3; ++i) 
     {
         // trapezoidal integration
-        currentIntegralValue[i] = lastIntegralValue[i] + th * (lastErrorValue[i] + currentErrorValue[i]) /2;
+        currentIntegralValue[i] = lastIntegralValue[i] +
+            th * (lastErrorValue[i] + currentErrorValue[i]) /2;
+
         force[i] =   KP_BP[i] * currentErrorValue[i] 
                    + KI_BP[i] * currentIntegralValue[i]
                    + KD_BP[i] * currentErrorDotValue[i];
@@ -627,7 +629,7 @@ int ImpedancePlanner::CalculateAdjForceBP(
     }
 
     // Gravity Compensation of body height
-    force[2] += -9.81 * 260;
+    // force[2] += -9.81 * 260;
 
     // Force distribution
     using Model::Leg;
@@ -638,8 +640,20 @@ int ImpedancePlanner::CalculateAdjForceBP(
         adjForceBP[Leg::LEG_ID_LF*3 + 2] =  1.401 * force[0] - 0.535 * force[1] - 0.288 * force[2];
         adjForceBP[Leg::LEG_ID_MB*3 + 2] =      0 * force[0] + 1.070 * force[1] - 0.426 * force[2];
     }
+
     else if (activeGroup == 1) // Group B
     {
+        adjForceBP[Leg::LEG_ID_RB*3 + 2] = -1.401 * force[0] + 0.535 * force[1] - 0.288 * force[2];
+        adjForceBP[Leg::LEG_ID_LB*3 + 2] =  1.401 * force[0] + 0.535 * force[1] - 0.288 * force[2];
+        adjForceBP[Leg::LEG_ID_MF*3 + 2] =      0 * force[0] - 1.070 * force[1] - 0.426 * force[2];
+    }
+
+    else if (activeGroup == 2) // All legs on the ground
+    {
+        adjForceBP[Leg::LEG_ID_RF*3 + 2] = -1.401 * force[0] - 0.535 * force[1] - 0.288 * force[2];
+        adjForceBP[Leg::LEG_ID_LF*3 + 2] =  1.401 * force[0] - 0.535 * force[1] - 0.288 * force[2];
+        adjForceBP[Leg::LEG_ID_MB*3 + 2] =      0 * force[0] + 1.070 * force[1] - 0.426 * force[2];
+
         adjForceBP[Leg::LEG_ID_RB*3 + 2] = -1.401 * force[0] + 0.535 * force[1] - 0.288 * force[2];
         adjForceBP[Leg::LEG_ID_LB*3 + 2] =  1.401 * force[0] + 0.535 * force[1] - 0.288 * force[2];
         adjForceBP[Leg::LEG_ID_MF*3 + 2] =      0 * force[0] - 1.070 * force[1] - 0.426 * force[2];

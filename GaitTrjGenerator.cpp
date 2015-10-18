@@ -498,7 +498,7 @@ int HopTrjGenerator::Initialize()
     m_lastStateShiftTime = 0;
     
     m_holdingTime    = 5;
-    m_thrustingTime  = 0.25;
+    m_thrustingTime  = 0.24;
     m_retractingTime = 0.32;
 
     m_holdLength     = 0.6;
