@@ -45,10 +45,12 @@ public:
     HOP_STATE m_currentState;
 
     double m_lastStateShiftTime;
+    double m_retractStartTime;
 
     double m_holdingTime;
     double m_thrustingTime;
     double m_retractingTime;
+    double m_settlingTime;
 
     double m_holdLength;
     double m_thrustLength;
@@ -60,7 +62,7 @@ public:
 
     double HopOnce(
         double timeFromStart,
-        bool   retractTrigger,
+        bool   touchdownTrigger,
         double *legTipPositionPole);
 };
 }

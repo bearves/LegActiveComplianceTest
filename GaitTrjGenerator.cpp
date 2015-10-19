@@ -496,10 +496,12 @@ int HopTrjGenerator::Initialize()
 {
     m_currentState = HopTrjGenerator::HOLD;
     m_lastStateShiftTime = 0;
+    m_retractStartTime = 0;
     
     m_holdingTime    = 5;
     m_thrustingTime  = 0.24;
     m_retractingTime = 0.32;
+    m_settlingTime   = 0.35;
 
     m_holdLength     = 0.6;
     m_thrustLength   = 0.72;
@@ -510,10 +512,11 @@ int HopTrjGenerator::Initialize()
 
 double HopTrjGenerator::HopOnce(
         double timeFromStart,
-        bool   retractTrigger,
+        bool   touchdownTrigger,
         double* legTipPositionPole)
 {
     HOP_STATE nextState = m_currentState;
+    double ti = 0;
     
     // State Machine
     switch (m_currentState)
@@ -531,11 +534,13 @@ double HopTrjGenerator::HopOnce(
             {
                 nextState = RETRACT;
                 m_lastStateShiftTime = timeFromStart;
+                m_retractStartTime = timeFromStart;
             }
             break;
 
         case RETRACT:
-            if ( timeFromStart - m_lastStateShiftTime > m_retractingTime)
+            if ( timeFromStart - m_lastStateShiftTime > m_retractingTime / 3.0 &&
+                 touchdownTrigger )   // when detecting the touchdown event, switch to LANDING state
             {
                 nextState = LANDING;
                 m_lastStateShiftTime = timeFromStart;
@@ -543,6 +548,11 @@ double HopTrjGenerator::HopOnce(
             break;
 
         case LANDING:
+            if ( timeFromStart - m_lastStateShiftTime > m_settlingTime )
+            {
+                nextState = THRUST;
+                m_lastStateShiftTime = timeFromStart;
+            }
             break;
     }
 
@@ -557,7 +567,7 @@ double HopTrjGenerator::HopOnce(
             for(int i = 0; i < 6; i++) {
                 legTipPositionPole[i*3+0] = 0;
                 legTipPositionPole[i*3+1] = 0;
-                legTipPositionPole[i*3+2] = m_holdLength;
+                legTipPositionPole[i*3+2] = m_retractLength;
             }
 
             break;
@@ -571,7 +581,7 @@ double HopTrjGenerator::HopOnce(
                     legTipPositionPole[i*3+1] = 0;
                     legTipPositionPole[i*3+2] = 
                         m_holdLength + 
-                        (m_thrustLength - m_holdLength)/2.0 * 
+                        (m_thrustLength - m_retractLength)/2.0 * 
                         (1 - cos(PI * (timeFromStart - m_lastStateShiftTime)/m_thrustingTime));
 
                 }
@@ -588,23 +598,51 @@ double HopTrjGenerator::HopOnce(
             break;
 
         case RETRACT:
-            for(int i = 0; i < 6; i++) {
-                legTipPositionPole[i*3+0] = 0;
-                legTipPositionPole[i*3+1] = 0;
-                legTipPositionPole[i*3+2] = 
-                    m_thrustLength + 
-                    (m_retractLength - m_thrustLength)/2.0 * 
-                    (1 - cos(PI * (timeFromStart - m_lastStateShiftTime)/m_retractingTime));
 
+            ti = timeFromStart - m_retractStartTime;
+            if (ti < m_retractingTime)
+            {
+                for(int i = 0; i < 6; i++) {
+                    legTipPositionPole[i*3+0] = 0;
+                    legTipPositionPole[i*3+1] = 0;
+                    legTipPositionPole[i*3+2] = 
+                        m_thrustLength + 
+                        (m_retractLength - m_thrustLength)/2.0 * 
+                        (1 - cos(PI * ti /m_retractingTime));
+
+                }
+            }
+            else
+            {
+                for(int i = 0; i < 6; i++) {
+                    legTipPositionPole[i*3+0] = 0;
+                    legTipPositionPole[i*3+1] = 0;
+                    legTipPositionPole[i*3+2] = m_retractLength;
+                }
             }
             break;
 
         case LANDING:
-            for(int i = 0; i < 6; i++) {
-                legTipPositionPole[i*3+0] = 0;
-                legTipPositionPole[i*3+1] = 0;
-                legTipPositionPole[i*3+2] = m_retractLength;
+            ti = timeFromStart - m_retractStartTime;
+            if (ti < m_retractingTime)
+            {
+                for(int i = 0; i < 6; i++) {
+                    legTipPositionPole[i*3+0] = 0;
+                    legTipPositionPole[i*3+1] = 0;
+                    legTipPositionPole[i*3+2] = 
+                        m_thrustLength + 
+                        (m_retractLength - m_thrustLength)/2.0 * 
+                        (1 - cos(PI * ti /m_retractingTime));
 
+                }
+            }
+            else
+            {
+                for(int i = 0; i < 6; i++) {
+                    legTipPositionPole[i*3+0] = 0;
+                    legTipPositionPole[i*3+1] = 0;
+                    legTipPositionPole[i*3+2] = m_retractLength;
+                }
             }
             break;
     }

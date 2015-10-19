@@ -262,39 +262,6 @@ int ImpedancePlanner::GenerateJointTrajectory(
     }
     else if (m_state == INMOTION)
     {
-        if (m_subState == HOLD_INIT_POS)
-        {
-            m_walkStartTime = timeNow; 
-
-            m_hopGenerator.HopOnce(
-                    0,
-                    false,
-                    m_currentTargetFootPos);
-        }
-        else if (m_subState == WALKING)
-
-        {
-            double timeFromStart = timeNow - m_walkStartTime;
-            m_walkStopTime = timeNow;
-
-            // when trj planning finished, switch to next state
-            if (timeFromStart >= m_trjGeneratorParam.totalPeriodCount * m_trjGeneratorParam.T)
-            {
-                m_subState = HOLD_END_POS;
-            }
-
-            m_hopGenerator.HopOnce(
-                    timeFromStart,
-                    false,
-                    m_currentTargetFootPos);
-        }
-        else if (m_subState == HOLD_END_POS)
-        {
-            m_hopGenerator.HopOnce(
-                    m_walkStopTime - m_walkStartTime,
-                    false,
-                    m_currentTargetFootPos);
-        }
         
         // re-initial desire force
         for( int i = 0; i < 18; i++)
@@ -355,7 +322,42 @@ int ImpedancePlanner::GenerateJointTrajectory(
                 m_lastIntegralValue[i] = m_currentIntegralValue[i];
             }
         }
-        
+       
+        // Generate the reference trajectory 
+        if (m_subState == HOLD_INIT_POS)
+        {
+            m_walkStartTime = timeNow; 
+
+            m_hopGenerator.HopOnce(
+                    0,
+                    false,
+                    m_currentTargetFootPos);
+        }
+        else if (m_subState == WALKING)
+
+        {
+            double timeFromStart = timeNow - m_walkStartTime;
+            m_walkStopTime = timeNow;
+
+            // when trj planning finished, switch to next state
+            if (timeFromStart >= m_trjGeneratorParam.totalPeriodCount * m_trjGeneratorParam.T)
+            {
+                m_subState = HOLD_END_POS;
+            }
+
+            m_hopGenerator.HopOnce(
+                    timeFromStart,
+                    (isBodyPoseBalanceOn && activeGroup == 2),  // indicating that all legs on the ground
+                    m_currentTargetFootPos);
+        }
+        else if (m_subState == HOLD_END_POS)
+        {
+            m_hopGenerator.HopOnce(
+                    m_walkStopTime - m_walkStartTime,
+                    false,
+                    m_currentTargetFootPos);
+        }
+
         // Do the impedance adjustment
         for( int i = 0; i < 6; i++)
         {
