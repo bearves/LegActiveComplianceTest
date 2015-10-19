@@ -495,13 +495,15 @@ HopTrjGenerator::HopTrjGenerator()
 int HopTrjGenerator::Initialize()
 {
     m_currentState = HopTrjGenerator::HOLD;
+    m_hopCount           = 0;
+    m_desireHopCount     = 4;
     m_lastStateShiftTime = 0;
-    m_retractStartTime = 0;
+    m_retractStartTime   = 0;
     
     m_holdingTime    = 5;
-    m_thrustingTime  = 0.24;
-    m_retractingTime = 0.32;
-    m_settlingTime   = 0.35;
+    m_thrustingTime  = 0.21;
+    m_retractingTime = 0.33;
+    m_settlingTime   = 0.38;
 
     m_holdLength     = 0.6;
     m_thrustLength   = 0.72;
@@ -548,10 +550,11 @@ double HopTrjGenerator::HopOnce(
             break;
 
         case LANDING:
-            if ( timeFromStart - m_lastStateShiftTime > m_settlingTime )
+            if ( timeFromStart - m_lastStateShiftTime > m_settlingTime && m_hopCount < m_desireHopCount - 1)
             {
                 nextState = THRUST;
                 m_lastStateShiftTime = timeFromStart;
+                m_hopCount++;
             }
             break;
     }

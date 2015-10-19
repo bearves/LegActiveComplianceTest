@@ -56,6 +56,9 @@ public:
     double m_thrustLength;
     double m_retractLength;
 
+    int m_hopCount;
+    int m_desireHopCount;
+
     HopTrjGenerator();
 
     int Initialize();

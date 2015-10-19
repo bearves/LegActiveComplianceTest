@@ -282,6 +282,8 @@ int ImpedancePlanner::GenerateJointTrajectory(
         // Adjust desire force according to the IMU feedback
         int activeGroup;
         bool isBodyPoseBalanceOn = bodyPoseBalanceCondition(m_forceTransfromed, activeGroup);
+        //isBodyPoseBalanceOn = true;
+        //activeGroup = 2;
         if ( isBodyPoseBalanceOn )
         {    
             isOnGround = true;
@@ -489,8 +491,8 @@ int ImpedancePlanner::ImpedanceControl(double* forceInput, double* forceDesire,
 
     if (legID == Model::Leg::LEG_ID_MB || legID == Model::Leg::LEG_ID_MF)
     {
-        K_use[2] *= 1.7;
-        B_use[2] *= 1.7;
+        K_use[2] *= 1.0;
+        B_use[2] *= 1.0;
     }
     
     for (int i = 0; i < 3; ++i) 
