@@ -501,8 +501,8 @@ int HopTrjGenerator::Initialize()
     m_retractStartTime   = 0;
     
     m_holdingTime    = 5;
-    m_thrustingTime  = 0.21;
-    m_retractingTime = 0.33;
+    m_thrustingTime  = 0.23;
+    m_retractingTime = 0.32;
     m_settlingTime   = 0.38;
 
     m_holdLength     = 0.6;
