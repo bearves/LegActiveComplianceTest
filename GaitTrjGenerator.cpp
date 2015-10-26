@@ -53,9 +53,9 @@ double WalkCxb(
 
     double legTipPoints[18]; // in cart coordinate
 
-    double xComOffset = 100;
+    double xComOffset = 40;
     double yComOffset = 0;
-    double xComOffsetUse = 100;
+    double xComOffsetUse = 40;
 
 
     if (timeFromStart < accTimeSpan)
