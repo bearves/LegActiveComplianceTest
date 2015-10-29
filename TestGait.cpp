@@ -12,43 +12,28 @@ int main(int argc, char *argv[])
     double legTipPoints[18];
     double screwLength[3];
     Model::Leg leg;
-    Model::HopTrjGenerator hopGenerator;
-
-    hopGenerator.Initialize();
 
     leg.SetID(0);
 
-    for(int timeCounter = 0; timeCounter < 6000; timeCounter++)
+    double TotalT = 4;
+    double tr = 0;
+    double p,v;
+
+    for(int timeCounter = 0; timeCounter < 4000; timeCounter++)
     {
         timeNow = timeCounter / 1000.0;
-        hopGenerator.HopOnce
-            ( timeNow,
-              false,
-              legTipPoints);
 
         cout << timeNow << "  "; 
-        for (int i = 0; i < 6; ++i) {
-            double *positionPole = &legTipPoints[i*3];
-            double l = positionPole[2]; 
-            double ty = positionPole[0];
-            double tx = positionPole[1];
-            double positionCart[3];
-            positionCart[0] = l * sin(ty);// X direction
-            positionCart[1] = l * sin(tx) * cos(ty); // Y direction
-            positionCart[2] = -l * cos(tx) * cos(ty); // Z direction
-            for(int j = 0; j < 3; j++)
-            {
-                cout << positionCart[j] << "   ";
-            }
-        }
+        tr = timeNow/TotalT; 
 
-        leg.InverseSolutionPole(legTipPoints, screwLength, false);
+        Spline2SegInterpolate(
+                TotalT,
+                -150, -60,
+                200, 0,
+                200, 
+                0.5, tr, p, v);
 
-        for(int j = 0; j < 3; j++)
-        {
-            cout << screwLength[j] << "   ";
-        }
-        cout << endl;
+        cout << p << "   " << v << "   " << endl;
     }
 
     return 0;

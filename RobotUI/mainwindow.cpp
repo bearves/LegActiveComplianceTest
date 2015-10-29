@@ -364,6 +364,18 @@ void MainWindow::ProcessCommand(QString cmd)
             m_robotMsgToSend.Copy(&param, sizeof(param));
             hasMessageToSend = true;
         }
+        else if (cmd.mid(5,3) == "stp")
+        {
+            m_robotMsgToSend.SetMsgID(RMID_SET_PARA_CXB);
+            RobotHighLevelControl::ParamCXB param = m_paramSetWindow->GetParamData();
+
+            param.gaitCommand      = RobotHighLevelControl::GAIT_SUB_COMMAND::GSC_STOP;
+            param.rotationAngle    = 0;
+
+            m_robotMsgToSend.SetLength(sizeof(param));
+            m_robotMsgToSend.Copy(&param, sizeof(param));
+            hasMessageToSend = true;
+        }
         else 
         {
             // get new param
@@ -371,7 +383,6 @@ void MainWindow::ProcessCommand(QString cmd)
             RobotHighLevelControl::ParamCXB param = m_paramSetWindow->GetParamData();
 
             param.gaitCommand      = RobotHighLevelControl::GAIT_SUB_COMMAND::GSC_START;
-            param.rotationAngle    = 0;
 
             m_robotMsgToSend.SetLength(sizeof(param));
             m_robotMsgToSend.Copy(&param, sizeof(param));
