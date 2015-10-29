@@ -408,17 +408,17 @@ int ImpedancePlanner::GenerateJointTrajectory(
                     imuFdbk.EulerAngle[1], 
                     imuFdbk.EulerAngle[2]);
             rt_printf("K: %9f  %9f  %9f\n", 
-                    K_ac[0], 
-                    K_ac[1], 
-                    K_ac[2]);
+                    K_ac[0][2], 
+                    K_ac[1][2], 
+                    K_ac[2][2]);
             rt_printf("B: %9f  %9f  %9f\n", 
-                    B_ac[0], 
-                    B_ac[1], 
-                    B_ac[2]);
+                    B_ac[0][2], 
+                    B_ac[1][2], 
+                    B_ac[2][2]);
             rt_printf("M: %9f  %9f  %9f\n", 
-                    M_ac[0], 
-                    M_ac[1], 
-                    M_ac[2]);
+                    M_ac[0][2], 
+                    M_ac[1][2], 
+                    M_ac[2][2]);
             rt_printf("State: %s\n", SUB_STATE_NAME[m_subState]);
             rt_printf("\n");
         }

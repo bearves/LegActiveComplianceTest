@@ -1,4 +1,5 @@
 #include "Aris_ControlData.h"
+#include "Planners.h"
 #include <fstream>
 #include <iostream>
 #include <errno.h>
@@ -9,9 +10,11 @@ using namespace Aris::RT_CONTROL;
 
 int main(int argc, char** argv)
 {
+    bool isLegacy = false;
     CMachineData data;
     int fileNameIndex = 1;
     int dataSize = 0;
+    RobotHighLevelControl::ControllerLogData conLogData;
 
     if (argc < 2)
     {
@@ -25,6 +28,7 @@ int main(int argc, char** argv)
         fileNameIndex = 2;
         // we use legacyData
         dataSize = sizeof(CMachineDataLegacy);
+        isLegacy = true;
     }
     else
     {
@@ -80,7 +84,29 @@ int main(int argc, char** argv)
         {
             fout << data.commandData[i].Position << "  ";
         }
-        fout << data.commandData[17].Position << endl;
+
+        if (!isLegacy)
+        {
+            fout << data.commandData[17].Position << "  ";
+
+            memcpy((void *)&conLogData, data.controlData, 
+                    sizeof(RobotHighLevelControl::ControllerLogData));
+
+            fout << conLogData.gaitState << "  ";
+            for(int i = 0; i < 5; i++){
+                fout << conLogData.targetPos[i] 
+                     << "  " << conLogData.adjustedPos[i]
+                     << "  " << conLogData.legForceOnZ[i] << "  ";
+            }
+            fout << conLogData.targetPos[5] 
+                << "  " << conLogData.adjustedPos[5]
+                << "  " << conLogData.legForceOnZ[5] << endl;
+            
+        }
+        else
+        {
+            fout << data.commandData[17].Position << endl;
+        }
     }
 
     fin.close();
