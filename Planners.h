@@ -102,12 +102,16 @@ namespace RobotHighLevelControl
             enum GAIT_SUB_STATE // for trj generator
             {
                 HOLD_INIT_POS = 0,
-                HOLD_A_LIFT_B = 1,
-                HOLD_B_LIFT_A = 2,
-                HOLD_END_POS  = 3
+                A_SP_B_LT     = 1,
+                A_TH_B_TD     = 2,
+                A_LT_B_LD     = 3,
+                A_LT_B_SP     = 4,
+                A_TD_B_TH     = 5,
+                A_LD_B_LT     = 6,
+                HOLD_END_POS  = 7
             };
 
-            static const char *SUB_STATE_NAME[4];
+            static const char *SUB_STATE_NAME[8];
 
             enum IMPD_MODE
             {
@@ -149,6 +153,11 @@ namespace RobotHighLevelControl
             double M_ac[6][3];
             double B_ac[6][3];
             double K_ac[6][3];
+
+            // Timing for gait state machine and trj generation
+            double Trt  = 0.3;
+            double Tset = 0.4;
+            double Tth  = 0.65;
             
             IMPD_PLANNER_STATE m_state;
             GAIT_SUB_STATE m_subState;

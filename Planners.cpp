@@ -114,11 +114,15 @@ const int ImpedancePlanner::LEG_INDEX_GROUP_A[3] = {Model::Leg::LEG_ID_MB, Model
 const int ImpedancePlanner::LEG_INDEX_GROUP_B[3] = {Model::Leg::LEG_ID_LB, Model::Leg::LEG_ID_RB, Model::Leg::LEG_ID_MF};
 const double ImpedancePlanner::IMPD_RATIO_A[3] = {1.8, 1, 1};
 const double ImpedancePlanner::IMPD_RATIO_B[3] = {1, 1, 1.8};
-const char * ImpedancePlanner::SUB_STATE_NAME[4] =
+const char * ImpedancePlanner::SUB_STATE_NAME[8] =
 {
     "HOLD_INIT_POS",
-    "HOLD_A",
-    "HOLD_B",
+    "A_SP_B_LT",
+    "A_TH_B_TD",
+    "A_LT_B_LD",
+    "A_LT_B_SP",
+    "A_TD_B_TH",
+    "A_LD_B_LT",
     "HOLD_END_POS"
 };
 
