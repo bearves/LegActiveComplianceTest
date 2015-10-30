@@ -168,12 +168,12 @@ int ImpedancePlanner::ResetInitialFootPos()
 int ImpedancePlanner::ResetImpedanceParam(int impedanceMode)
 { 
     double K_SOFT_LANDING[3] = {1e8, 1e8, 500};
-    double B_SOFT_LANDING[3] = {1e5, 1e5, 500};
-    double M_SOFT_LANDING[3] = {100, 100, 10};
+    double B_SOFT_LANDING[3] = {1e5, 1e5, 2000};
+    double M_SOFT_LANDING[3] = {100, 100, 20};
 
-    double K_MEDIUM_SOFT[3] = {1e8, 1e8, 30000};
-    double B_MEDIUM_SOFT[3] = {1e5, 1e5, 4000}; // actual damping ratio is much smaller than the desired
-    double M_MEDIUM_SOFT[3] = {100, 100, 10};
+    double K_MEDIUM_SOFT[3] = {1e8, 1e8, 40000};
+    double B_MEDIUM_SOFT[3] = {1e5, 1e5, 10000}; // actual damping ratio is much smaller than the desired
+    double M_MEDIUM_SOFT[3] = {100, 100, 20};
 
     switch (impedanceMode)
     { 
@@ -332,7 +332,14 @@ int ImpedancePlanner::GenerateJointTrajectory(
         // Forbid using IMU
         for (int i = 0; i < 18; ++i) 
         {
-            m_adjForceBP[i] = 0;
+            if (m_adjForceBP[i] > 2e3 )
+            {
+                m_adjForceBP[i] = 2e3;
+            }
+            else if (m_adjForceBP[i] < -2e3 )
+            {
+                m_adjForceBP[i] = -2e3;
+            }
         }
         for (int i = 0; i < 18; ++i) 
         {
@@ -535,9 +542,9 @@ int ImpedancePlanner::CalculateAdjForceBP(
         GAIT_SUB_STATE gaitState)
 {
                       //Roll, Pitch, Height
-    double KP_BP[3] = {  200,   200,     0};
+    double KP_BP[3] = { 1000,  1000,     0};
     double KI_BP[3] = {  200,   200,     0};
-    double KD_BP[3] = {   20,    20,     0};
+    double KD_BP[3] = {  100,   100,     0};
     double force[3];
     double th = 0.001;
 
@@ -656,6 +663,9 @@ void ImpedancePlanner::DetermineCurrentState(
                     m_lastOffset[LEG_INDEX_GROUP_A[i]*3 + 0] = 0;
                     m_lastOffset[LEG_INDEX_GROUP_A[i]*3 + 1] = 0;
                     m_lastOffset[LEG_INDEX_GROUP_A[i]*3 + 2] = 0;
+                    m_lastOffsetdot[LEG_INDEX_GROUP_A[i]*3 + 0] = 0;
+                    m_lastOffsetdot[LEG_INDEX_GROUP_A[i]*3 + 1] = 0;
+                    m_lastOffsetdot[LEG_INDEX_GROUP_A[i]*3 + 2] = 0;
                 }
                 // Also clear the pose balance states
                 ClearBalancePIDStates();
@@ -666,7 +676,7 @@ void ImpedancePlanner::DetermineCurrentState(
             break;
             
         case GAIT_SUB_STATE::HOLD_A_LIFT_B:
-            if (timeNow - m_lastStateShiftTime > 5.0)
+            if (timeNow - m_lastStateShiftTime > 10.0)
             {
                 if (cmdFlag == GAIT_SUB_COMMAND::GSC_STOP)
                 {
@@ -681,6 +691,9 @@ void ImpedancePlanner::DetermineCurrentState(
                         m_lastOffset[i*3 + 0] = 0;
                         m_lastOffset[i*3 + 1] = 0;
                         m_lastOffset[i*3 + 2] = 0;
+                        m_lastOffsetdot[i*3 + 0] = 0;
+                        m_lastOffsetdot[i*3 + 1] = 0;
+                        m_lastOffsetdot[i*3 + 2] = 0;
                     }
                 }
                 else
@@ -694,6 +707,9 @@ void ImpedancePlanner::DetermineCurrentState(
                         m_lastOffset[LEG_INDEX_GROUP_B[i]*3 + 0] = 0;
                         m_lastOffset[LEG_INDEX_GROUP_B[i]*3 + 1] = 0;
                         m_lastOffset[LEG_INDEX_GROUP_B[i]*3 + 2] = 0;
+                        m_lastOffsetdot[LEG_INDEX_GROUP_B[i]*3 + 0] = 0;
+                        m_lastOffsetdot[LEG_INDEX_GROUP_B[i]*3 + 1] = 0;
+                        m_lastOffsetdot[LEG_INDEX_GROUP_B[i]*3 + 2] = 0;
                     }
                 }
                 ClearBalancePIDStates();
@@ -702,7 +718,7 @@ void ImpedancePlanner::DetermineCurrentState(
             break;
 
         case GAIT_SUB_STATE::HOLD_B_LIFT_A:
-            if (timeNow - m_lastStateShiftTime > 5.0)
+            if (timeNow - m_lastStateShiftTime > 10.0)
             {
                 currentState = GAIT_SUB_STATE::HOLD_A_LIFT_B;
                 m_lastStateShiftTime = timeNow;
@@ -713,6 +729,9 @@ void ImpedancePlanner::DetermineCurrentState(
                     m_lastOffset[LEG_INDEX_GROUP_A[i]*3 + 0] = 0;
                     m_lastOffset[LEG_INDEX_GROUP_A[i]*3 + 1] = 0;
                     m_lastOffset[LEG_INDEX_GROUP_A[i]*3 + 2] = 0;
+                    m_lastOffsetdot[LEG_INDEX_GROUP_A[i]*3 + 0] = 0;
+                    m_lastOffsetdot[LEG_INDEX_GROUP_A[i]*3 + 1] = 0;
+                    m_lastOffsetdot[LEG_INDEX_GROUP_A[i]*3 + 2] = 0;
                 }
                 ClearBalancePIDStates();
                 UpdateTransitionPosVel();
@@ -732,6 +751,9 @@ void ImpedancePlanner::DetermineCurrentState(
                     m_lastOffset[LEG_INDEX_GROUP_A[i]*3 + 0] = 0;
                     m_lastOffset[LEG_INDEX_GROUP_A[i]*3 + 1] = 0;
                     m_lastOffset[LEG_INDEX_GROUP_A[i]*3 + 2] = 0;
+                    m_lastOffsetdot[LEG_INDEX_GROUP_A[i]*3 + 0] = 0;
+                    m_lastOffsetdot[LEG_INDEX_GROUP_A[i]*3 + 1] = 0;
+                    m_lastOffsetdot[LEG_INDEX_GROUP_A[i]*3 + 2] = 0;
                 }
                 ClearBalancePIDStates();
                 UpdateTransitionPosVel();
