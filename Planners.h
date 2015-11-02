@@ -260,7 +260,7 @@ namespace RobotHighLevelControl
             void SwingReferenceTrj(
                     double timeNow, double lastLiftTime,
                     double posAtLift, double velAtLift,
-                    double posRef, double velRef);
+                    double& posRef, double& velRef);
     };
 
 }

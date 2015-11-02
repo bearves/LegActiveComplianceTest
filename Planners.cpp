@@ -936,10 +936,10 @@ void ImpedancePlanner::GenerateReferenceTrj(
 
                 Model::HermitInterpolate(
                         Tth,
-                        m_lastShiftActPos[index*3 + 2], 
-                        m_lastShiftActVel[index*3 + 2], 
-                        m_lastShiftActPos[index*3 + 2] + stepLDHeight, 
-                        -0.2, 
+                        m_lastShiftRefPos[index*3 + 2], 
+                        m_lastShiftRefVel[index*3 + 2], 
+                        m_lastShiftRefPos[index*3 + 2] + stepLDHeight, 
+                        -0.1, 
                         tt, 
                         targetFootPos[index*3+2], 
                         targetFootVel[index*3+2]);
@@ -950,6 +950,7 @@ void ImpedancePlanner::GenerateReferenceTrj(
                     targetFootVel[index*3 + j] = m_lastShiftRefVel[index*3 + j];
                 }
             }
+            break;
 
         case GAIT_SUB_STATE::A_LT_B_LD:
             for(int i = 0; i < 3; i++)
@@ -1034,10 +1035,10 @@ void ImpedancePlanner::GenerateReferenceTrj(
 
                 Model::HermitInterpolate(
                         Tth,
-                        m_lastShiftActPos[index*3 + 2], 
-                        m_lastShiftActVel[index*3 + 2], 
-                        m_lastShiftActPos[index*3 + 2] + stepLDHeight, 
-                        -0.2, 
+                        m_lastShiftRefPos[index*3 + 2], 
+                        m_lastShiftRefVel[index*3 + 2], 
+                        m_lastShiftRefPos[index*3 + 2] + stepLDHeight, 
+                        -0.1, 
                         tt, 
                         targetFootPos[index*3+2], 
                         targetFootVel[index*3+2]);
@@ -1107,7 +1108,7 @@ void ImpedancePlanner::GenerateReferenceTrj(
 void ImpedancePlanner::SwingReferenceTrj(
         double timeNow, double lastLiftTime,
         double posAtLift, double velAtLift,
-        double posRef, double velRef)
+        double& posRef, double& velRef)
 {
     double tr = (timeNow - lastLiftTime) / Trt;
 
