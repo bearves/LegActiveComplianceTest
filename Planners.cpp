@@ -161,6 +161,7 @@ int ImpedancePlanner::Initialize()
 int ImpedancePlanner::ResetInitialFootPos()
 {
     GenerateReferenceTrj(
+            0,
             GAIT_SUB_STATE::HOLD_INIT_POS,
             m_beginFootPos,
             m_beginFootVel
@@ -356,7 +357,7 @@ int ImpedancePlanner::GenerateJointTrajectory(
         }
         
         // Generate the reference trajectory 
-        GenerateReferenceTrj(m_subState, m_currentTargetFootPos, m_currentTargetFootVel);
+        GenerateReferenceTrj(timeNow, m_subState, m_currentTargetFootPos, m_currentTargetFootVel);
 
         // Do the impedance adjustment
         for( int i = 0; i < 6; i++)
@@ -600,15 +601,21 @@ int ImpedancePlanner::CalculateAdjForceBP(
     {
         case GAIT_SUB_STATE::HOLD_INIT_POS:
             break;
-        case GAIT_SUB_STATE::HOLD_A_LIFT_B:
+        case GAIT_SUB_STATE::A_SP_B_LT:
+        case GAIT_SUB_STATE::A_TH_B_TD:
             adjForceBP[Leg::LEG_ID_RF*3 + 2] = -1.401 * force[0] - 0.535 * force[1] - 0.288 * force[2];
             adjForceBP[Leg::LEG_ID_LF*3 + 2] =  1.401 * force[0] - 0.535 * force[1] - 0.288 * force[2];
             adjForceBP[Leg::LEG_ID_MB*3 + 2] =      0 * force[0] + 1.070 * force[1] - 0.426 * force[2];
             break;
-        case GAIT_SUB_STATE::HOLD_B_LIFT_A:
+        case GAIT_SUB_STATE::A_LT_B_LD:
+            break;
+        case GAIT_SUB_STATE::A_LT_B_SP:
+        case GAIT_SUB_STATE::A_TD_B_TH:
             adjForceBP[Leg::LEG_ID_RB*3 + 2] = -1.401 * force[0] + 0.535 * force[1] - 0.288 * force[2];
             adjForceBP[Leg::LEG_ID_LB*3 + 2] =  1.401 * force[0] + 0.535 * force[1] - 0.288 * force[2];
             adjForceBP[Leg::LEG_ID_MF*3 + 2] =      0 * force[0] - 1.070 * force[1] - 0.426 * force[2];
+            break;
+        case GAIT_SUB_STATE::A_LD_B_LT:
             break;
         case GAIT_SUB_STATE::HOLD_END_POS:
             break;
@@ -619,7 +626,7 @@ int ImpedancePlanner::CalculateAdjForceBP(
 double ImpedancePlanner::CalculateCurrentHeight(double* currentFootPos, GAIT_SUB_STATE gaitState)
 {
     using Model::Leg;
-    double height = 0;
+    double height = standingHeight;
 
     switch (gaitState)
     {
@@ -630,13 +637,17 @@ double ImpedancePlanner::CalculateCurrentHeight(double* currentFootPos, GAIT_SUB
                 height = std::max(currentFootPos[i * 3 + 2], height);
             }
             break;
-        case GAIT_SUB_STATE::HOLD_A_LIFT_B:
+        case GAIT_SUB_STATE::A_SP_B_LT:
+        case GAIT_SUB_STATE::A_TH_B_TD:
+        case GAIT_SUB_STATE::A_LT_B_LD:
             for(int i = 0; i < 3; i++)
             {
                 height = std::max(currentFootPos[LEG_INDEX_GROUP_A[i] * 3 + 2], height);
             }
             break;
-        case GAIT_SUB_STATE::HOLD_B_LIFT_A:
+        case GAIT_SUB_STATE::A_LT_B_SP:
+        case GAIT_SUB_STATE::A_TD_B_TH:
+        case GAIT_SUB_STATE::A_LD_B_LT:
             for(int i = 0; i < 3; i++)
             {
                 height = std::max(currentFootPos[LEG_INDEX_GROUP_B[i] * 3 + 2], height);
@@ -656,31 +667,25 @@ void ImpedancePlanner::DetermineCurrentState(
         case GAIT_SUB_STATE::HOLD_INIT_POS:
             if (cmdFlag == GAIT_SUB_COMMAND::GSC_START)
             {
-                currentState = GAIT_SUB_STATE::HOLD_A_LIFT_B;
+                currentState = GAIT_SUB_STATE::A_SP_B_LT;
                 m_lastStateShiftTime = timeNow;
+                m_lastLiftUpTime     = timeNow;
                 cmdFlag = GAIT_SUB_COMMAND::GSC_NOCMD; // clear the command flag
 
                 // Reset Impedance param and clear the offsets 
                 ResetImpedanceParam(A_HARD_B_SOFT);
-                for(int i = 0; i < 3; i++)
-                {
-                    m_lastOffset[LEG_INDEX_GROUP_A[i]*3 + 0] = 0;
-                    m_lastOffset[LEG_INDEX_GROUP_A[i]*3 + 1] = 0;
-                    m_lastOffset[LEG_INDEX_GROUP_A[i]*3 + 2] = 0;
-                    m_lastOffsetdot[LEG_INDEX_GROUP_A[i]*3 + 0] = 0;
-                    m_lastOffsetdot[LEG_INDEX_GROUP_A[i]*3 + 1] = 0;
-                    m_lastOffsetdot[LEG_INDEX_GROUP_A[i]*3 + 2] = 0;
-                }
+                ClearImpedanceStates("A");
                 // Also clear the pose balance states
                 ClearBalancePIDStates();
                 
                 // Update the ref and act pos and vel at the state shift moment
                 UpdateTransitionPosVel();
+                UpdateLiftUpLegPosVel();
             }
             break;
             
-        case GAIT_SUB_STATE::HOLD_A_LIFT_B:
-            if (timeNow - m_lastStateShiftTime > 10.0)
+        case GAIT_SUB_STATE::A_SP_B_LT:
+            if (timeNow - m_lastStateShiftTime > Tset)
             {
                 if (cmdFlag == GAIT_SUB_COMMAND::GSC_STOP)
                 {
@@ -690,77 +695,98 @@ void ImpedancePlanner::DetermineCurrentState(
                     
                     // Reset Impedance param and clear the offsets 
                     ResetImpedanceParam(A_HARD_B_HARD);
-                    for(int i = 0; i < 6; i++)
-                    {
-                        m_lastOffset[i*3 + 0] = 0;
-                        m_lastOffset[i*3 + 1] = 0;
-                        m_lastOffset[i*3 + 2] = 0;
-                        m_lastOffsetdot[i*3 + 0] = 0;
-                        m_lastOffsetdot[i*3 + 1] = 0;
-                        m_lastOffsetdot[i*3 + 2] = 0;
-                    }
+                    ClearImpedanceStates("A");
+                    ClearImpedanceStates("B");
+                    ClearBalancePIDStates();
                 }
                 else
                 {
-                    currentState = GAIT_SUB_STATE::HOLD_B_LIFT_A;
+                    currentState = GAIT_SUB_STATE::A_TH_B_TD;
                     m_lastStateShiftTime = timeNow;
-                    // Reset Impedance param and clear the offsets 
-                    ResetImpedanceParam(A_SOFT_B_HARD);
-                    for(int i = 0; i < 3; i++)
-                    {
-                        m_lastOffset[LEG_INDEX_GROUP_B[i]*3 + 0] = 0;
-                        m_lastOffset[LEG_INDEX_GROUP_B[i]*3 + 1] = 0;
-                        m_lastOffset[LEG_INDEX_GROUP_B[i]*3 + 2] = 0;
-                        m_lastOffsetdot[LEG_INDEX_GROUP_B[i]*3 + 0] = 0;
-                        m_lastOffsetdot[LEG_INDEX_GROUP_B[i]*3 + 1] = 0;
-                        m_lastOffsetdot[LEG_INDEX_GROUP_B[i]*3 + 2] = 0;
-                    }
                 }
-                ClearBalancePIDStates();
                 UpdateTransitionPosVel();
             }
             break;
 
-        case GAIT_SUB_STATE::HOLD_B_LIFT_A:
-            if (timeNow - m_lastStateShiftTime > 10.0)
+        case GAIT_SUB_STATE::A_TH_B_TD:
+            if (timeNow - m_lastStateShiftTime > Tth)
             {
-                currentState = GAIT_SUB_STATE::HOLD_A_LIFT_B;
+                currentState = GAIT_SUB_STATE::A_LT_B_LD;
                 m_lastStateShiftTime = timeNow;
+                m_lastLiftUpTime     = timeNow;
+
                 // Reset Impedance param and clear the offsets 
-                ResetImpedanceParam(A_HARD_B_SOFT);
-                for(int i = 0; i < 3; i++)
-                {
-                    m_lastOffset[LEG_INDEX_GROUP_A[i]*3 + 0] = 0;
-                    m_lastOffset[LEG_INDEX_GROUP_A[i]*3 + 1] = 0;
-                    m_lastOffset[LEG_INDEX_GROUP_A[i]*3 + 2] = 0;
-                    m_lastOffsetdot[LEG_INDEX_GROUP_A[i]*3 + 0] = 0;
-                    m_lastOffsetdot[LEG_INDEX_GROUP_A[i]*3 + 1] = 0;
-                    m_lastOffsetdot[LEG_INDEX_GROUP_A[i]*3 + 2] = 0;
-                }
+                ResetImpedanceParam(A_SOFT_B_SOFT);
                 ClearBalancePIDStates();
                 UpdateTransitionPosVel();
+                // save the shift pos and vel for continous planning of swing legs
+                UpdateLiftUpLegPosVel();
+            }
+            break;
+
+        case GAIT_SUB_STATE::A_LT_B_LD:
+            if (AllLegOnGround("B") || timeNow - m_lastStateShiftTime > Tfly)
+            {
+                currentState = GAIT_SUB_STATE::A_LT_B_SP;
+                m_lastStateShiftTime = timeNow;
+                UpdateTransitionPosVel();
+                ResetImpedanceParam(A_SOFT_B_HARD);
+                ClearBalancePIDStates();
+                ClearImpedanceStates("B");
+            }
+            break;
+
+        case GAIT_SUB_STATE::A_LT_B_SP:
+            if (timeNow - m_lastStateShiftTime > Tset)
+            {
+                currentState = GAIT_SUB_STATE::A_TD_B_TH;
+                m_lastStateShiftTime = timeNow;
+                UpdateTransitionPosVel();
+            }
+            break;
+
+        case GAIT_SUB_STATE::A_TD_B_TH:
+            if (timeNow - m_lastStateShiftTime > Tth)
+            {
+                currentState = GAIT_SUB_STATE::A_LD_B_LT;
+                m_lastStateShiftTime = timeNow;
+                m_lastLiftUpTime     = timeNow;
+
+                // Reset Impedance param and clear the offsets 
+                ResetImpedanceParam(A_SOFT_B_SOFT);
+                ClearBalancePIDStates();
+                UpdateTransitionPosVel();
+                // save the shift pos and vel for continous planning of swing legs
+                UpdateLiftUpLegPosVel();
+            }
+            break;
+
+        case GAIT_SUB_STATE::A_LD_B_LT:
+            if (AllLegOnGround("A") || timeNow - m_lastStateShiftTime > Tfly)
+            {
+                currentState = GAIT_SUB_STATE::A_SP_B_LT;
+                m_lastStateShiftTime = timeNow;
+                UpdateTransitionPosVel();
+                ResetImpedanceParam(A_HARD_B_SOFT);
+                ClearBalancePIDStates();
+                ClearImpedanceStates("A");
             }
             break;
 
         case GAIT_SUB_STATE::HOLD_END_POS:
             if (cmdFlag == GAIT_SUB_COMMAND::GSC_START)
             {
-                currentState = GAIT_SUB_STATE::HOLD_A_LIFT_B;
+                currentState = GAIT_SUB_STATE::A_SP_B_LT;
                 m_lastStateShiftTime = timeNow;
+                m_lastLiftUpTime     = timeNow;
+
                 cmdFlag = GAIT_SUB_COMMAND::GSC_NOCMD; // clear the command flag
                 // Reset Impedance param and clear the offsets 
                 ResetImpedanceParam(A_HARD_B_SOFT);
-                for(int i = 0; i < 3; i++)
-                {
-                    m_lastOffset[LEG_INDEX_GROUP_A[i]*3 + 0] = 0;
-                    m_lastOffset[LEG_INDEX_GROUP_A[i]*3 + 1] = 0;
-                    m_lastOffset[LEG_INDEX_GROUP_A[i]*3 + 2] = 0;
-                    m_lastOffsetdot[LEG_INDEX_GROUP_A[i]*3 + 0] = 0;
-                    m_lastOffsetdot[LEG_INDEX_GROUP_A[i]*3 + 1] = 0;
-                    m_lastOffsetdot[LEG_INDEX_GROUP_A[i]*3 + 2] = 0;
-                }
+                ClearImpedanceStates("A");
                 ClearBalancePIDStates();
                 UpdateTransitionPosVel();
+                UpdateLiftUpLegPosVel();
             }
             break;
     }
@@ -795,6 +821,28 @@ int ImpedancePlanner::SetGaitParameter(const void* param, int dataLength)
     return 0;
 }
 
+void ImpedancePlanner::ClearImpedanceStates(const char* legGroupName)
+{
+    const int* groupList;
+    if (*legGroupName == 'A')
+    {
+        groupList = LEG_INDEX_GROUP_A;
+    }
+    else if (*legGroupName == 'B')
+    {
+        groupList = LEG_INDEX_GROUP_B;
+    }
+
+    for(int i = 0; i < 3; i++)
+    {
+        for( int j = 0; j < 3; j ++)
+        {
+            m_lastOffset[groupList[i]*3 + j] = 0;
+            m_lastOffsetdot[groupList[i]*3 + j] = 0;
+        }
+    }
+}
+
 void ImpedancePlanner::ClearBalancePIDStates()
 {
     for(int i = 0; i < 3; i++)
@@ -806,6 +854,7 @@ void ImpedancePlanner::ClearBalancePIDStates()
 }
 
 void ImpedancePlanner::GenerateReferenceTrj(
+        double timeNow,
         GAIT_SUB_STATE gaitState, 
         double* targetFootPos, 
         double* targetFootVel)
@@ -816,14 +865,16 @@ void ImpedancePlanner::GenerateReferenceTrj(
             // Hold at the initial position
             for(int i = 0; i < 3; i++)
             {
+                // Positions
                 targetFootPos[LEG_INDEX_GROUP_A[i]*3 + 0] = 0;
                 targetFootPos[LEG_INDEX_GROUP_A[i]*3 + 1] = 0;
-                targetFootPos[LEG_INDEX_GROUP_A[i]*3 + 2] = 0.71;
+                targetFootPos[LEG_INDEX_GROUP_A[i]*3 + 2] = standingHeight;
 
                 targetFootPos[LEG_INDEX_GROUP_B[i]*3 + 0] = 0;
                 targetFootPos[LEG_INDEX_GROUP_B[i]*3 + 1] = 0;
-                targetFootPos[LEG_INDEX_GROUP_B[i]*3 + 2] = 0.71;
+                targetFootPos[LEG_INDEX_GROUP_B[i]*3 + 2] = standingHeight;
 
+                // Velocities
                 targetFootVel[LEG_INDEX_GROUP_A[i]*3 + 0] = 0;
                 targetFootVel[LEG_INDEX_GROUP_A[i]*3 + 1] = 0;
                 targetFootVel[LEG_INDEX_GROUP_A[i]*3 + 2] = 0;
@@ -834,12 +885,18 @@ void ImpedancePlanner::GenerateReferenceTrj(
             }
             
             break;
-        case GAIT_SUB_STATE::HOLD_A_LIFT_B:
+        case GAIT_SUB_STATE::A_SP_B_LT:
             for(int i = 0; i < 3; i++)
             {
-                // B hold at the last transition ref place
+                // B Liftup and swing
                 int index = LEG_INDEX_GROUP_B[i];
-                for(int j = 0; j < 3; j++)
+                SwingReferenceTrj(
+                        timeNow,   m_lastLiftUpTime,
+                        m_lastLiftRefPos[index*3+2], m_lastLiftRefVel[index*3+2],
+                        targetFootPos[index*3+2],    targetFootVel[index*3+2]);
+
+                // leg angles of swing leg are not changed
+                for(int j = 0; j < 2; j++)
                 {
                     targetFootPos[index*3 + j] = m_lastShiftRefPos[index*3 + j];
                     targetFootVel[index*3 + j] = m_lastShiftRefVel[index*3 + j];
@@ -855,12 +912,89 @@ void ImpedancePlanner::GenerateReferenceTrj(
             }
             break;
 
-        case GAIT_SUB_STATE::HOLD_B_LIFT_A:
+        case GAIT_SUB_STATE::A_TH_B_TD:
             for(int i = 0; i < 3; i++)
             {
-                // A hold at the last transition ref place
+                // B swing
+                int index = LEG_INDEX_GROUP_B[i];
+                SwingReferenceTrj(
+                        timeNow,   m_lastLiftUpTime,
+                        m_lastLiftRefPos[index*3+2], m_lastLiftRefVel[index*3+2],
+                        targetFootPos[index*3+2],    targetFootVel[index*3+2]);
+
+                // leg angles of swing leg are not changed
+                for(int j = 0; j < 2; j++)
+                {
+                    targetFootPos[index*3 + j] = m_lastShiftRefPos[index*3 + j];
+                    targetFootVel[index*3 + j] = m_lastShiftRefVel[index*3 + j];
+                }
+                
+                // A extend to the original standing length 
+                index = LEG_INDEX_GROUP_A[i];
+
+                double tt = (timeNow - m_lastStateShiftTime) / Tth;
+
+                Model::HermitInterpolate(
+                        Tth,
+                        m_lastShiftActPos[index*3 + 2], 
+                        m_lastShiftActVel[index*3 + 2], 
+                        m_lastShiftActPos[index*3 + 2] + stepLDHeight, 
+                        -0.2, 
+                        tt, 
+                        targetFootPos[index*3+2], 
+                        targetFootVel[index*3+2]);
+
+                for(int j = 0; j < 2; j++)
+                {
+                    targetFootPos[index*3 + j] = m_lastShiftRefPos[index*3 + j];
+                    targetFootVel[index*3 + j] = m_lastShiftRefVel[index*3 + j];
+                }
+            }
+
+        case GAIT_SUB_STATE::A_LT_B_LD:
+            for(int i = 0; i < 3; i++)
+            {
+                // B hold at the pre-landing length
+                int index = LEG_INDEX_GROUP_B[i];
+                targetFootPos[index*3+2] = standingHeight - stepLDHeight;
+                targetFootVel[index*3+2] = 0;
+
+                // leg angles of swing leg are not changed
+                for(int j = 0; j < 2; j++)
+                {
+                    targetFootPos[index*3 + j] = m_lastShiftRefPos[index*3 + j];
+                    targetFootVel[index*3 + j] = m_lastShiftRefVel[index*3 + j];
+                }
+                
+                // A liftup and swing
+                index = LEG_INDEX_GROUP_A[i];
+
+                SwingReferenceTrj(
+                        timeNow,   m_lastLiftUpTime,
+                        m_lastLiftRefPos[index*3+2], m_lastLiftRefVel[index*3+2],
+                        targetFootPos[index*3+2],    targetFootVel[index*3+2]);
+
+                for(int j = 0; j < 2; j++)
+                {
+                    targetFootPos[index*3 + j] = m_lastShiftRefPos[index*3 + j];
+                    targetFootVel[index*3 + j] = m_lastShiftRefVel[index*3 + j];
+                }
+            }
+
+            break;
+
+        case GAIT_SUB_STATE::A_LT_B_SP:
+            for(int i = 0; i < 3; i++)
+            {
+                // A Liftup and swing
                 int index = LEG_INDEX_GROUP_A[i];
-                for(int j = 0; j < 3; j++)
+                SwingReferenceTrj(
+                        timeNow,   m_lastLiftUpTime,
+                        m_lastLiftRefPos[index*3+2], m_lastLiftRefVel[index*3+2],
+                        targetFootPos[index*3+2],    targetFootVel[index*3+2]);
+
+                // leg angles of swing leg are not changed
+                for(int j = 0; j < 2; j++)
                 {
                     targetFootPos[index*3 + j] = m_lastShiftRefPos[index*3 + j];
                     targetFootVel[index*3 + j] = m_lastShiftRefVel[index*3 + j];
@@ -874,6 +1008,78 @@ void ImpedancePlanner::GenerateReferenceTrj(
                     targetFootVel[index*3 + j] = m_lastShiftActVel[index*3 + j];
                 }
             }
+            break;
+
+        case GAIT_SUB_STATE::A_TD_B_TH:
+            for(int i = 0; i < 3; i++)
+            {
+                // A swing
+                int index = LEG_INDEX_GROUP_A[i];
+                SwingReferenceTrj(
+                        timeNow,   m_lastLiftUpTime,
+                        m_lastLiftRefPos[index*3+2], m_lastLiftRefVel[index*3+2],
+                        targetFootPos[index*3+2],    targetFootVel[index*3+2]);
+
+                // leg angles of swing leg are not changed
+                for(int j = 0; j < 2; j++)
+                {
+                    targetFootPos[index*3 + j] = m_lastShiftRefPos[index*3 + j];
+                    targetFootVel[index*3 + j] = m_lastShiftRefVel[index*3 + j];
+                }
+                
+                // B extend to the original standing length 
+                index = LEG_INDEX_GROUP_B[i];
+
+                double tt = (timeNow - m_lastStateShiftTime) / Tth;
+
+                Model::HermitInterpolate(
+                        Tth,
+                        m_lastShiftActPos[index*3 + 2], 
+                        m_lastShiftActVel[index*3 + 2], 
+                        m_lastShiftActPos[index*3 + 2] + stepLDHeight, 
+                        -0.2, 
+                        tt, 
+                        targetFootPos[index*3+2], 
+                        targetFootVel[index*3+2]);
+
+                for(int j = 0; j < 2; j++)
+                {
+                    targetFootPos[index*3 + j] = m_lastShiftRefPos[index*3 + j];
+                    targetFootVel[index*3 + j] = m_lastShiftRefVel[index*3 + j];
+                }
+            }
+            break;
+
+        case GAIT_SUB_STATE::A_LD_B_LT:
+            for(int i = 0; i < 3; i++)
+            {
+                // A hold at the pre-landing length
+                int index = LEG_INDEX_GROUP_A[i];
+                targetFootPos[index*3+2] = standingHeight - stepLDHeight;
+                targetFootVel[index*3+2] = 0;
+
+                // leg angles of swing leg are not changed
+                for(int j = 0; j < 2; j++)
+                {
+                    targetFootPos[index*3 + j] = m_lastShiftRefPos[index*3 + j];
+                    targetFootVel[index*3 + j] = m_lastShiftRefVel[index*3 + j];
+                }
+                
+                // B liftup and swing
+                index = LEG_INDEX_GROUP_B[i];
+
+                SwingReferenceTrj(
+                        timeNow,   m_lastLiftUpTime,
+                        m_lastLiftRefPos[index*3+2], m_lastLiftRefVel[index*3+2],
+                        targetFootPos[index*3+2],    targetFootVel[index*3+2]);
+
+                for(int j = 0; j < 2; j++)
+                {
+                    targetFootPos[index*3 + j] = m_lastShiftRefPos[index*3 + j];
+                    targetFootVel[index*3 + j] = m_lastShiftRefVel[index*3 + j];
+                }
+            }
+            break;
 
         case GAIT_SUB_STATE::HOLD_END_POS:
             for(int i = 0; i < 3; i++)
@@ -898,6 +1104,42 @@ void ImpedancePlanner::GenerateReferenceTrj(
     }
 }
 
+void ImpedancePlanner::SwingReferenceTrj(
+        double timeNow, double lastLiftTime,
+        double posAtLift, double velAtLift,
+        double posRef, double velRef)
+{
+    double tr = (timeNow - lastLiftTime) / Trt;
+
+    double Text = (Tset + Tth - Trt - 0.03);
+    double tk = (timeNow - lastLiftTime - Trt) / Text;
+
+    if (tr < 1)  // retracting phase
+    {
+        Model::HermitInterpolate(
+                Trt,
+                posAtLift, velAtLift, 
+                standingHeight - stepHeight, 0, 
+                tr, 
+                posRef, velRef);
+    }
+    else if (tk < 1) // extending phase
+    {
+        Model::Spline2SegInterpolate(
+                Text,
+                standingHeight - stepHeight, 0, 
+                standingHeight - stepLDHeight, 0, 
+                standingHeight - (stepHeight + stepLDHeight)/2, 0.7, // t1 is normalized 
+                tk, 
+                posRef, velRef);
+    }
+    else
+    {
+        posRef = standingHeight - stepLDHeight;
+        velRef = 0;
+    }
+}
+
 void ImpedancePlanner::UpdateTransitionPosVel()
 {
     for(int i = 0; i < 6; i++)
@@ -910,4 +1152,40 @@ void ImpedancePlanner::UpdateTransitionPosVel()
             m_lastShiftRefVel[i*3 + j] = m_currentTargetFootVel[i*3 + j]; 
         }
     }
+}
+
+void ImpedancePlanner::UpdateLiftUpLegPosVel()
+{
+    for(int i = 0; i < 6; i++)
+    {
+        for(int j = 0; j < 3; j++)
+        {
+            m_lastLiftActPos[i*3 + j] = m_currentAdjustedFootPos[i*3 + j];
+            m_lastLiftActVel[i*3 + j] = m_currentAdjustedFootVel[i*3 + j]; 
+            m_lastLiftRefPos[i*3 + j] = m_currentTargetFootPos[i*3 + j];
+            m_lastLiftRefVel[i*3 + j] = m_currentTargetFootVel[i*3 + j]; 
+        }
+    }
+}
+
+
+bool ImpedancePlanner::AllLegOnGround(const char* legGroupName)
+{
+
+    const int* groupList;
+    if (*legGroupName == 'A')
+    {
+        groupList = LEG_INDEX_GROUP_A;
+    }
+    else if (*legGroupName == 'B')
+    {
+        groupList = LEG_INDEX_GROUP_B;
+    }
+
+    bool result =  
+        ( m_forceTransfromed[groupList[0]*3 + 2] > 50 ) &&
+        ( m_forceTransfromed[groupList[1]*3 + 2] > 50 ) &&
+        ( m_forceTransfromed[groupList[2]*3 + 2] > 50 );
+                   
+    return result;
 }

@@ -14,7 +14,7 @@ namespace Model
 
 // Hermit interpolation given the position and velocity at the beginning and the ending point
 // Note: the time is normalized.
-void HermitInterpolate(
+static void HermitInterpolate(
         double T,
         double y0, 
         double v0, 
@@ -37,7 +37,7 @@ void HermitInterpolate(
 
 // Cubic spline only for 2 segment interpolation
 // Note: the time is normalized
-void Spline2SegInterpolate(
+static void Spline2SegInterpolate(
         double T,
         double y0, 
         double v0, 
