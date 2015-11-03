@@ -28,20 +28,19 @@ tplt = time / 1.0
 
 plt.subplot(3,1,1)
 plt.plot(tplt, axis[81])
-plt.xlim([32, 40])
+plt.xlim([210, 230])
 
 plt.subplot(3,1,2)
 for i in range(6):
-    plt.plot(tplt, axis[82+i*3+1])
-plt.xlim([32, 40])
+    plt.plot(tplt, axis[82+i*3+0])
+plt.xlim([210, 230])
 plt.ylim([0.6,0.75])
 
 plt.subplot(3,1,3)
 for i in range(6):
-    plt.plot(tplt, axis[82+i*3+0])
-plt.xlim([32, 40])
-plt.ylim([0.6,0.75])
-#plt.xlim([325, 335])
+    plt.plot(tplt, axis[82+i*3+2])
+plt.xlim([210, 230])
+#plt.ylim([0.6,0.75])
 
 plt.show()
 

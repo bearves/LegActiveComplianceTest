@@ -109,7 +109,7 @@ int GoToPointPlanner::GenerateJointTrajectory(double timeNow, double* currentPoi
 
 const double ImpedancePlanner::FOOT_POS_UP_LIMIT[3]  = { Model::PI/9,  Model::PI/36, 0.76};
 const double ImpedancePlanner::FOOT_POS_LOW_LIMIT[3] = {-Model::PI/9, -Model::PI/36, 0.5};
-const double ImpedancePlanner::FORCE_DEADZONE[3]     = { 2.5, 2.5, 8 };
+const double ImpedancePlanner::FORCE_DEADZONE[3]     = { 2.5, 2.5, 10 };
 const int ImpedancePlanner::LEG_INDEX_GROUP_A[3] = {Model::Leg::LEG_ID_MB, Model::Leg::LEG_ID_RF, Model::Leg::LEG_ID_LF};
 const int ImpedancePlanner::LEG_INDEX_GROUP_B[3] = {Model::Leg::LEG_ID_LB, Model::Leg::LEG_ID_RB, Model::Leg::LEG_ID_MF};
 const double ImpedancePlanner::IMPD_RATIO_A[3] = {1.8, 1, 1};
@@ -547,9 +547,9 @@ int ImpedancePlanner::CalculateAdjForceBP(
         GAIT_SUB_STATE gaitState)
 {
                       //Roll, Pitch, Height
-    double KP_BP[3] = { 1000,  1000,     0};
-    double KI_BP[3] = {  200,   200,     0};
-    double KD_BP[3] = {  100,   100,     0};
+    double KP_BP[3] = { 20000,  20000,     0};
+    double KI_BP[3] = {  2000,   2000,     0};
+    double KD_BP[3] = {  2000,   2000,     0};
     double force[3];
     double th = 0.001;
 
@@ -585,7 +585,7 @@ int ImpedancePlanner::CalculateAdjForceBP(
     }
 
     // Gravity Compensation of body height
-    force[2] += -9.81 * 260;
+    force[2] += -9.81 * 268;
 
     // Force distribution
     using Model::Leg;
@@ -868,11 +868,11 @@ void ImpedancePlanner::GenerateReferenceTrj(
                 // Positions
                 targetFootPos[LEG_INDEX_GROUP_A[i]*3 + 0] = 0;
                 targetFootPos[LEG_INDEX_GROUP_A[i]*3 + 1] = 0;
-                targetFootPos[LEG_INDEX_GROUP_A[i]*3 + 2] = standingHeight;
+                targetFootPos[LEG_INDEX_GROUP_A[i]*3 + 2] = standingHeight - stepLDHeight;
 
                 targetFootPos[LEG_INDEX_GROUP_B[i]*3 + 0] = 0;
                 targetFootPos[LEG_INDEX_GROUP_B[i]*3 + 1] = 0;
-                targetFootPos[LEG_INDEX_GROUP_B[i]*3 + 2] = standingHeight;
+                targetFootPos[LEG_INDEX_GROUP_B[i]*3 + 2] = standingHeight - stepLDHeight;
 
                 // Velocities
                 targetFootVel[LEG_INDEX_GROUP_A[i]*3 + 0] = 0;
@@ -907,7 +907,7 @@ void ImpedancePlanner::GenerateReferenceTrj(
                 for(int j = 0; j < 3; j++)
                 {
                     targetFootPos[index*3 + j] = m_lastShiftActPos[index*3 + j];
-                    targetFootVel[index*3 + j] = m_lastShiftActVel[index*3 + j];
+                    targetFootVel[index*3 + j] = 0; 
                 }
             }
             break;
@@ -1006,7 +1006,7 @@ void ImpedancePlanner::GenerateReferenceTrj(
                 for(int j = 0; j < 3; j++)
                 {
                     targetFootPos[index*3 + j] = m_lastShiftActPos[index*3 + j];
-                    targetFootVel[index*3 + j] = m_lastShiftActVel[index*3 + j];
+                    targetFootVel[index*3 + j] = 0;
                 }
             }
             break;
