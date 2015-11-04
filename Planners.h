@@ -157,8 +157,8 @@ namespace RobotHighLevelControl
 
             // Timing for gait state machine and trj generation
             double Trt  = 0.3;
-            double Tset = 0.5;
-            double Tth  = 0.5;
+            double Tset = 0.25;
+            double Tth  = 0.35;
             double Tfly = 0.15; // the maximum flying time
             double stepHeight = 0.08;
             double stepLDHeight = 0.02;

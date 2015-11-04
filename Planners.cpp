@@ -173,11 +173,11 @@ int ImpedancePlanner::ResetInitialFootPos()
 int ImpedancePlanner::ResetImpedanceParam(int impedanceMode)
 { 
     double K_SOFT_LANDING[3] = {1e8, 1e8, 500};
-    double B_SOFT_LANDING[3] = {1e5, 1e5, 2000};
+    double B_SOFT_LANDING[3] = {1e5, 1e5, 1500};
     double M_SOFT_LANDING[3] = {100, 100, 20};
 
     double K_MEDIUM_SOFT[3] = {1e8, 1e8, 40000};
-    double B_MEDIUM_SOFT[3] = {1e5, 1e5, 10000}; // actual damping ratio is much smaller than the desired
+    double B_MEDIUM_SOFT[3] = {1e5, 1e5, 6000}; // actual damping ratio is much smaller than the desired
     double M_MEDIUM_SOFT[3] = {100, 100, 20};
 
     switch (impedanceMode)
@@ -939,7 +939,7 @@ void ImpedancePlanner::GenerateReferenceTrj(
                         m_lastShiftRefPos[index*3 + 2], 
                         m_lastShiftRefVel[index*3 + 2], 
                         m_lastShiftRefPos[index*3 + 2] + stepLDHeight, 
-                        -0.1, 
+                        -0.05, 
                         tt, 
                         targetFootPos[index*3+2], 
                         targetFootVel[index*3+2]);
@@ -1038,7 +1038,7 @@ void ImpedancePlanner::GenerateReferenceTrj(
                         m_lastShiftRefPos[index*3 + 2], 
                         m_lastShiftRefVel[index*3 + 2], 
                         m_lastShiftRefPos[index*3 + 2] + stepLDHeight, 
-                        -0.1, 
+                        -0.05, 
                         tt, 
                         targetFootPos[index*3+2], 
                         targetFootVel[index*3+2]);
@@ -1130,7 +1130,7 @@ void ImpedancePlanner::SwingReferenceTrj(
                 Text,
                 standingHeight - stepHeight, 0, 
                 standingHeight - stepLDHeight, 0, 
-                standingHeight - (stepHeight + stepLDHeight)/2, 0.7, // t1 is normalized 
+                standingHeight - (stepHeight + stepLDHeight)/2, 0.6, // t1 is normalized 
                 tk, 
                 posRef, velRef);
     }
@@ -1184,9 +1184,9 @@ bool ImpedancePlanner::AllLegOnGround(const char* legGroupName)
     }
 
     bool result =  
-        ( m_forceTransfromed[groupList[0]*3 + 2] > 50 ) &&
-        ( m_forceTransfromed[groupList[1]*3 + 2] > 50 ) &&
-        ( m_forceTransfromed[groupList[2]*3 + 2] > 50 );
+        ( m_forceTransfromed[groupList[0]*3 + 2] > 100 ) &&
+        ( m_forceTransfromed[groupList[1]*3 + 2] > 100 ) &&
+        ( m_forceTransfromed[groupList[2]*3 + 2] > 100 );
                    
     return result;
 }
