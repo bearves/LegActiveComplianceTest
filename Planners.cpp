@@ -670,6 +670,7 @@ void ImpedancePlanner::DetermineCurrentState(
                 currentState = GAIT_SUB_STATE::A_SP_B_LT;
                 m_lastStateShiftTime = timeNow;
                 m_lastLiftUpTime     = timeNow;
+                m_lastTouchDownTime  = timeNow;
                 cmdFlag = GAIT_SUB_COMMAND::GSC_NOCMD; // clear the command flag
 
                 // Reset Impedance param and clear the offsets 
@@ -729,6 +730,7 @@ void ImpedancePlanner::DetermineCurrentState(
             {
                 currentState = GAIT_SUB_STATE::A_LT_B_SP;
                 m_lastStateShiftTime = timeNow;
+                m_lastTouchDownTime  = timeNow;
                 UpdateTransitionPosVel();
                 ResetImpedanceParam(A_SOFT_B_HARD);
                 ClearBalancePIDStates();
@@ -766,6 +768,7 @@ void ImpedancePlanner::DetermineCurrentState(
             {
                 currentState = GAIT_SUB_STATE::A_SP_B_LT;
                 m_lastStateShiftTime = timeNow;
+                m_lastTouchDownTime  = timeNow;
                 UpdateTransitionPosVel();
                 ResetImpedanceParam(A_HARD_B_SOFT);
                 ClearBalancePIDStates();
@@ -891,7 +894,7 @@ void ImpedancePlanner::GenerateReferenceTrj(
                 // B Liftup and swing
                 int index = LEG_INDEX_GROUP_B[i];
                 SwingReferenceTrj(
-                        timeNow,   m_lastLiftUpTime,
+                        timeNow,   m_lastLiftUpTime, m_lastTouchDownTime,
                         m_lastLiftRefPos[index*3+2], m_lastLiftRefVel[index*3+2],
                         targetFootPos[index*3+2],    targetFootVel[index*3+2]);
 
@@ -918,7 +921,7 @@ void ImpedancePlanner::GenerateReferenceTrj(
                 // B swing
                 int index = LEG_INDEX_GROUP_B[i];
                 SwingReferenceTrj(
-                        timeNow,   m_lastLiftUpTime,
+                        timeNow,   m_lastLiftUpTime, m_lastTouchDownTime,
                         m_lastLiftRefPos[index*3+2], m_lastLiftRefVel[index*3+2],
                         targetFootPos[index*3+2],    targetFootVel[index*3+2]);
 
@@ -971,7 +974,7 @@ void ImpedancePlanner::GenerateReferenceTrj(
                 index = LEG_INDEX_GROUP_A[i];
 
                 SwingReferenceTrj(
-                        timeNow,   m_lastLiftUpTime,
+                        timeNow,   m_lastLiftUpTime, m_lastTouchDownTime,
                         m_lastLiftRefPos[index*3+2], m_lastLiftRefVel[index*3+2],
                         targetFootPos[index*3+2],    targetFootVel[index*3+2]);
 
@@ -990,7 +993,7 @@ void ImpedancePlanner::GenerateReferenceTrj(
                 // A Liftup and swing
                 int index = LEG_INDEX_GROUP_A[i];
                 SwingReferenceTrj(
-                        timeNow,   m_lastLiftUpTime,
+                        timeNow,   m_lastLiftUpTime, m_lastTouchDownTime,
                         m_lastLiftRefPos[index*3+2], m_lastLiftRefVel[index*3+2],
                         targetFootPos[index*3+2],    targetFootVel[index*3+2]);
 
@@ -1017,7 +1020,7 @@ void ImpedancePlanner::GenerateReferenceTrj(
                 // A swing
                 int index = LEG_INDEX_GROUP_A[i];
                 SwingReferenceTrj(
-                        timeNow,   m_lastLiftUpTime,
+                        timeNow,   m_lastLiftUpTime, m_lastTouchDownTime,
                         m_lastLiftRefPos[index*3+2], m_lastLiftRefVel[index*3+2],
                         targetFootPos[index*3+2],    targetFootVel[index*3+2]);
 
@@ -1070,7 +1073,7 @@ void ImpedancePlanner::GenerateReferenceTrj(
                 index = LEG_INDEX_GROUP_B[i];
 
                 SwingReferenceTrj(
-                        timeNow,   m_lastLiftUpTime,
+                        timeNow,   m_lastLiftUpTime, m_lastTouchDownTime,
                         m_lastLiftRefPos[index*3+2], m_lastLiftRefVel[index*3+2],
                         targetFootPos[index*3+2],    targetFootVel[index*3+2]);
 
@@ -1106,13 +1109,13 @@ void ImpedancePlanner::GenerateReferenceTrj(
 }
 
 void ImpedancePlanner::SwingReferenceTrj(
-        double timeNow, double lastLiftTime,
+        double timeNow, double lastLiftTime, double lastTDTime,
         double posAtLift, double velAtLift,
         double& posRef, double& velRef)
 {
     double tr = (timeNow - lastLiftTime) / Trt;
 
-    double Text = (Tset + Tth - Trt - 0.03);
+    double Text = (Tset + Tth - Trt + (lastTDTime - lastLiftTime) - 0.03);
     double tk = (timeNow - lastLiftTime - Trt) / Text;
 
     if (tr < 1)  // retracting phase
