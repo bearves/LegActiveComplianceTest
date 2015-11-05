@@ -905,9 +905,22 @@ void ImpedancePlanner::GenerateReferenceTrj(
                     targetFootVel[index*3 + j] = m_lastShiftRefVel[index*3 + j];
                 }
                 
-                // A hold at the last transition actual place
+                // A retract very little from the actual TD place 
                 index = LEG_INDEX_GROUP_A[i];
-                for(int j = 0; j < 3; j++)
+
+                double tt = (timeNow - m_lastStateShiftTime) / Tset;
+                double estimateTouchdownVel = (m_lastTouchDownTime - m_lastLiftUpTime) * -9.81 * 0.5;
+
+                Model::HermitInterpolate(
+                        Tset,
+                        m_lastShiftActPos[index*3 + 2], 
+                        estimateTouchdownVel, 
+                        m_lastShiftActPos[index*3 + 2],
+                        0.05, 
+                        tt, 
+                        targetFootPos[index*3+2], 
+                        targetFootVel[index*3+2]);
+                for(int j = 0; j < 2; j++)
                 {
                     targetFootPos[index*3 + j] = m_lastShiftActPos[index*3 + j];
                     targetFootVel[index*3 + j] = 0; 
@@ -1004,12 +1017,25 @@ void ImpedancePlanner::GenerateReferenceTrj(
                     targetFootVel[index*3 + j] = m_lastShiftRefVel[index*3 + j];
                 }
                 
-                // B hold at the last transition actual place
+                // B retract very little from the actual TD place 
                 index = LEG_INDEX_GROUP_B[i];
-                for(int j = 0; j < 3; j++)
+
+                double tt = (timeNow - m_lastStateShiftTime) / Tset;
+                double estimateTouchdownVel = (m_lastTouchDownTime - m_lastLiftUpTime) * -9.81 * 0.5;
+
+                Model::HermitInterpolate(
+                        Tset,
+                        m_lastShiftActPos[index*3 + 2], 
+                        estimateTouchdownVel,
+                        m_lastShiftActPos[index*3 + 2],
+                        0.05, 
+                        tt, 
+                        targetFootPos[index*3+2], 
+                        targetFootVel[index*3+2]);
+                for(int j = 0; j < 2; j++)
                 {
                     targetFootPos[index*3 + j] = m_lastShiftActPos[index*3 + j];
-                    targetFootVel[index*3 + j] = 0;
+                    targetFootVel[index*3 + j] = 0; 
                 }
             }
             break;
