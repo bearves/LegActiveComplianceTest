@@ -118,8 +118,8 @@ int CGait::RunGait(double timeNow, EGAIT* p_gait,Aris::RT_CONTROL::CMachineData&
 {
     // data.commandData -> m_feedbackDataMapped
     MapFeedbackDataIn(data);
-    //CURRENT STAGE: the scale of the first two FSR is 1000 times of the others, so we firstly adjust them to the same scale
-    for( int i = 0; i < 2; i++)
+    //CURRENT STAGE: the scale of the first one FSR is 1000 times of the others, so we firstly adjust them to the same scale
+    for( int i = 0; i < 1; i++)
     {
         for ( int j = 0; j < 6; j++)
             data.forceData[MapAbsToPhyForceSensor[i]].forceValues[j] /= 1000.0;
