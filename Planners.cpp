@@ -1115,7 +1115,7 @@ void ImpedancePlanner::SwingReferenceTrj(
 {
     double tr = (timeNow - lastLiftTime) / Trt;
 
-    double Text = (Tset + Tth - Trt + (lastTDTime - lastLiftTime) - 0.03);
+    double Text = (Tset + Tth - Trt + (lastTDTime - lastLiftTime) - 0.0);
     double tk = (timeNow - lastLiftTime - Trt) / Text;
 
     if (tr < 1)  // retracting phase

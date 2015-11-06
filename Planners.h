@@ -160,9 +160,9 @@ namespace RobotHighLevelControl
             double Tset = 0.3;
             double Tth  = 0.36;
             double Tfly = 0.15; // the maximum flying time
-            double stepHeight = 0.08;
+            double stepHeight = 0.14;
             double stepLDHeight = 0.02;
-            double standingHeight = 0.71;
+            double standingHeight = 0.725;
 
             
             IMPD_PLANNER_STATE m_state;
