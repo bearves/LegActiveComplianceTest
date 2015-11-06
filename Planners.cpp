@@ -909,14 +909,14 @@ void ImpedancePlanner::GenerateReferenceTrj(
                 index = LEG_INDEX_GROUP_A[i];
 
                 double tt = (timeNow - m_lastStateShiftTime) / Tset;
-                double estimateTouchdownVel = (m_lastTouchDownTime - m_lastLiftUpTime) * -9.81 * 0.5;
+                double estimateTouchdownVel = (m_lastTouchDownTime - m_lastLiftUpTime) * -9.81 * 0.1;
 
                 Model::HermitInterpolate(
                         Tset,
                         m_lastShiftActPos[index*3 + 2], 
                         estimateTouchdownVel, 
                         m_lastShiftActPos[index*3 + 2],
-                        0.05, 
+                        -estimateTouchdownVel/2, 
                         tt, 
                         targetFootPos[index*3+2], 
                         targetFootVel[index*3+2]);
@@ -954,7 +954,7 @@ void ImpedancePlanner::GenerateReferenceTrj(
                         Tth,
                         m_lastShiftRefPos[index*3 + 2], 
                         m_lastShiftRefVel[index*3 + 2], 
-                        m_lastShiftRefPos[index*3 + 2] + stepLDHeight, 
+                        m_lastShiftRefPos[index*3 + 2] + stepTHHeight, 
                         -0.05, 
                         tt, 
                         targetFootPos[index*3+2], 
@@ -1021,14 +1021,14 @@ void ImpedancePlanner::GenerateReferenceTrj(
                 index = LEG_INDEX_GROUP_B[i];
 
                 double tt = (timeNow - m_lastStateShiftTime) / Tset;
-                double estimateTouchdownVel = (m_lastTouchDownTime - m_lastLiftUpTime) * -9.81 * 0.5;
+                double estimateTouchdownVel = (m_lastTouchDownTime - m_lastLiftUpTime) * -9.81 * 0.1;
 
                 Model::HermitInterpolate(
                         Tset,
                         m_lastShiftActPos[index*3 + 2], 
                         estimateTouchdownVel,
                         m_lastShiftActPos[index*3 + 2],
-                        0.05, 
+                        -estimateTouchdownVel/2, 
                         tt, 
                         targetFootPos[index*3+2], 
                         targetFootVel[index*3+2]);
@@ -1066,7 +1066,7 @@ void ImpedancePlanner::GenerateReferenceTrj(
                         Tth,
                         m_lastShiftRefPos[index*3 + 2], 
                         m_lastShiftRefVel[index*3 + 2], 
-                        m_lastShiftRefPos[index*3 + 2] + stepLDHeight, 
+                        m_lastShiftRefPos[index*3 + 2] + stepTHHeight, 
                         -0.05, 
                         tt, 
                         targetFootPos[index*3+2], 
@@ -1141,7 +1141,7 @@ void ImpedancePlanner::SwingReferenceTrj(
 {
     double tr = (timeNow - lastLiftTime) / Trt;
 
-    double Text = (Tset + Tth - Trt + (lastTDTime - lastLiftTime) - 0.03);
+    double Text = (Tset + Tth - Trt + (lastTDTime - lastLiftTime) - 0.0);
     double tk = (timeNow - lastLiftTime - Trt) / Text;
 
     if (tr < 1)  // retracting phase
