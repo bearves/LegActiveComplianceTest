@@ -99,4 +99,11 @@ add_executable(TestGait ${SOURCE_FILES})
 target_link_libraries(TestGait ${SYSTEM_LINK_LIBS})
 endif(UNIX)
 
+if(WIN32)
+set(SOURCE_FILES ./LogDataReader.cpp)
+PREPEND(FULL_SRC PRT ${SOURCE_FILES})
+add_executable(LogDataReader ${SOURCE_FILES})
+target_link_libraries(LogDataReader ${ARIS_NORT_LINK_LIBS})
+endif(WIN32)
+
 add_subdirectory(RobotUI)
