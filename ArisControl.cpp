@@ -305,12 +305,12 @@ int tg(Aris::RT_CONTROL::CMachineData& machineData,
 //offsets driver order
 static int HEXBOT_HOME_OFFSETS_RESOLVER_CUSTOM[18] =
 {
-   50421,  6453, 71942,  
+    90421, 86453, 71942,  
    129736, 78428, 86986,
-   26853, 14059, 21163,
-   68989, 68989, 68995,
-   41328, 52643, 39912,
-   -22000, -23500, -10315
+    23853, 11059, 18163,
+     68989, 68989, 8995,
+      5328, 46643,63912,
+     91000, 60000, 3000 
 };
 
 int OnGetControlCommand(Aris::Core::MSG &msg)

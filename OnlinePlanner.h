@@ -44,7 +44,8 @@ public:
             double* jointStateInput, 
             Aris::RT_CONTROL::CForceData* forceData, 
             Aris::RT_CONTROL::CIMUData& imuFdbk,
-            double* jointStateOutput);
+            double* jointStateOutput,
+            char* controlDataForLog);
     // Get the joint length of initial position, used for go to initial position before starting
     int GetInitialJointLength(double jointLengthList[]);
 

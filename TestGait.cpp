@@ -1,6 +1,7 @@
 #include <iostream>
 #include "GaitTrjGenerator.h"
 #include "Planners.h"
+#include "LegKinematicsIV.h"
 
 using namespace Model;
 using namespace std;
@@ -8,40 +9,31 @@ using namespace std;
 int main(int argc, char *argv[])
 {
     double timeNow;
-    unsigned int totalPeriodCount = 20;
-    double stepLength = 400;
-    double Lside = 0;
-    double rotationAngle = 0;
-    double duty = 0.55;
-    double stepHeight = 60; //positive value
-    double T = 1.0;
-    double standHeight = 700;
     double legTipPoints[18];
-    double tdDeltaMidLeg = 5;
-    double tdDeltaSideLeg = 5;
+    double screwLength[3];
+    Model::Leg leg;
 
-    for(int timeCounter = 0; timeCounter < 20000; timeCounter++)
+    leg.SetID(0);
+
+    double TotalT = 4;
+    double tr = 0;
+    double p,v;
+
+    for(int timeCounter = 0; timeCounter < 4000; timeCounter++)
     {
         timeNow = timeCounter / 1000.0;
-        walk_cxb(
-                timeNow,
-                totalPeriodCount,
-                stepLength,
-                Lside,
-                rotationAngle,
-                duty,
-                stepHeight,
-                T,
-                standHeight,
-                tdDeltaMidLeg,
-                tdDeltaSideLeg,
-                legTipPoints);
 
         cout << timeNow << "  "; 
-        for (int i = 0; i < 18; ++i) {
-            cout << legTipPoints[i] << "   ";
-        }
-        cout << endl;
+        tr = timeNow/TotalT; 
+
+        Spline2SegInterpolate(
+                TotalT,
+                -150, -60,
+                200, 0,
+                200, 
+                0.5, tr, p, v);
+
+        cout << p << "   " << v << "   " << endl;
     }
 
     return 0;
