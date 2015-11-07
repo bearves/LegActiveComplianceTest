@@ -39,7 +39,7 @@ int main(int argc, char** argv)
     cout << "Opening log file:" << argv[fileNameIndex] << endl;
     cout << "Data point size: " << dataSize << endl;
 
-    ifstream fin(argv[fileNameIndex]);
+    ifstream fin(argv[fileNameIndex], ios::in | ios::binary);
     ofstream fout("ParsedFile.txt");
 
     if (fin.fail())
