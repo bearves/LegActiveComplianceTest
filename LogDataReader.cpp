@@ -96,11 +96,16 @@ int main(int argc, char** argv)
             for(int i = 0; i < 5; i++){
                 fout << conLogData.targetPos[i] 
                      << "  " << conLogData.adjustedPos[i]
-                     << "  " << conLogData.legForceOnZ[i] << "  ";
+                     << "  " << conLogData.legForceOnZ[i] 
+                     << "  " << conLogData.targetAng[i]
+                     << "  " << conLogData.legForceOnX[i] << "  ";
+
             }
             fout << conLogData.targetPos[5] 
                 << "  " << conLogData.adjustedPos[5]
-                << "  " << conLogData.legForceOnZ[5] << endl;
+                << "  " << conLogData.legForceOnZ[5]
+                << "  " << conLogData.targetAng[5]
+                << "  " << conLogData.legForceOnX[5] << endl;
             
         }
         else

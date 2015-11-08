@@ -334,7 +334,7 @@ int ImpedancePlanner::GenerateJointTrajectory(
                 m_adjForceBP,
                 m_subState);
 
-        // Forbid using IMU
+        // Add saturation to Pose ajustment force
         for (int i = 0; i < 18; ++i) 
         {
             if (m_adjForceBP[i] > 2e3 )
@@ -396,6 +396,9 @@ int ImpedancePlanner::GenerateJointTrajectory(
             m_logData.targetPos[i] = m_currentTargetFootPos[i*3+2];
             m_logData.adjustedPos[i] = m_currentAdjustedFootPos[i*3+2];
             m_logData.legForceOnZ[i] = m_forceTransfromed[i*3+2];
+
+            m_logData.targetAng[i] = m_currentTargetFootPos[i*3+0];
+            m_logData.legForceOnX[i] = m_forceTransfromed[i*3+0];
         }
         memcpy(controlDataForLog, (void *)&m_logData, sizeof(ControllerLogData));
 
@@ -681,7 +684,12 @@ void ImpedancePlanner::DetermineCurrentState(
                 
                 // Update the ref and act pos and vel at the state shift moment
                 UpdateTransitionPosVel();
+                UpdateTouchDownLegPosVel();
                 UpdateLiftUpLegPosVel();
+                
+                // Update the body vel at next lift up for the stance leg
+                CalculateBodyVelNextLiftUp("A");
+
             }
             break;
             
@@ -732,9 +740,12 @@ void ImpedancePlanner::DetermineCurrentState(
                 m_lastStateShiftTime = timeNow;
                 m_lastTouchDownTime  = timeNow;
                 UpdateTransitionPosVel();
+                UpdateTouchDownLegPosVel();
                 ResetImpedanceParam(A_SOFT_B_HARD);
                 ClearBalancePIDStates();
                 ClearImpedanceStates("B");
+                CalculateBodyVelNextLiftUp("B");
+
             }
             break;
 
@@ -770,9 +781,11 @@ void ImpedancePlanner::DetermineCurrentState(
                 m_lastStateShiftTime = timeNow;
                 m_lastTouchDownTime  = timeNow;
                 UpdateTransitionPosVel();
+                UpdateTouchDownLegPosVel();
                 ResetImpedanceParam(A_HARD_B_SOFT);
                 ClearBalancePIDStates();
                 ClearImpedanceStates("A");
+                CalculateBodyVelNextLiftUp("A");
             }
             break;
 
@@ -895,11 +908,11 @@ void ImpedancePlanner::GenerateReferenceTrj(
                 int index = LEG_INDEX_GROUP_B[i];
                 SwingReferenceTrj(
                         timeNow,   m_lastLiftUpTime, m_lastTouchDownTime,
-                        m_lastLiftRefPos[index*3+2], m_lastLiftRefVel[index*3+2],
-                        targetFootPos[index*3+2],    targetFootVel[index*3+2]);
+                        &m_lastLiftRefPos[index*3], &m_lastLiftRefVel[index*3],
+                        &targetFootPos[index*3],    &targetFootVel[index*3]);
 
-                // leg angles of swing leg are not changed
-                for(int j = 0; j < 2; j++)
+                // leg angles of side swing leg are not changed
+                for(int j = 1; j < 2; j++)
                 {
                     targetFootPos[index*3 + j] = m_lastShiftRefPos[index*3 + j];
                     targetFootVel[index*3 + j] = m_lastShiftRefVel[index*3 + j];
@@ -920,7 +933,15 @@ void ImpedancePlanner::GenerateReferenceTrj(
                         tt, 
                         targetFootPos[index*3+2], 
                         targetFootVel[index*3+2]);
-                for(int j = 0; j < 2; j++)
+
+                // leg angle planning for supporting leg
+                StanceAngleReferenceTrj(
+                        timeNow,  m_lastTouchDownTime,  m_lastTdActPos[index*3 + 2],
+                        m_lastTdActPos[index*3+0],  m_lastTdActVel[index*3+0],
+                        bodyVelLastTouchdown,  bodyVelNextLiftUp,
+                        targetFootPos[index*3+0], targetFootVel[index*3+0]);
+
+                for(int j = 1; j < 2; j++)
                 {
                     targetFootPos[index*3 + j] = m_lastShiftActPos[index*3 + j];
                     targetFootVel[index*3 + j] = 0; 
@@ -935,11 +956,11 @@ void ImpedancePlanner::GenerateReferenceTrj(
                 int index = LEG_INDEX_GROUP_B[i];
                 SwingReferenceTrj(
                         timeNow,   m_lastLiftUpTime, m_lastTouchDownTime,
-                        m_lastLiftRefPos[index*3+2], m_lastLiftRefVel[index*3+2],
-                        targetFootPos[index*3+2],    targetFootVel[index*3+2]);
+                        &m_lastLiftRefPos[index*3], &m_lastLiftRefVel[index*3],
+                        &targetFootPos[index*3],    &targetFootVel[index*3]);
 
                 // leg angles of swing leg are not changed
-                for(int j = 0; j < 2; j++)
+                for(int j = 1; j < 2; j++)
                 {
                     targetFootPos[index*3 + j] = m_lastShiftRefPos[index*3 + j];
                     targetFootVel[index*3 + j] = m_lastShiftRefVel[index*3 + j];
@@ -960,7 +981,14 @@ void ImpedancePlanner::GenerateReferenceTrj(
                         targetFootPos[index*3+2], 
                         targetFootVel[index*3+2]);
 
-                for(int j = 0; j < 2; j++)
+                // leg angle planning for supporting leg
+                StanceAngleReferenceTrj(
+                        timeNow,  m_lastTouchDownTime,  m_lastTdActPos[index*3 + 2],
+                        m_lastTdActPos[index*3+0],  m_lastTdActVel[index*3+0],
+                        bodyVelLastTouchdown,  bodyVelNextLiftUp,
+                        targetFootPos[index*3+0], targetFootVel[index*3+0]);
+
+                for(int j = 1; j < 2; j++)
                 {
                     targetFootPos[index*3 + j] = m_lastShiftRefPos[index*3 + j];
                     targetFootVel[index*3 + j] = m_lastShiftRefVel[index*3 + j];
@@ -976,10 +1004,12 @@ void ImpedancePlanner::GenerateReferenceTrj(
                 targetFootPos[index*3+2] = standingHeight - stepLDHeight;
                 targetFootVel[index*3+2] = 0;
 
+                // meanwhile, B swing back trying to cancel the relative speed with the ground
                 // leg angles of swing leg are not changed
                 for(int j = 0; j < 2; j++)
                 {
-                    targetFootPos[index*3 + j] = m_lastShiftRefPos[index*3 + j];
+                    targetFootPos[index*3 + j] = m_lastShiftRefPos[index*3 + j] +
+                                                 m_lastShiftRefVel[index*3 + j] * (timeNow - m_lastStateShiftTime);
                     targetFootVel[index*3 + j] = m_lastShiftRefVel[index*3 + j];
                 }
                 
@@ -988,10 +1018,10 @@ void ImpedancePlanner::GenerateReferenceTrj(
 
                 SwingReferenceTrj(
                         timeNow,   m_lastLiftUpTime, m_lastTouchDownTime,
-                        m_lastLiftRefPos[index*3+2], m_lastLiftRefVel[index*3+2],
-                        targetFootPos[index*3+2],    targetFootVel[index*3+2]);
+                        &m_lastLiftRefPos[index*3], &m_lastLiftRefVel[index*3],
+                        &targetFootPos[index*3],    &targetFootVel[index*3]);
 
-                for(int j = 0; j < 2; j++)
+                for(int j = 1; j < 2; j++)
                 {
                     targetFootPos[index*3 + j] = m_lastShiftRefPos[index*3 + j];
                     targetFootVel[index*3 + j] = m_lastShiftRefVel[index*3 + j];
@@ -1007,11 +1037,11 @@ void ImpedancePlanner::GenerateReferenceTrj(
                 int index = LEG_INDEX_GROUP_A[i];
                 SwingReferenceTrj(
                         timeNow,   m_lastLiftUpTime, m_lastTouchDownTime,
-                        m_lastLiftRefPos[index*3+2], m_lastLiftRefVel[index*3+2],
-                        targetFootPos[index*3+2],    targetFootVel[index*3+2]);
+                        &m_lastLiftRefPos[index*3], &m_lastLiftRefVel[index*3],
+                        &targetFootPos[index*3],    &targetFootVel[index*3]);
 
                 // leg angles of swing leg are not changed
-                for(int j = 0; j < 2; j++)
+                for(int j = 1; j < 2; j++)
                 {
                     targetFootPos[index*3 + j] = m_lastShiftRefPos[index*3 + j];
                     targetFootVel[index*3 + j] = m_lastShiftRefVel[index*3 + j];
@@ -1032,7 +1062,15 @@ void ImpedancePlanner::GenerateReferenceTrj(
                         tt, 
                         targetFootPos[index*3+2], 
                         targetFootVel[index*3+2]);
-                for(int j = 0; j < 2; j++)
+                 
+                // leg angle planning for supporting leg
+                StanceAngleReferenceTrj(
+                        timeNow,  m_lastTouchDownTime,  m_lastTdActPos[index*3 + 2],
+                        m_lastTdActPos[index*3+0],  m_lastTdActVel[index*3+0],
+                        bodyVelLastTouchdown,  bodyVelNextLiftUp,
+                        targetFootPos[index*3+0], targetFootVel[index*3+0]);
+
+                for(int j = 1; j < 2; j++)
                 {
                     targetFootPos[index*3 + j] = m_lastShiftActPos[index*3 + j];
                     targetFootVel[index*3 + j] = 0; 
@@ -1047,11 +1085,11 @@ void ImpedancePlanner::GenerateReferenceTrj(
                 int index = LEG_INDEX_GROUP_A[i];
                 SwingReferenceTrj(
                         timeNow,   m_lastLiftUpTime, m_lastTouchDownTime,
-                        m_lastLiftRefPos[index*3+2], m_lastLiftRefVel[index*3+2],
-                        targetFootPos[index*3+2],    targetFootVel[index*3+2]);
+                        &m_lastLiftRefPos[index*3], &m_lastLiftRefVel[index*3],
+                        &targetFootPos[index*3],    &targetFootVel[index*3]);
 
                 // leg angles of swing leg are not changed
-                for(int j = 0; j < 2; j++)
+                for(int j = 1; j < 2; j++)
                 {
                     targetFootPos[index*3 + j] = m_lastShiftRefPos[index*3 + j];
                     targetFootVel[index*3 + j] = m_lastShiftRefVel[index*3 + j];
@@ -1071,8 +1109,14 @@ void ImpedancePlanner::GenerateReferenceTrj(
                         tt, 
                         targetFootPos[index*3+2], 
                         targetFootVel[index*3+2]);
+                // leg angle planning for supporting leg
+                StanceAngleReferenceTrj(
+                        timeNow,  m_lastTouchDownTime,  m_lastTdActPos[index*3 + 2],
+                        m_lastTdActPos[index*3+0],  m_lastTdActVel[index*3+0],
+                        bodyVelLastTouchdown,  bodyVelNextLiftUp,
+                        targetFootPos[index*3+0], targetFootVel[index*3+0]);
 
-                for(int j = 0; j < 2; j++)
+                for(int j = 1; j < 2; j++)
                 {
                     targetFootPos[index*3 + j] = m_lastShiftRefPos[index*3 + j];
                     targetFootVel[index*3 + j] = m_lastShiftRefVel[index*3 + j];
@@ -1088,10 +1132,10 @@ void ImpedancePlanner::GenerateReferenceTrj(
                 targetFootPos[index*3+2] = standingHeight - stepLDHeight;
                 targetFootVel[index*3+2] = 0;
 
-                // leg angles of swing leg are not changed
                 for(int j = 0; j < 2; j++)
                 {
-                    targetFootPos[index*3 + j] = m_lastShiftRefPos[index*3 + j];
+                    targetFootPos[index*3 + j] = m_lastShiftRefPos[index*3 + j] +
+                                                 m_lastShiftRefVel[index*3 + j] * (timeNow - m_lastStateShiftTime);
                     targetFootVel[index*3 + j] = m_lastShiftRefVel[index*3 + j];
                 }
                 
@@ -1100,10 +1144,10 @@ void ImpedancePlanner::GenerateReferenceTrj(
 
                 SwingReferenceTrj(
                         timeNow,   m_lastLiftUpTime, m_lastTouchDownTime,
-                        m_lastLiftRefPos[index*3+2], m_lastLiftRefVel[index*3+2],
-                        targetFootPos[index*3+2],    targetFootVel[index*3+2]);
+                        &m_lastLiftRefPos[index*3], &m_lastLiftRefVel[index*3],
+                        &targetFootPos[index*3],    &targetFootVel[index*3]);
 
-                for(int j = 0; j < 2; j++)
+                for(int j = 1; j < 2; j++)
                 {
                     targetFootPos[index*3 + j] = m_lastShiftRefPos[index*3 + j];
                     targetFootVel[index*3 + j] = m_lastShiftRefVel[index*3 + j];
@@ -1134,24 +1178,58 @@ void ImpedancePlanner::GenerateReferenceTrj(
     }
 }
 
+void ImpedancePlanner::StanceAngleReferenceTrj(
+        double timeNow, double  lastTDTime, double lenAtTd,
+        double angAtTd, double angVelAtTd,
+        double bodyVelAtTd, double bodyVelNextLt,
+        double& angRef, double& angVelRef)
+{
+    double angVelBegin = -bodyVelAtTd * cos (angAtTd) / lenAtTd;
+    double angVelEnd   = -bodyVelNextLt / lenAtTd;
+    double Tstance     = Tset + Tth;
+
+    double angEnd = angAtTd + (angVelBegin + angVelEnd) / 2.0 * Tstance;
+
+    double tr = (timeNow - lastTDTime) / (Tset + Tth);
+    Model::HermitInterpolate(
+            Tstance,
+            angAtTd,
+            angVelBegin,
+            angEnd,
+            angVelEnd,
+            tr,
+            angRef, 
+            angVelRef);
+}
+
 void ImpedancePlanner::SwingReferenceTrj(
         double timeNow, double lastLiftTime, double lastTDTime,
-        double posAtLift, double velAtLift,
-        double& posRef, double& velRef)
+        double* posAtLift, double* velAtLift,
+        double* posRef,    double* velRef)
 {
     double tr = (timeNow - lastLiftTime) / Trt;
 
     double Text = (Tset + Tth - Trt + (lastTDTime - lastLiftTime) - 0.0);
     double tk = (timeNow - lastLiftTime - Trt) / Text;
 
+    double keepVelRetio = 0.4;
+    double Tbackward = Trt * keepVelRetio;
+    double Tforward  = (Tset + Tth - Tbackward + (lastTDTime - lastLiftTime) - 0.02);
+    double tb = (timeNow - lastLiftTime) / Tbackward;
+    double tf = (timeNow - Tbackward - lastLiftTime) / Tforward;
+    double tm = (timeNow - Tbackward - Tforward - lastLiftTime) / Tforward;
+    double tdAngle, tdAngVel;
+    
+
+    // Planning leg length
     if (tr < 1)  // retracting phase
     {
         Model::HermitInterpolate(
                 Trt,
-                posAtLift, velAtLift, 
+                posAtLift[2], velAtLift[2], 
                 standingHeight - stepHeight, 0, 
                 tr, 
-                posRef, velRef);
+                posRef[2], velRef[2]);
     }
     else if (tk < 1) // extending phase
     {
@@ -1161,12 +1239,43 @@ void ImpedancePlanner::SwingReferenceTrj(
                 standingHeight - stepLDHeight, 0, 
                 standingHeight - (stepHeight + stepLDHeight)/2, 0.6, // t1 is normalized 
                 tk, 
-                posRef, velRef);
+                posRef[2], velRef[2]);
     }
     else
     {
-        posRef = standingHeight - stepLDHeight;
-        velRef = 0;
+        posRef[2] = standingHeight - stepLDHeight;
+        velRef[2] = 0;
+    }
+
+    // Planning leg angle
+    if (tb < 1) // Keep swing backward
+    {
+        Model::HermitInterpolate(
+                Tbackward, 
+                posAtLift[0], velAtLift[0], 
+                posAtLift[0]+velAtLift[0]*Tbackward, velAtLift[0], 
+                tb, 
+                posRef[0], velRef[0]);
+        posRef[0] = posAtLift[0] + velAtLift[0]*tb*Tbackward;
+        velRef[0] = velAtLift[0];
+    }
+    else if (tf < 1) // Swing forward and try to match the touchdown speed
+    {
+        tdAngle = -posAtLift[0] * Tset / Tth;
+        tdAngVel = 0;
+        EstimateTDState(tdAngle, tdAngVel);
+        Model::HermitInterpolate(
+                Tforward,
+                posAtLift[0] + velAtLift[0]*Tbackward, velAtLift[0],
+                tdAngle, tdAngVel,
+                tf,
+                posRef[0], velRef[0]
+                );
+    }
+    else // Swing back at a constant speed, which is estimated touchdown speed
+    {
+        posRef[0] = tdAngle + tdAngVel*tm*Tforward;
+        velRef[0] = tdAngVel;
     }
 }
 
@@ -1198,6 +1307,48 @@ void ImpedancePlanner::UpdateLiftUpLegPosVel()
     }
 }
 
+void ImpedancePlanner::UpdateTouchDownLegPosVel()
+{
+    for(int i = 0; i < 6; i++)
+    {
+        for(int j = 0; j < 3; j++)
+        {
+            m_lastTdActPos[i*3 + j] = m_currentAdjustedFootPos[i*3 + j];
+            m_lastTdActVel[i*3 + j] = m_currentAdjustedFootVel[i*3 + j]; 
+            m_lastTdRefPos[i*3 + j] = m_currentTargetFootPos[i*3 + j];
+            m_lastTdRefVel[i*3 + j] = m_currentTargetFootVel[i*3 + j]; 
+        }
+    }
+}
+
+void ImpedancePlanner::CalculateBodyVelNextLiftUp(const char* legGroupName)
+{
+
+    const int* groupList;
+    if (*legGroupName == 'A')
+    {
+        groupList = LEG_INDEX_GROUP_A;
+    }
+    else if (*legGroupName == 'B')
+    {
+        groupList = LEG_INDEX_GROUP_B;
+    }
+
+    // simply assume that the body velocity at td is equal to that at lift up (We planned)
+    bodyVelLastTouchdown = bodyVelNextLiftUp;
+    // Calculate the planned lift up body vel in the new step
+    double velErr = -bodyVelLastTouchdown + bodyVelDesire;
+    
+    if (fabs(velErr) < 0.05)
+    {
+        bodyVelNextLiftUp = bodyVelDesire;
+    }
+    else
+    {
+        bodyVelNextLiftUp = bodyVelLastTouchdown + velErr / fabs(velErr) * 0.05;
+    }
+                   
+}
 
 bool ImpedancePlanner::AllLegOnGround(const char* legGroupName)
 {
@@ -1218,4 +1369,12 @@ bool ImpedancePlanner::AllLegOnGround(const char* legGroupName)
         ( m_forceTransfromed[groupList[2]*3 + 2] > 100 );
                    
     return result;
+}
+
+void ImpedancePlanner::EstimateTDState(
+        double& tdAngle, double& tdAngVel)
+{
+    double Tstance = Tset + Tth;
+    tdAngle = atan(bodyVelNextLiftUp * Tstance / 2 / standingHeight);
+    tdAngVel = bodyVelNextLiftUp / standingHeight;
 }
