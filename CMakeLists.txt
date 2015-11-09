@@ -83,4 +83,9 @@ PREPEND(FULL_SRC PRT ${SOURCE_FILES})
 add_executable(TestGait ${SOURCE_FILES})
 target_link_libraries(TestGait ${SYSTEM_LINK_LIBS})
 
+set(SOURCE_FILES WorkSpaceCalculation.cpp LegKinematicsIV.cpp) 
+PREPEND(FULL_SRC PRT ${SOURCE_FILES})
+add_executable(WSCal ${SOURCE_FILES})
+target_link_libraries(WSCal ${ROBOTS_LINK_LIBS} ${ARIS_NORT_LINK_LIBS} ${LAPACK_LINK_LIBS} ${SYSTEM_LINK_LIBS} ${IMU_LINK_LIBS})
+
 add_subdirectory(RobotUI)
