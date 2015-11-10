@@ -165,11 +165,10 @@ namespace RobotHighLevelControl
             double stepHeight = 0.10;
             double stepLDHeight = 0.02;
             double stepTHHeight = 0.025;
-            double standingHeight = 0.71;
-            double bodyVelDesire = 0.2;
+            double standingHeight = 0.66;
+            double bodyVelDesire = -0.2;
             double bodyVelLastTouchdown = 0.0; 
             double bodyVelNextLiftUp = 0.0;
-
             
             IMPD_PLANNER_STATE m_state;
             GAIT_SUB_STATE m_subState;
@@ -274,14 +273,14 @@ namespace RobotHighLevelControl
             void SwingReferenceTrj(
                     double timeNow, double lastLiftTime, double lastTDTime,
                     double* posAtLift, double* velAtLift,
-                    double* posRef,    double* velRef);
+                    double* posRef,    double* velRef, bool isFront);
 
             void StanceAngleReferenceTrj(
                     double timeNow, double  lastTDTime, double lenAtTd,
                     double angAtTd, double angVelAtTd,
                     double bodyVelAtTd, double bodyVelNextLt,
-                    double& angRef, double& angVelRef);
-            void EstimateTDState( double& tdAngle, double& tdAngVel);
+                    double& angRef, double& angVelRef, bool isFront);
+            void EstimateTDState( double& tdAngle, double& tdAngVel, bool isFront);
     };
 
 }

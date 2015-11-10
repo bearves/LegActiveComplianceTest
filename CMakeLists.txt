@@ -28,8 +28,8 @@ set(LIBRARY_OUTPUT_PATH "${PROJECT_SOURCE_DIR}/lib")
 
 # set include and lib folders
 if(UNIX)
-    #set(ARIS_SOURCE_LOCATION "/home/hex/Aris_with_force")
-    set(ARIS_SOURCE_LOCATION "/home/sun/Projects/Aris")
+    set(ARIS_SOURCE_LOCATION "/home/hex/Aris_with_force")
+    #set(ARIS_SOURCE_LOCATION "/home/sun/Projects/Aris")
     include_directories("/usr/lapack/include")
     include_directories(${ARIS_SOURCE_LOCATION}/src/Aris_Control)
     include_directories(${ARIS_SOURCE_LOCATION}/src/Aris_Core)
@@ -105,5 +105,10 @@ PREPEND(FULL_SRC PRT ${SOURCE_FILES})
 add_executable(LogDataReader ${SOURCE_FILES})
 target_link_libraries(LogDataReader ${ARIS_NORT_LINK_LIBS})
 endif(WIN32)
+
+set(SOURCE_FILES WorkSpaceCalculation.cpp LegKinematicsIV.cpp) 
+PREPEND(FULL_SRC PRT ${SOURCE_FILES})
+add_executable(WSCal ${SOURCE_FILES})
+target_link_libraries(WSCal ${ROBOTS_LINK_LIBS} ${ARIS_NORT_LINK_LIBS} ${LAPACK_LINK_LIBS} ${SYSTEM_LINK_LIBS} ${IMU_LINK_LIBS})
 
 add_subdirectory(RobotUI)

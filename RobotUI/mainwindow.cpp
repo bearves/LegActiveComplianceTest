@@ -176,7 +176,7 @@ void MainWindow::OnDatagramReceived()
         case RMID_MESSAGE_DATA_REPORT:
             m_robotMsgReceive.Paste((void *)&m_machineData, m_robotMsgReceive.GetLength());
 
-            // The first force sensors have a different scale of data
+            // The first one force sensors have a different scale of data
             for (int i = 0; i < 6; ++i)
             {
                 m_machineData.forceData[RobotHighLevelControl::MapAbsToPhyForceSensor[0]].forceValues[i] /= 1000.0;
