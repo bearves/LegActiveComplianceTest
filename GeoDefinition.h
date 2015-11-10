@@ -7,7 +7,7 @@ namespace Model
 
     const double LG1 = 250;
     const double LG2 = 280;
-    const double LG3 = 320;
+    const double LG3 = 280;
     const double LGOS = LG1 - 50;
     const double PHI = 180 * PI / 180;
     const double LGC = 110;
@@ -17,7 +17,7 @@ namespace Model
     const double BLEN = 65.0/2; //动平台三角形腰长
     const double LP = 140;
     const double L1 = 211.34;
-    const double L2 = 191;
+    const double L2 = 193;
     const double L3 = L2;
     const double HALFANGPLT = PI / 2;
     const double AP[3] = { -14, 0, 82.5 };

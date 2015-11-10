@@ -165,7 +165,7 @@ namespace RobotHighLevelControl
             double stepHeight = 0.10;
             double stepLDHeight = 0.02;
             double stepTHHeight = 0.025;
-            double standingHeight = 0.68;
+            double standingHeight = 0.67;
             double bodyVelDesire = -0.1;
             double bodyVelLastTouchdown = 0.0; 
             double bodyVelNextLiftUp = 0.0;
