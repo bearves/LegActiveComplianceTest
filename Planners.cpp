@@ -173,7 +173,7 @@ int ImpedancePlanner::ResetInitialFootPos()
 int ImpedancePlanner::ResetImpedanceParam(int impedanceMode)
 { 
     double K_SOFT_LANDING[3] = {1e8, 1e8, 500};
-    double B_SOFT_LANDING[3] = {1e5, 1e5, 1500};
+    double B_SOFT_LANDING[3] = {1e5, 1e5, 500};
     double M_SOFT_LANDING[3] = {100, 100, 20};
 
     double K_MEDIUM_SOFT[3] = {1e8, 1e8, 40000};
