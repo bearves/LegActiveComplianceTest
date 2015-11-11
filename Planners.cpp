@@ -112,8 +112,8 @@ const double ImpedancePlanner::FOOT_POS_LOW_LIMIT[3] = {-Model::PI/9, -Model::PI
 const double ImpedancePlanner::FORCE_DEADZONE[3]     = { 2.5, 2.5, 10 };
 const int ImpedancePlanner::LEG_INDEX_GROUP_A[3] = {Model::Leg::LEG_ID_MB, Model::Leg::LEG_ID_RF, Model::Leg::LEG_ID_LF};
 const int ImpedancePlanner::LEG_INDEX_GROUP_B[3] = {Model::Leg::LEG_ID_LB, Model::Leg::LEG_ID_RB, Model::Leg::LEG_ID_MF};
-const double ImpedancePlanner::IMPD_RATIO_A[3] = {1.8, 1, 1};
-const double ImpedancePlanner::IMPD_RATIO_B[3] = {1, 1, 1.8};
+const double ImpedancePlanner::IMPD_RATIO_A[3] = {1.7, 1, 1};
+const double ImpedancePlanner::IMPD_RATIO_B[3] = {1, 1, 1.7};
 const char * ImpedancePlanner::SUB_STATE_NAME[8] =
 {
     "HOLD_INIT_POS",
@@ -187,11 +187,11 @@ int ImpedancePlanner::ResetImpedanceParam(int impedanceMode)
                 for (int j = 0; j < 3; ++j)
                 { 
                     K_ac[LEG_INDEX_GROUP_A[i]][j] = K_MEDIUM_SOFT[j] * IMPD_RATIO_A[i];
-                    B_ac[LEG_INDEX_GROUP_A[i]][j] = B_MEDIUM_SOFT[j] * IMPD_RATIO_A[i];
+                    B_ac[LEG_INDEX_GROUP_A[i]][j] = B_MEDIUM_SOFT[j] * sqrt(IMPD_RATIO_A[i]);
                     M_ac[LEG_INDEX_GROUP_A[i]][j] = M_MEDIUM_SOFT[j];
 
                     K_ac[LEG_INDEX_GROUP_B[i]][j] = K_MEDIUM_SOFT[j] * IMPD_RATIO_B[i];
-                    B_ac[LEG_INDEX_GROUP_B[i]][j] = B_MEDIUM_SOFT[j] * IMPD_RATIO_B[i];
+                    B_ac[LEG_INDEX_GROUP_B[i]][j] = B_MEDIUM_SOFT[j] * sqrt(IMPD_RATIO_B[i]);
                     M_ac[LEG_INDEX_GROUP_B[i]][j] = M_MEDIUM_SOFT[j];
                 }
             }
@@ -211,7 +211,7 @@ int ImpedancePlanner::ResetImpedanceParam(int impedanceMode)
                 for (int j = 0; j < 3; ++j)
                 { 
                     K_ac[LEG_INDEX_GROUP_A[i]][j] = K_MEDIUM_SOFT[j] * IMPD_RATIO_A[i];
-                    B_ac[LEG_INDEX_GROUP_A[i]][j] = B_MEDIUM_SOFT[j] * IMPD_RATIO_A[i];
+                    B_ac[LEG_INDEX_GROUP_A[i]][j] = B_MEDIUM_SOFT[j] * sqrt(IMPD_RATIO_A[i]);
                     M_ac[LEG_INDEX_GROUP_A[i]][j] = M_MEDIUM_SOFT[j];
 
                     K_ac[LEG_INDEX_GROUP_B[i]][j] = K_SOFT_LANDING[j];
@@ -225,7 +225,7 @@ int ImpedancePlanner::ResetImpedanceParam(int impedanceMode)
                 for (int j = 0; j < 3; ++j)
                 { 
                     K_ac[LEG_INDEX_GROUP_B[i]][j] = K_MEDIUM_SOFT[j] * IMPD_RATIO_B[i];
-                    B_ac[LEG_INDEX_GROUP_B[i]][j] = B_MEDIUM_SOFT[j] * IMPD_RATIO_B[i];
+                    B_ac[LEG_INDEX_GROUP_B[i]][j] = B_MEDIUM_SOFT[j] * sqrt(IMPD_RATIO_B[i]);
                     M_ac[LEG_INDEX_GROUP_B[i]][j] = M_MEDIUM_SOFT[j];
 
                     K_ac[LEG_INDEX_GROUP_A[i]][j] = K_SOFT_LANDING[j];
@@ -1423,7 +1423,10 @@ void ImpedancePlanner::EstimateTDState(
 
 void ImpedancePlanner::CalculateTHLength(double* posLastTd, const char* legGroupName, double& stepTHLength)
 {
+    // Get the max height of current step
+    double height = standingHeight - 0.2;
     const int* groupList;
+
     if (*legGroupName == 'A')
     {
         groupList = LEG_INDEX_GROUP_A;
@@ -1433,8 +1436,6 @@ void ImpedancePlanner::CalculateTHLength(double* posLastTd, const char* legGroup
         groupList = LEG_INDEX_GROUP_B;
     }
 
-    // Get the max height of current step
-    double height = standingHeight - 0.2;
     for(int i = 0; i < 3; i++)
     {
         height = std::max(posLastTd[groupList[i] * 3 + 2], height);

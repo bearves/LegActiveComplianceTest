@@ -163,7 +163,7 @@ namespace RobotHighLevelControl
             double Tth  = 0.36;
             double Tfly = 0.15; // the maximum flying time
             double stepHeight = 0.10;
-            double stepLDHeight = 0.023;
+            double stepLDHeight = 0.025;
             double stepTHHeight = 0.025;
             double standingHeight = 0.66;
             double bodyVelDesire = -0.0;
