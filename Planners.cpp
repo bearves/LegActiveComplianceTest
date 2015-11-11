@@ -335,7 +335,8 @@ int ImpedancePlanner::GenerateJointTrajectory(
                 m_lastIntegralValue,
                 m_currentIntegralValue, 
                 m_adjForceBP,
-                m_subState);
+                m_subState,
+                timeNow - m_lastTouchDownTime);
 
         // Add saturation to Pose ajustment force
         for (int i = 0; i < 18; ++i) 
@@ -550,12 +551,13 @@ int ImpedancePlanner::CalculateAdjForceBP(
         double* lastIntegralValue,
         double* currentIntegralValue,
         double* adjForceBP,
-        GAIT_SUB_STATE gaitState)
+        GAIT_SUB_STATE gaitState,
+        double  tdTimeInterval)
 {
                       //Roll, Pitch, Height
     double KP_BP[3] = { 20000,  20000,     0};
     double KI_BP[3] = {  2000,   2000,     0};
-    double KD_BP[3] = {  2000,   2000,     0};
+    double KD_BP[3] = {  1500,   2000,     0};
     double force[3];
     double th = 0.001;
 
@@ -591,7 +593,14 @@ int ImpedancePlanner::CalculateAdjForceBP(
     }
 
     // Gravity Compensation of body height
-    force[2] += -9.81 * 268;
+    if (tdTimeInterval < 0.06 && tdTimeInterval > 0)
+    {
+        force[2] += -9.81*268*tdTimeInterval;
+    }
+    else
+    {
+        force[2] += -9.81 * 268;
+    }
 
     // Force distribution
     using Model::Leg;
