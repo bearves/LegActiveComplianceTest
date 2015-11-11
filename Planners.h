@@ -158,7 +158,7 @@ namespace RobotHighLevelControl
             double K_ac[6][3];
 
             // Timing for gait state machine and trj generation
-            double Trt  = 0.3;
+            double Trt  = 0.25;
             double Tset = 0.3;
             double Tth  = 0.36;
             double Tfly = 0.15; // the maximum flying time
@@ -166,7 +166,7 @@ namespace RobotHighLevelControl
             double stepLDHeight = 0.02;
             double stepTHHeight = 0.025;
             double standingHeight = 0.67;
-            double bodyVelDesire = -0.1;
+            double bodyVelDesire = -0.0;
             double bodyVelLastTouchdown = 0.0; 
             double bodyVelNextLiftUp = 0.0;
             
@@ -281,6 +281,7 @@ namespace RobotHighLevelControl
                     double bodyVelAtTd, double bodyVelNextLt,
                     double& angRef, double& angVelRef, bool isFront);
             void EstimateTDState( double& tdAngle, double& tdAngVel, bool isFront);
+            void CalculateTHLength(double* posLastTd, const char* legGroupName, double& stepTHHeight);
     };
 
 }
