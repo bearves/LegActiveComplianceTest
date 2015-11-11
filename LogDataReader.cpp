@@ -92,7 +92,7 @@ int main(int argc, char** argv)
                     sizeof(RobotHighLevelControl::ControllerLogData));
 
             fout << conLogData.gaitState << "  ";
-            for(int i = 0; i < 5; i++){
+            for(int i = 0; i < 6; i++){
                 fout << conLogData.targetPos[i] 
                      << "  " << conLogData.adjustedPos[i]
                      << "  " << conLogData.legForceOnZ[i] 
@@ -100,11 +100,12 @@ int main(int argc, char** argv)
                      << "  " << conLogData.legForceOnX[i] << "  ";
 
             }
-            fout << conLogData.targetPos[5] 
-                << "  " << conLogData.adjustedPos[5]
-                << "  " << conLogData.legForceOnZ[5]
-                << "  " << conLogData.targetAng[5]
-                << "  " << conLogData.legForceOnX[5] << endl;
+
+            for(int i = 0; i < 17; i++)
+            {
+                fout << data.feedbackData[i].Torque << "  ";
+            }
+            fout << data.feedbackData[17].Torque << std::endl;
             
         }
         else
