@@ -868,7 +868,7 @@ void ImpedancePlanner::ClearImpedanceStates(const char* legGroupName)
         for( int j = 0; j < 3; j ++)
         {
             m_lastOffset[groupList[i]*3 + j] = 0;
-            m_lastOffsetdot[groupList[i]*3 + j] = 0;
+            m_lastOffsetdot[groupList[i]*3 + j] *= 0.5;
         }
     }
 }
@@ -995,7 +995,7 @@ void ImpedancePlanner::GenerateReferenceTrj(
                         m_lastShiftRefPos[index*3 + 2], 
                         m_lastShiftRefVel[index*3 + 2], 
                         m_lastShiftRefPos[index*3 + 2] + stepTHHeight, 
-                        -0.05, 
+                        -0, 
                         tt, 
                         targetFootPos[index*3+2], 
                         targetFootVel[index*3+2]);
@@ -1139,7 +1139,7 @@ void ImpedancePlanner::GenerateReferenceTrj(
                         m_lastShiftRefPos[index*3 + 2], 
                         m_lastShiftRefVel[index*3 + 2], 
                         m_lastShiftRefPos[index*3 + 2] + stepTHHeight, 
-                        -0.05, 
+                        0, 
                         tt, 
                         targetFootPos[index*3+2], 
                         targetFootVel[index*3+2]);
