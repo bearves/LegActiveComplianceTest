@@ -173,7 +173,7 @@ int ImpedancePlanner::ResetInitialFootPos()
 int ImpedancePlanner::ResetImpedanceParam(int impedanceMode)
 { 
     double K_SOFT_LANDING[3] = {1e8, 1e8, 500};
-    double B_SOFT_LANDING[3] = {1e5, 1e5, 500};
+    double B_SOFT_LANDING[3] = {1e5, 1e5, 1000};
     double M_SOFT_LANDING[3] = {100, 100, 20};
 
     double K_MEDIUM_SOFT[3] = {1e8, 1e8, 40000};
@@ -325,7 +325,7 @@ int ImpedancePlanner::GenerateJointTrajectory(
         
         // State machine of the gait controller
         // and select the desired impedance
-        DetermineCurrentState(timeNow, m_cmdFlag, m_subState);
+        DetermineCurrentState(timeNow, m_cmdFlag, m_subState, imuFdbk);
 
         // Calculate the pose adjustment force
         // Adjust desire force according to the IMU feedback
@@ -675,7 +675,8 @@ double ImpedancePlanner::CalculateCurrentHeight(double* currentFootPos, GAIT_SUB
 void ImpedancePlanner::DetermineCurrentState(
         double timeNow, 
         GAIT_SUB_COMMAND& cmdFlag, 
-        GAIT_SUB_STATE& currentState)
+        GAIT_SUB_STATE& currentState,
+        const Aris::RT_CONTROL::CIMUData& imuData)
 {
     switch (currentState)
     {
@@ -696,7 +697,7 @@ void ImpedancePlanner::DetermineCurrentState(
                 
                 // Update the ref and act pos and vel at the state shift moment
                 UpdateTransitionPosVel();
-                UpdateTouchDownLegPosVel();
+                UpdateTouchDownLegPosVel(imuData);
                 UpdateLiftUpLegPosVel();
                 
                 // Update the body vel at next lift up for the stance leg
@@ -753,7 +754,7 @@ void ImpedancePlanner::DetermineCurrentState(
                 m_lastStateShiftTime = timeNow;
                 m_lastTouchDownTime  = timeNow;
                 UpdateTransitionPosVel();
-                UpdateTouchDownLegPosVel();
+                UpdateTouchDownLegPosVel(imuData);
                 ResetImpedanceParam(A_HARD_B_HARD);
                 ClearBalancePIDStates();
                 ClearImpedanceStates("B");
@@ -795,7 +796,7 @@ void ImpedancePlanner::DetermineCurrentState(
                 m_lastStateShiftTime = timeNow;
                 m_lastTouchDownTime  = timeNow;
                 UpdateTransitionPosVel();
-                UpdateTouchDownLegPosVel();
+                UpdateTouchDownLegPosVel(imuData);
                 ResetImpedanceParam(A_HARD_B_HARD);
                 ClearBalancePIDStates();
                 ClearImpedanceStates("A");
@@ -988,7 +989,7 @@ void ImpedancePlanner::GenerateReferenceTrj(
 
                 double tt = (timeNow - m_lastStateShiftTime) / Tth;
 
-                CalculateTHLength(m_lastTdActPos, "B", stepTHHeight);
+                CalculateTHLength(index, m_lastTdActPos, m_lastTdBodyOrient, "A", stepTHHeight);
 
                 Model::HermitInterpolate(
                         Tth,
@@ -1132,7 +1133,7 @@ void ImpedancePlanner::GenerateReferenceTrj(
                         targetFootPos[index*3+0], targetFootVel[index*3+0],
                         index >= 3);
 
-                CalculateTHLength(m_lastTdActPos, "B", stepTHHeight);
+                CalculateTHLength(index, m_lastTdActPos, m_lastTdBodyOrient, "B", stepTHHeight);
 
                 Model::HermitInterpolate(
                         Tth,
@@ -1342,7 +1343,7 @@ void ImpedancePlanner::UpdateLiftUpLegPosVel()
     }
 }
 
-void ImpedancePlanner::UpdateTouchDownLegPosVel()
+void ImpedancePlanner::UpdateTouchDownLegPosVel(const Aris::RT_CONTROL::CIMUData& imuData)
 {
     for(int i = 0; i < 6; i++)
     {
@@ -1353,6 +1354,11 @@ void ImpedancePlanner::UpdateTouchDownLegPosVel()
             m_lastTdRefPos[i*3 + j] = m_currentTargetFootPos[i*3 + j];
             m_lastTdRefVel[i*3 + j] = m_currentTargetFootVel[i*3 + j]; 
         }
+    }
+
+    for(int i = 0; i < 3; i++)
+    {
+        m_lastTdBodyOrient[i] = imuData.EulerAngle[i];
     }
 }
 
@@ -1421,7 +1427,12 @@ void ImpedancePlanner::EstimateTDState(
     }
 }
 
-void ImpedancePlanner::CalculateTHLength(double* posLastTd, const char* legGroupName, double& stepTHLength)
+void ImpedancePlanner::CalculateTHLength(
+        int legIndex,
+        double* posLastTd, 
+        double* bodyOrientLastTd,
+        const char* legGroupName, 
+        double& stepTHLength)
 {
     // Get the max height of current step
     double height = standingHeight - 0.2;
@@ -1445,5 +1456,19 @@ void ImpedancePlanner::CalculateTHLength(double* posLastTd, const char* legGroup
     // Get the angle planned to lift up at current step
     EstimateTDState(tdAngle, tdAngVel, false);
 
-    stepTHLength = standingHeight * (2 - cos(tdAngle)) - height + 0.005;
+    // Compensate the pitch error
+    double pitchError = bodyOrientLastTd[1] * (0.792+0.143);
+    double pitchCompensation = 0;
+
+    using Model::Leg;
+    if (pitchError < 0 && ( legIndex == Leg::LEG_ID_LF || legIndex == Leg::LEG_ID_RF || legIndex == Leg::LEG_ID_MF))
+    {
+        pitchCompensation = std::min(-pitchError, 0.05);
+    }
+    else if (pitchError > 0 && ( legIndex == Leg::LEG_ID_LB || legIndex == Leg::LEG_ID_RB || legIndex == Leg::LEG_ID_MB))
+    {
+        pitchCompensation = std::min(pitchError, 0.05);
+    }
+
+    stepTHLength = standingHeight * (2 - cos(tdAngle)) - height + 0.005 + pitchCompensation;
 }
