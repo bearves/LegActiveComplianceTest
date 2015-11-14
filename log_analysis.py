@@ -26,8 +26,8 @@ for i in range(1, 113):
 print len(time)
 tplt = time / 1.0
 
-tstart = 115;
-tend   = 125;
+tstart = 140;
+tend   = 150;
 
 plt.subplot(3,1,1)
 plt.plot(tplt, axis[81])

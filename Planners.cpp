@@ -177,7 +177,7 @@ int ImpedancePlanner::ResetImpedanceParam(int impedanceMode)
     double M_SOFT_LANDING[3] = {100, 100, 20};
 
     double K_MEDIUM_SOFT[3] = {1e8, 1e8, 40000};
-    double B_MEDIUM_SOFT[3] = {1e5, 1e5, 6000}; // actual damping ratio is much smaller than the desired
+    double B_MEDIUM_SOFT[3] = {1e5, 1e5, 5000}; // actual damping ratio is much smaller than the desired
     double M_MEDIUM_SOFT[3] = {100, 100, 20};
 
     switch (impedanceMode)
@@ -1262,7 +1262,7 @@ void ImpedancePlanner::SwingReferenceTrj(
         Model::HermitInterpolate(
                 Trt,
                 posAtLift[2], velAtLift[2], 
-                standingHeight - stepHeight, 0, 
+                posAtLift[2] - stepHeight, 0, 
                 tr, 
                 posRef[2], velRef[2]);
     }
@@ -1270,7 +1270,7 @@ void ImpedancePlanner::SwingReferenceTrj(
     {
         Model::Spline2SegInterpolate(
                 Text,
-                standingHeight - stepHeight, 0, 
+                posAtLift[2] - stepHeight, 0, 
                 standingHeight - stepLDHeight, 0, 
                 standingHeight - (stepHeight + stepLDHeight)/2, 0.7, // t1 is normalized 
                 tk, 
@@ -1470,5 +1470,5 @@ void ImpedancePlanner::CalculateTHLength(
         pitchCompensation = std::min(pitchError, 0.05);
     }
 
-    stepTHLength = standingHeight * (2 - cos(tdAngle)) - height + 0.005 + pitchCompensation;
+    stepTHLength = standingHeight * (2 - cos(tdAngle)) - height + 0.005 + pitchCompensation*1.2;
 }
