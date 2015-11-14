@@ -1256,13 +1256,15 @@ void ImpedancePlanner::SwingReferenceTrj(
     double tdAngle, tdAngVel;
     
 
+    // Estimate the retracting length compensation due to the lift angle
+    double lenComp = (1 - cos(posAtLift[0]))*standingHeight;
     // Planning leg length
     if (tr < 1)  // retracting phase
     {
         Model::HermitInterpolate(
                 Trt,
                 posAtLift[2], velAtLift[2], 
-                posAtLift[2] - stepHeight, 0, 
+                posAtLift[2] - stepHeight - lenComp, 0, 
                 tr, 
                 posRef[2], velRef[2]);
     }
@@ -1270,7 +1272,7 @@ void ImpedancePlanner::SwingReferenceTrj(
     {
         Model::Spline2SegInterpolate(
                 Text,
-                posAtLift[2] - stepHeight, 0, 
+                posAtLift[2] - stepHeight - lenComp, 0, 
                 standingHeight - stepLDHeight, 0, 
                 standingHeight - (stepHeight + stepLDHeight)/2, 0.7, // t1 is normalized 
                 tk, 
