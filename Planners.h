@@ -40,12 +40,14 @@ namespace RobotHighLevelControl
 
     enum class GAIT_SUB_COMMAND : int
     {
-        GSC_NOCMD  =  0, 
-        GSC_START  =  1, // start move
-        GSC_STOP   =  2, // not implemented
-        GSC_CHANGE =  3, // not implemented
-        GSC_BEHARD =  4, // used to ask the robot to switch from flexible leg to hard leg
-        GSC_BESOFT =  5  // used to ask the robot to switch from hard leg to flexible leg
+        GSC_NOCMD = 0,
+        GSC_START = 1, // start move
+        GSC_STOP  = 2,
+        GSC_SPEED = 3,
+        GSC_STEPH = 4,
+        GSC_SIDE  = 5,
+        GSC_TURN  = 6,
+        GSC_CLEAR = 7
     };
 
     class ParamCXB
@@ -53,7 +55,7 @@ namespace RobotHighLevelControl
     public:
         GAIT_SUB_COMMAND gaitCommand;
         unsigned int totalPeriodCount;
-        double stepLength;
+        double desireVelocity;
         double Lside;
         double rotationAngle;
         double duty;
@@ -68,13 +70,13 @@ namespace RobotHighLevelControl
             // default values
             gaitCommand      = GAIT_SUB_COMMAND::GSC_NOCMD;
             totalPeriodCount = 10;
-            stepLength       = 0;
+            desireVelocity   = 0;
             Lside            = 0;
             rotationAngle    = 0;
             duty             = 0.52;
-            stepHeight       = 60; 
+            stepHeight       = 0.1; 
             T                = 1.2;
-            standHeight      = 710;
+            standHeight      = 0.66;
             tdDeltaMidLeg    = 0;
             tdDeltaSideLeg   = 0;
         }
@@ -111,10 +113,11 @@ namespace RobotHighLevelControl
                 A_LT_B_SP     = 4,
                 A_TD_B_TH     = 5,
                 A_LD_B_LT     = 6,
-                HOLD_END_POS  = 7
+                RECOVERING    = 7,
+                HOLD_END_POS  = 8
             };
 
-            static const char *SUB_STATE_NAME[8];
+            static const char *SUB_STATE_NAME[9];
 
             enum IMPD_MODE
             {
@@ -162,6 +165,7 @@ namespace RobotHighLevelControl
             double Tset = 0.3;
             double Tth  = 0.36;
             double Tfly = 0.15; // the maximum flying time
+            double Trec = 1.5;
             double stepHeight = 0.10;
             double stepLDHeight = 0.025;
             double stepTHHeight = 0.025;
@@ -246,6 +250,7 @@ namespace RobotHighLevelControl
             void DetermineCurrentState(
                     double timeNow, 
                     GAIT_SUB_COMMAND& cmdFlag, 
+                    ParamCXB& gaitParamCmd,
                     GAIT_SUB_STATE& currentState,
                     const Aris::RT_CONTROL::CIMUData& imuData);
 
@@ -273,6 +278,7 @@ namespace RobotHighLevelControl
                     double* targetFootPos, 
                     double* targetFootVel);
 
+            void RecoverTrj(double timeNow, double* targetFootPos, double* targetFootVel);
             void SwingReferenceTrj(
                     double timeNow, double lastLiftTime, double lastTDTime,
                     double* posAtLift, double* velAtLift,
