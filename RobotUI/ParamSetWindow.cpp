@@ -40,8 +40,8 @@ void ParamSetWindow::OnPushbuttonOKClicked()
         ShowMessageBox("Wrong stepHeight setting!");
         return;
     }
-    temp.stepLength       = ui->lineEditStepLength->text().toDouble(&flag);
-    if (!flag || temp.stepLength < -400 || temp.stepLength > 400)
+    temp.desireVelocity       = ui->lineEditStepLength->text().toDouble(&flag);
+    if (!flag || temp.desireVelocity < -400 || temp.desireVelocity > 400)
     {
         ShowMessageBox("Wrong stepLength setting!");
         return;
@@ -115,7 +115,7 @@ void ParamSetWindow::show()
     ui->lineEditStepDpMid->setText(QString::number(m_param.tdDeltaMidLeg));
     ui->lineEditStepDpSide->setText(QString::number(m_param.tdDeltaSideLeg));
     ui->lineEditStepHeight->setText(QString::number(m_param.stepHeight));
-    ui->lineEditStepLength->setText(QString::number(m_param.stepLength));
+    ui->lineEditStepLength->setText(QString::number(m_param.desireVelocity));
     ui->lineEditStandHeight->setText(QString::number(m_param.standHeight));
     ui->lineEditPeriodCount->setText(QString::number(m_param.totalPeriodCount));
     ui->lineRotationAngle->setText(QString::number(m_param.rotationAngle));
