@@ -1658,5 +1658,5 @@ void ImpedancePlanner::CalculateTHLength(
         pitchCompensation = std::min(pitchError, 0.05);
     }
 
-    stepTHLength = standingHeight * (2 - cos(tdAngle)) - height + 0.005 + pitchCompensation*1.2;
+    stepTHLength = standingHeight * (2 - cos(tdAngle)) - height + 0.0 + pitchCompensation*1.2;
 }
