@@ -316,7 +316,7 @@ public:
     {
         ParamSetWindow->setWindowTitle(QApplication::translate("ParamSetWindow", "Param settings", 0));
         labelPeriodCount->setText(QApplication::translate("ParamSetWindow", "Period Count:", 0));
-        labelStepLength->setText(QApplication::translate("ParamSetWindow", "Step Length:", 0));
+        labelStepLength->setText(QApplication::translate("ParamSetWindow", "Desire Velocity:", 0));
         labelStepHeight->setText(QApplication::translate("ParamSetWindow", "Step Height:", 0));
         labelStandHeight->setText(QApplication::translate("ParamSetWindow", "Stand Height:", 0));
         labelDuty->setText(QApplication::translate("ParamSetWindow", "Duty:", 0));

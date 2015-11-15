@@ -88,7 +88,7 @@
             </font>
            </property>
            <property name="text">
-            <string>Step Length:</string>
+            <string>Desire Velocity:</string>
            </property>
           </widget>
          </item>

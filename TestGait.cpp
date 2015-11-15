@@ -9,32 +9,31 @@ using namespace std;
 int main(int argc, char *argv[])
 {
     double timeNow;
-    double legTipPoints[18];
+    double legTipPoints[3] = {-0.0, -0.005, -0.66};
+    double legTipPoints2[3] = {-0.0, 0, -0.66};
     double screwLength[3];
+    double screwLength2[3];
     Model::Leg leg;
 
     leg.SetID(0);
 
-    double TotalT = 4;
-    double tr = 0;
-    double p,v;
+    leg.InverseSolution(legTipPoints, screwLength, false);
 
-    for(int timeCounter = 0; timeCounter < 4000; timeCounter++)
-    {
-        timeNow = timeCounter / 1000.0;
+    for( auto a : screwLength)
+        cout << a << "\n";
 
-        cout << timeNow << "  "; 
-        tr = timeNow/TotalT; 
+    cout << "\n";
 
-        Spline2SegInterpolate(
-                TotalT,
-                -150, -60,
-                200, 0,
-                200, 
-                0.5, tr, p, v);
+    leg.InverseSolution(legTipPoints2, screwLength2, false);
 
-        cout << p << "   " << v << "   " << endl;
-    }
+    for( auto a : screwLength2)
+        cout << a << "\n";
+
+    cout << "\n";
+
+    for( int i = 0; i < 3; i++)
+        cout << 65536*1.5*(screwLength[i] - screwLength2[i])/0.005 << "\n";
+    cout << endl;
 
     return 0;
 }
