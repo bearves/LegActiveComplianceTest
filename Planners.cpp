@@ -699,6 +699,7 @@ void ImpedancePlanner::DetermineCurrentState(
                 UpdateTransitionPosVel();
                 UpdateTouchDownLegPosVel(imuData);
                 UpdateLiftUpLegPosVel();
+                m_lastTdBodyOrient[1] = 0; // clear pitch error
                 
                 // Update the body vel at next lift up for the stance leg
                 CalculateBodyVelNextLiftUp("A");
