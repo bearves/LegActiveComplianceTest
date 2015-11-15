@@ -4,7 +4,7 @@
 #include "Aris_Message.h"
 
 #define REMOTE_PORT            5690
-#define REMOTE_IP_STRING    "127.0.0.1"
+#define REMOTE_IP_STRING    "192.168.1.100"
 
 #define CONNECTION_FREQ        20
 

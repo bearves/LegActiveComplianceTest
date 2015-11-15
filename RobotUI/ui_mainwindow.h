@@ -13,6 +13,7 @@
 #include <QtWidgets/QAction>
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QButtonGroup>
+#include <QtWidgets/QGridLayout>
 #include <QtWidgets/QHBoxLayout>
 #include <QtWidgets/QHeaderView>
 #include <QtWidgets/QLabel>
@@ -31,7 +32,7 @@ class Ui_MainWindow
 {
 public:
     QWidget *centralWidget;
-    QWidget *horizontalLayoutWidget;
+    QGridLayout *gridLayout;
     QHBoxLayout *horizontalLayout_4;
     QVBoxLayout *verticalLayout;
     QTextBrowser *textBrowserDevStatus;
@@ -57,24 +58,30 @@ public:
         if (MainWindow->objectName().isEmpty())
             MainWindow->setObjectName(QStringLiteral("MainWindow"));
         MainWindow->resize(1122, 808);
+        QSizePolicy sizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
+        sizePolicy.setHorizontalStretch(0);
+        sizePolicy.setVerticalStretch(0);
+        sizePolicy.setHeightForWidth(MainWindow->sizePolicy().hasHeightForWidth());
+        MainWindow->setSizePolicy(sizePolicy);
         centralWidget = new QWidget(MainWindow);
         centralWidget->setObjectName(QStringLiteral("centralWidget"));
-        horizontalLayoutWidget = new QWidget(centralWidget);
-        horizontalLayoutWidget->setObjectName(QStringLiteral("horizontalLayoutWidget"));
-        horizontalLayoutWidget->setGeometry(QRect(10, 10, 1101, 791));
-        horizontalLayout_4 = new QHBoxLayout(horizontalLayoutWidget);
+        sizePolicy.setHeightForWidth(centralWidget->sizePolicy().hasHeightForWidth());
+        centralWidget->setSizePolicy(sizePolicy);
+        gridLayout = new QGridLayout(centralWidget);
+        gridLayout->setSpacing(6);
+        gridLayout->setContentsMargins(11, 11, 11, 11);
+        gridLayout->setObjectName(QStringLiteral("gridLayout"));
+        horizontalLayout_4 = new QHBoxLayout();
         horizontalLayout_4->setSpacing(6);
-        horizontalLayout_4->setContentsMargins(11, 11, 11, 11);
         horizontalLayout_4->setObjectName(QStringLiteral("horizontalLayout_4"));
-        horizontalLayout_4->setContentsMargins(0, 0, 0, 0);
         verticalLayout = new QVBoxLayout();
         verticalLayout->setSpacing(6);
         verticalLayout->setObjectName(QStringLiteral("verticalLayout"));
-        textBrowserDevStatus = new QTextBrowser(horizontalLayoutWidget);
+        textBrowserDevStatus = new QTextBrowser(centralWidget);
         textBrowserDevStatus->setObjectName(QStringLiteral("textBrowserDevStatus"));
         QFont font;
         font.setFamily(QStringLiteral("Consolas"));
-        font.setPointSize(11);
+        font.setPointSize(10);
         textBrowserDevStatus->setFont(font);
 
         verticalLayout->addWidget(textBrowserDevStatus);
@@ -82,28 +89,26 @@ public:
         horizontalLayout = new QHBoxLayout();
         horizontalLayout->setSpacing(6);
         horizontalLayout->setObjectName(QStringLiteral("horizontalLayout"));
-        plainTextEditCmdLog = new QPlainTextEdit(horizontalLayoutWidget);
+        plainTextEditCmdLog = new QPlainTextEdit(centralWidget);
         plainTextEditCmdLog->setObjectName(QStringLiteral("plainTextEditCmdLog"));
-        QSizePolicy sizePolicy(QSizePolicy::Expanding, QSizePolicy::Maximum);
-        sizePolicy.setHorizontalStretch(0);
-        sizePolicy.setVerticalStretch(0);
-        sizePolicy.setHeightForWidth(plainTextEditCmdLog->sizePolicy().hasHeightForWidth());
-        plainTextEditCmdLog->setSizePolicy(sizePolicy);
+        QSizePolicy sizePolicy1(QSizePolicy::Expanding, QSizePolicy::Maximum);
+        sizePolicy1.setHorizontalStretch(0);
+        sizePolicy1.setVerticalStretch(0);
+        sizePolicy1.setHeightForWidth(plainTextEditCmdLog->sizePolicy().hasHeightForWidth());
+        plainTextEditCmdLog->setSizePolicy(sizePolicy1);
         plainTextEditCmdLog->setMaximumSize(QSize(16777215, 160));
-        QFont font1;
-        font1.setPointSize(12);
-        plainTextEditCmdLog->setFont(font1);
+        plainTextEditCmdLog->setFont(font);
         plainTextEditCmdLog->setReadOnly(true);
         plainTextEditCmdLog->setMaximumBlockCount(10000);
 
         horizontalLayout->addWidget(plainTextEditCmdLog);
 
-        plainTextEditMsgLog = new QPlainTextEdit(horizontalLayoutWidget);
+        plainTextEditMsgLog = new QPlainTextEdit(centralWidget);
         plainTextEditMsgLog->setObjectName(QStringLiteral("plainTextEditMsgLog"));
-        sizePolicy.setHeightForWidth(plainTextEditMsgLog->sizePolicy().hasHeightForWidth());
-        plainTextEditMsgLog->setSizePolicy(sizePolicy);
+        sizePolicy1.setHeightForWidth(plainTextEditMsgLog->sizePolicy().hasHeightForWidth());
+        plainTextEditMsgLog->setSizePolicy(sizePolicy1);
         plainTextEditMsgLog->setMaximumSize(QSize(16777215, 160));
-        plainTextEditMsgLog->setFont(font1);
+        plainTextEditMsgLog->setFont(font);
         plainTextEditMsgLog->setReadOnly(true);
         plainTextEditMsgLog->setMaximumBlockCount(10000);
 
@@ -115,15 +120,17 @@ public:
         horizontalLayout_2 = new QHBoxLayout();
         horizontalLayout_2->setSpacing(6);
         horizontalLayout_2->setObjectName(QStringLiteral("horizontalLayout_2"));
-        labelCmd = new QLabel(horizontalLayoutWidget);
+        labelCmd = new QLabel(centralWidget);
         labelCmd->setObjectName(QStringLiteral("labelCmd"));
+        QFont font1;
+        font1.setPointSize(12);
         labelCmd->setFont(font1);
 
         horizontalLayout_2->addWidget(labelCmd);
 
-        lineEditCmd = new QLineEdit(horizontalLayoutWidget);
+        lineEditCmd = new QLineEdit(centralWidget);
         lineEditCmd->setObjectName(QStringLiteral("lineEditCmd"));
-        lineEditCmd->setFont(font1);
+        lineEditCmd->setFont(font);
 
         horizontalLayout_2->addWidget(lineEditCmd);
 
@@ -133,31 +140,31 @@ public:
         horizontalLayout_3 = new QHBoxLayout();
         horizontalLayout_3->setSpacing(6);
         horizontalLayout_3->setObjectName(QStringLiteral("horizontalLayout_3"));
-        labelIP = new QLabel(horizontalLayoutWidget);
+        labelIP = new QLabel(centralWidget);
         labelIP->setObjectName(QStringLiteral("labelIP"));
         labelIP->setFont(font1);
 
         horizontalLayout_3->addWidget(labelIP);
 
-        lineEditIP = new QLineEdit(horizontalLayoutWidget);
+        lineEditIP = new QLineEdit(centralWidget);
         lineEditIP->setObjectName(QStringLiteral("lineEditIP"));
-        lineEditIP->setFont(font1);
+        lineEditIP->setFont(font);
 
         horizontalLayout_3->addWidget(lineEditIP);
 
-        labelPort = new QLabel(horizontalLayoutWidget);
+        labelPort = new QLabel(centralWidget);
         labelPort->setObjectName(QStringLiteral("labelPort"));
         labelPort->setFont(font1);
 
         horizontalLayout_3->addWidget(labelPort);
 
-        lineEditPort = new QLineEdit(horizontalLayoutWidget);
+        lineEditPort = new QLineEdit(centralWidget);
         lineEditPort->setObjectName(QStringLiteral("lineEditPort"));
-        lineEditPort->setFont(font1);
+        lineEditPort->setFont(font);
 
         horizontalLayout_3->addWidget(lineEditPort);
 
-        pushButtonConnect = new QPushButton(horizontalLayoutWidget);
+        pushButtonConnect = new QPushButton(centralWidget);
         pushButtonConnect->setObjectName(QStringLiteral("pushButtonConnect"));
         pushButtonConnect->setFont(font1);
 
@@ -172,32 +179,35 @@ public:
         verticalLayout_2 = new QVBoxLayout();
         verticalLayout_2->setSpacing(6);
         verticalLayout_2->setObjectName(QStringLiteral("verticalLayout_2"));
-        widget_3 = new QCustomPlot(horizontalLayoutWidget);
+        widget_3 = new QCustomPlot(centralWidget);
         widget_3->setObjectName(QStringLiteral("widget_3"));
 
         verticalLayout_2->addWidget(widget_3);
 
-        widget_2 = new QCustomPlot(horizontalLayoutWidget);
+        widget_2 = new QCustomPlot(centralWidget);
         widget_2->setObjectName(QStringLiteral("widget_2"));
-        QSizePolicy sizePolicy1(QSizePolicy::Minimum, QSizePolicy::Preferred);
-        sizePolicy1.setHorizontalStretch(0);
-        sizePolicy1.setVerticalStretch(0);
-        sizePolicy1.setHeightForWidth(widget_2->sizePolicy().hasHeightForWidth());
-        widget_2->setSizePolicy(sizePolicy1);
-        widget_2->setMinimumSize(QSize(430, 0));
+        QSizePolicy sizePolicy2(QSizePolicy::Minimum, QSizePolicy::Preferred);
+        sizePolicy2.setHorizontalStretch(0);
+        sizePolicy2.setVerticalStretch(0);
+        sizePolicy2.setHeightForWidth(widget_2->sizePolicy().hasHeightForWidth());
+        widget_2->setSizePolicy(sizePolicy2);
+        widget_2->setMinimumSize(QSize(350, 0));
 
         verticalLayout_2->addWidget(widget_2);
 
-        widget = new QCustomPlot(horizontalLayoutWidget);
+        widget = new QCustomPlot(centralWidget);
         widget->setObjectName(QStringLiteral("widget"));
-        sizePolicy1.setHeightForWidth(widget->sizePolicy().hasHeightForWidth());
-        widget->setSizePolicy(sizePolicy1);
-        widget->setMinimumSize(QSize(430, 0));
+        sizePolicy2.setHeightForWidth(widget->sizePolicy().hasHeightForWidth());
+        widget->setSizePolicy(sizePolicy2);
+        widget->setMinimumSize(QSize(350, 0));
 
         verticalLayout_2->addWidget(widget);
 
 
         horizontalLayout_4->addLayout(verticalLayout_2);
+
+
+        gridLayout->addLayout(horizontalLayout_4, 0, 0, 1, 1);
 
         MainWindow->setCentralWidget(centralWidget);
 

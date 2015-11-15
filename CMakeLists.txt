@@ -13,7 +13,7 @@ ENDFUNCTION(PREPEND)
 
 project(LegActiveCompliance)
 
-set(CMAKE_CXX_FLAGS "-std=c++11")
+set(CMAKE_CXX_FLAGS "-std=c++11 -static-libgcc -static")
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)
 
