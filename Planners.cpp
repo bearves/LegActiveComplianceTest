@@ -859,6 +859,7 @@ void ImpedancePlanner::DetermineCurrentState(
                 currentState = GAIT_SUB_STATE::A_SP_B_LT;
                 m_lastStateShiftTime = timeNow;
                 m_lastLiftUpTime     = timeNow;
+                m_lastTouchDownTime  = timeNow;
 
                 cmdFlag = GAIT_SUB_COMMAND::GSC_NOCMD; // clear the command flag
                 // Reset Impedance param and clear the offsets 
@@ -867,6 +868,11 @@ void ImpedancePlanner::DetermineCurrentState(
                 ClearBalancePIDStates();
                 UpdateTransitionPosVel();
                 UpdateLiftUpLegPosVel();
+                UpdateTouchDownLegPosVel(imuData);
+                m_lastTdBodyOrient[1] = 0; // clear pitch error
+                
+                // Update the body vel at next lift up for the stance leg
+                CalculateBodyVelNextLiftUp("A");
             }
             break;
     }
@@ -1273,7 +1279,7 @@ void ImpedancePlanner::RecoverTrj(double timeNow, double* targetFootPos, double*
     // Initial standing place, then we lift up A legs and put them to the initial place as well.
     double tRecB = (timeNow - m_lastStateShiftTime) / (Trec/3.0);
     double tLiftA = (timeNow - m_lastStateShiftTime - Trec/3.0) / (Trec/3.0);
-    double tRecA = (timeNow - m_lastStateShiftTime - 2*Trec/3.0) / (2*Trec/3.0);
+    double tRecA = (timeNow - m_lastStateShiftTime - 2*Trec/3.0) / (Trec/3.0);
     double initLegPlace[3] = {0, 0, standingHeight - stepLDHeight};
     double liftLegPlace[3] = {0, 0, standingHeight - stepHeight};
 
@@ -1594,9 +1600,9 @@ bool ImpedancePlanner::AllLegOnGround(const char* legGroupName)
     }
 
     bool result =  
-        ( m_forceTransfromed[groupList[0]*3 + 2] > 100 ) &&
-        ( m_forceTransfromed[groupList[1]*3 + 2] > 100 ) &&
-        ( m_forceTransfromed[groupList[2]*3 + 2] > 100 );
+        ( m_forceTransfromed[groupList[0]*3 + 2] > 40 ) &&
+        ( m_forceTransfromed[groupList[1]*3 + 2] > 40 ) &&
+        ( m_forceTransfromed[groupList[2]*3 + 2] > 40 );
                    
     return result;
 }

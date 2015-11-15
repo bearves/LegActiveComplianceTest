@@ -41,9 +41,9 @@ void ParamSetWindow::OnPushbuttonOKClicked()
         return;
     }
     temp.desireVelocity       = ui->lineEditStepLength->text().toDouble(&flag);
-    if (!flag || temp.desireVelocity < -400 || temp.desireVelocity > 400)
+    if (!flag || temp.desireVelocity < -0.4 || temp.desireVelocity > 0.4)
     {
-        ShowMessageBox("Wrong stepLength setting!");
+        ShowMessageBox("Wrong speed setting!");
         return;
     }
     temp.standHeight      = ui->lineEditStandHeight->text().toDouble(&flag);
