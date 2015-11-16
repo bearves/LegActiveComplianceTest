@@ -556,9 +556,9 @@ int ImpedancePlanner::CalculateAdjForceBP(
         double  tdTimeInterval)
 {
                       //Roll, Pitch, Height
-    double KP_BP[3] = { 20000,  20000,     0};
+    double KP_BP[3] = { 15000,  30000,     0};
     double KI_BP[3] = {  2000,   2000,     0};
-    double KD_BP[3] = {  1500,   2000,     0};
+    double KD_BP[3] = {  1000,   2000,     0};
     double force[3];
     double th = 0.001;
 
@@ -568,7 +568,7 @@ int ImpedancePlanner::CalculateAdjForceBP(
     double crtHeight, errHeight, errHeightDot;
     crtHeight = CalculateCurrentHeight(currentFootPos, gaitState);
 
-    errHeight = crtHeight - 0.71; // CURRENT STAGE: We fix the body height to 0.71m
+    errHeight = crtHeight - standingHeight;
     errHeightDot = (errHeight - lastErrorValue[2]) / th;
 
     currentErrorValue[2] = errHeight;
@@ -1665,5 +1665,5 @@ void ImpedancePlanner::CalculateTHLength(
         pitchCompensation = std::min(pitchError, 0.05);
     }
 
-    stepTHLength = standingHeight * (2 - cos(tdAngle)) - height + 0.005 + pitchCompensation*1.2;
+    stepTHLength = standingHeight * (2 - cos(tdAngle)) - height + 0.00 + pitchCompensation*1.2;
 }
