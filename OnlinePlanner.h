@@ -18,6 +18,8 @@ public:
     {
         OGS_ONLINE_WALK             = 1,
         OGS_ONLINE_GOTO_START_POINT = 2,
+        OGS_ONLINE_GOTO_SIT_POINT   = 3,
+        OGS_ONLINE_GOTO_STAND_POINT = 4,
         OGS_OFFLINE                 = 5
     };
     OnlinePlanner(void);
@@ -47,7 +49,7 @@ public:
             double* jointStateOutput,
             char* controlDataForLog);
     // Get the joint length of initial position, used for go to initial position before starting
-    int GetInitialJointLength(double jointLengthList[]);
+    int GetInitialJointLength(double jointLengthList[], ONLINE_GAIT_STATE gaitMod);
 
     ONLINE_GAIT_STATE GetCurrentState() const { return olgaitState; };
 

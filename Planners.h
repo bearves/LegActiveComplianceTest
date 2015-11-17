@@ -151,6 +151,7 @@ namespace RobotHighLevelControl
             static const int LEG_INDEX_GROUP_B[3];
             static const double IMPD_RATIO_A[3];
             static const double IMPD_RATIO_B[3];
+            static const double BASE_ORIENT[2];
 
             ControllerLogData m_logData;
             bool isOnGround;
@@ -171,6 +172,7 @@ namespace RobotHighLevelControl
             double stepTHHeight = 0.025;
             double standingHeight = 0.66;
             double bodyVelDesire = -0;
+            double rotateAngle   = 0;
             double bodyVelLastTouchdown = 0.0; 
             double bodyVelNextLiftUp = 0.0;
             
@@ -296,6 +298,12 @@ namespace RobotHighLevelControl
                     double* bodyOrientLastTd,
                     const char* legGroupName, 
                     double& stepTHLength);
+            void RotationAdjustment(
+                    double timeFromTd, 
+                    double rotateAngle, 
+                    const char* legGroupName,
+                    double* targetFootPos, 
+                    double* targetFootVel);
     };
 
 }

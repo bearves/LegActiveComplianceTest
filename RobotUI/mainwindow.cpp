@@ -158,6 +158,17 @@ void MainWindow::OnDatagramReceived()
     {
         // read msg header
         byteRead = m_tcpSocket->read(msgHead.header, MSG_HEADER_LENGTH);
+
+        if (byteRead < MSG_HEADER_LENGTH)
+        {
+            std::cout << "SKIP MSG:" << byteRead << endl;
+            continue;
+        }
+        if (msgHead.dataLength > 2048)
+        {
+            std::cout << "Wrong length of message: " << msgHead.dataLength << "\n";
+            continue;
+        }
         
         m_robotMsgReceive.SetLength(msgHead.dataLength);
         m_robotMsgReceive.SetMsgID(msgHead.msgID);
@@ -174,7 +185,11 @@ void MainWindow::OnDatagramReceived()
             break;
 
         case RMID_MESSAGE_DATA_REPORT:
-            m_robotMsgReceive.Paste((void *)&m_machineData, m_robotMsgReceive.GetLength());
+            // sometimes a wrong data length is received, if so, the bad::alloc exception 
+            // might been thrown and therefore the program crushes.
+            m_robotMsgReceive.Paste(
+                    (void *)&m_machineData, 
+                    std::min<int>(m_robotMsgReceive.GetLength(), sizeof(m_machineData)));
 
             // The first one force sensors have a different scale of data
             for (int i = 0; i < 6; ++i)
@@ -311,7 +326,7 @@ void MainWindow::ProcessCommand(QString cmd)
         //}
         else if (cmd[0] == 'b' && cmd[1] == 'i')
         {
-            m_robotMsgToSend.SetMsgID(RMID_ONLINEGAIT);
+            m_robotMsgToSend.SetMsgID(RMID_GOTO_START);
             hasMessageToSend = true;
         }
         else if (cmd[0] == 'b' && cmd[1] == 'c')
@@ -343,6 +358,16 @@ void MainWindow::ProcessCommand(QString cmd)
             m_robotMsgToSend.Copy(&param, sizeof(param));
             hasMessageToSend = true;
         }
+    }
+    if (cmd == "sit")
+    {
+        m_robotMsgToSend.SetMsgID(RMID_GOTO_SIT);
+        hasMessageToSend = true;
+    }
+    if (cmd == "stand")
+    {
+        m_robotMsgToSend.SetMsgID(RMID_GOTO_STAND);
+        hasMessageToSend = true;
     }
     if (cmd.left(4) == "show")
     {
@@ -484,7 +509,7 @@ void MainWindow::ProcessCommand(QString cmd)
             RobotHighLevelControl::ParamCXB param = m_paramSetWindow->GetParamData();
 
             param.gaitCommand      = RobotHighLevelControl::GAIT_SUB_COMMAND::GSC_TURN;
-            param.rotationAngle     -= 3.0/180*3.14159265;
+            param.rotationAngle     -= 1.0/180*3.14159265;
             m_paramSetWindow->SetParamData(param);
 
             m_robotMsgToSend.SetLength(sizeof(param));
@@ -497,7 +522,7 @@ void MainWindow::ProcessCommand(QString cmd)
             RobotHighLevelControl::ParamCXB param = m_paramSetWindow->GetParamData();
 
             param.gaitCommand      = RobotHighLevelControl::GAIT_SUB_COMMAND::GSC_TURN;
-            param.rotationAngle     += 3.0/180*3.14159265;
+            param.rotationAngle     += 1.0/180*3.14159265;
             m_paramSetWindow->SetParamData(param);
 
             m_robotMsgToSend.SetLength(sizeof(param));
