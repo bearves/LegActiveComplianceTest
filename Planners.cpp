@@ -403,7 +403,7 @@ int ImpedancePlanner::GenerateJointTrajectory(
             m_logData.adjustedPos[i] = m_currentAdjustedFootPos[i*3+2];
             m_logData.legForceOnZ[i] = m_forceTransfromed[i*3+2];
 
-            m_logData.targetAng[i] = m_currentAdjustedFootPos[i*3+0];
+            m_logData.targetAng[i] = m_currentAdjustedFootPos[i*3+1];
             m_logData.legForceOnX[i] = m_forceTransfromed[i*3+0];
         }
         memcpy(controlDataForLog, (void *)&m_logData, sizeof(ControllerLogData));
@@ -769,6 +769,7 @@ void ImpedancePlanner::DetermineCurrentState(
                 if (cmdFlag == GAIT_SUB_COMMAND::GSC_CLEAR)
                 {
                     bodyVelDesire = 0;
+                    rotateAngle = 0;
                     cmdFlag = GAIT_SUB_COMMAND::GSC_NOCMD;
                 }
             }
@@ -831,6 +832,7 @@ void ImpedancePlanner::DetermineCurrentState(
                 if (cmdFlag == GAIT_SUB_COMMAND::GSC_CLEAR)
                 {
                     bodyVelDesire = 0;
+                    rotateAngle = 0;
                     cmdFlag = GAIT_SUB_COMMAND::GSC_NOCMD;
                 }
             }
@@ -1024,7 +1026,7 @@ void ImpedancePlanner::GenerateReferenceTrj(
 
                 for(int j = 1; j < 2; j++)
                 {
-                    targetFootPos[index*3 + j] = m_lastShiftActPos[index*3 + j];
+                    targetFootPos[index*3 + j] = m_lastTdActPos[index*3 + j];
                     targetFootVel[index*3 + j] = 0; 
                 }
 
@@ -1077,7 +1079,7 @@ void ImpedancePlanner::GenerateReferenceTrj(
 
                 for(int j = 1; j < 2; j++)
                 {
-                    targetFootPos[index*3 + j] = m_lastShiftRefPos[index*3 + j];
+                    targetFootPos[index*3 + j] = m_lastTdActPos[index*3 + j];
                     targetFootVel[index*3 + j] = 0; 
                 }
                 
@@ -1158,7 +1160,7 @@ void ImpedancePlanner::GenerateReferenceTrj(
 
                 for(int j = 1; j < 2; j++)
                 {
-                    targetFootPos[index*3 + j] = m_lastShiftActPos[index*3 + j];
+                    targetFootPos[index*3 + j] = m_lastTdActPos[index*3 + j];
                     targetFootVel[index*3 + j] = 0; 
                 }
                 // Add rotation adjustment to supporting legs
@@ -1209,7 +1211,7 @@ void ImpedancePlanner::GenerateReferenceTrj(
 
                 for(int j = 1; j < 2; j++)
                 {
-                    targetFootPos[index*3 + j] = m_lastShiftRefPos[index*3 + j];
+                    targetFootPos[index*3 + j] = m_lastTdActPos[index*3 + j];
                     targetFootVel[index*3 + j] = 0;
                 }
                 // Add rotation adjustment to supporting legs
@@ -1461,7 +1463,7 @@ void ImpedancePlanner::SwingReferenceTrj(
         Model::HermitInterpolate(
                 Trt,
                 posAtLift[2], velAtLift[2], 
-                posAtLift[2] - stepHeight - lenComp, 0, 
+                posAtLift[2] - stepHeight - lenComp, -0.05, 
                 tr, 
                 posRef[2], velRef[2]);
     }
@@ -1469,9 +1471,9 @@ void ImpedancePlanner::SwingReferenceTrj(
     {
         Model::Spline2SegInterpolate(
                 Text,
-                posAtLift[2] - stepHeight - lenComp, 0, 
+                posAtLift[2] - stepHeight - lenComp, -0.05, 
                 standingHeight - stepLDHeight, 0, 
-                standingHeight - (stepHeight + stepLDHeight)/2, 0.7, // t1 is normalized 
+                standingHeight - (stepHeight + stepLDHeight)/2, 0.75, // t1 is normalized 
                 tk, 
                 posRef[2], velRef[2]);
     }
@@ -1685,7 +1687,7 @@ void ImpedancePlanner::CalculateTHLength(
         pitchCompensation = std::min(pitchError, 0.05);
     }
 
-    stepTHLength = standingHeight * (2 - cos(tdAngle)) - height + 0.00 + pitchCompensation*1.2;
+    stepTHLength = standingHeight * (2 - cos(tdAngle)) - height + 0.005 + pitchCompensation*1.2;
 }
 
 void ImpedancePlanner::RotationAdjustment(
