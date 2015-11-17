@@ -114,6 +114,7 @@ const int ImpedancePlanner::LEG_INDEX_GROUP_A[3] = {Model::Leg::LEG_ID_MB, Model
 const int ImpedancePlanner::LEG_INDEX_GROUP_B[3] = {Model::Leg::LEG_ID_LB, Model::Leg::LEG_ID_RB, Model::Leg::LEG_ID_MF};
 const double ImpedancePlanner::IMPD_RATIO_A[3] = {1.7, 1, 1};
 const double ImpedancePlanner::IMPD_RATIO_B[3] = {1, 1, 1.7};
+const double ImpedancePlanner::BASE_ORIENT[2] = {0.01, 0.0};
 const char * ImpedancePlanner::SUB_STATE_NAME[9] =
 {
     "HOLD_INIT_POS",
@@ -558,7 +559,7 @@ int ImpedancePlanner::CalculateAdjForceBP(
                       //Roll, Pitch, Height
     double KP_BP[3] = { 20000,  20000,     0};
     double KI_BP[3] = {  2000,   2000,     0};
-    double KD_BP[3] = {  1500,   2000,     0};
+    double KD_BP[3] = {  1000,   2000,     0};
     double force[3];
     double th = 0.001;
 
@@ -568,7 +569,7 @@ int ImpedancePlanner::CalculateAdjForceBP(
     double crtHeight, errHeight, errHeightDot;
     crtHeight = CalculateCurrentHeight(currentFootPos, gaitState);
 
-    errHeight = crtHeight - 0.71; // CURRENT STAGE: We fix the body height to 0.71m
+    errHeight = crtHeight - standingHeight;
     errHeightDot = (errHeight - lastErrorValue[2]) / th;
 
     currentErrorValue[2] = errHeight;
@@ -576,7 +577,7 @@ int ImpedancePlanner::CalculateAdjForceBP(
 
     for(int i = 0; i < 2; i++) // Get the error and dot error from IMU data
     {
-        currentErrorValue[i] = imuFdbk.EulerAngle[i]; 
+        currentErrorValue[i] = imuFdbk.EulerAngle[i] - BASE_ORIENT[i]; 
         currentErrorDotValue[i] = imuFdbk.AngularVel[i];
     }
 
@@ -760,6 +761,11 @@ void ImpedancePlanner::DetermineCurrentState(
                     bodyVelDesire = m_trjGeneratorParam.desireVelocity;
                     cmdFlag = GAIT_SUB_COMMAND::GSC_NOCMD;
                 }
+                if (cmdFlag == GAIT_SUB_COMMAND::GSC_TURN)
+                {
+                    rotateAngle = m_trjGeneratorParam.rotationAngle;
+                    cmdFlag = GAIT_SUB_COMMAND::GSC_NOCMD;
+                }
                 if (cmdFlag == GAIT_SUB_COMMAND::GSC_CLEAR)
                 {
                     bodyVelDesire = 0;
@@ -815,6 +821,11 @@ void ImpedancePlanner::DetermineCurrentState(
                 if (cmdFlag == GAIT_SUB_COMMAND::GSC_SPEED)
                 {
                     bodyVelDesire = m_trjGeneratorParam.desireVelocity;
+                    cmdFlag = GAIT_SUB_COMMAND::GSC_NOCMD;
+                }
+                if (cmdFlag == GAIT_SUB_COMMAND::GSC_TURN)
+                {
+                    rotateAngle = m_trjGeneratorParam.rotationAngle;
                     cmdFlag = GAIT_SUB_COMMAND::GSC_NOCMD;
                 }
                 if (cmdFlag == GAIT_SUB_COMMAND::GSC_CLEAR)
@@ -959,11 +970,11 @@ void ImpedancePlanner::GenerateReferenceTrj(
                 // Positions
                 targetFootPos[LEG_INDEX_GROUP_A[i]*3 + 0] = 0;
                 targetFootPos[LEG_INDEX_GROUP_A[i]*3 + 1] = 0;
-                targetFootPos[LEG_INDEX_GROUP_A[i]*3 + 2] = standingHeight - stepLDHeight;
+                targetFootPos[LEG_INDEX_GROUP_A[i]*3 + 2] = standingHeight;
 
                 targetFootPos[LEG_INDEX_GROUP_B[i]*3 + 0] = 0;
                 targetFootPos[LEG_INDEX_GROUP_B[i]*3 + 1] = 0;
-                targetFootPos[LEG_INDEX_GROUP_B[i]*3 + 2] = standingHeight - stepLDHeight;
+                targetFootPos[LEG_INDEX_GROUP_B[i]*3 + 2] = standingHeight;
 
                 // Velocities
                 targetFootVel[LEG_INDEX_GROUP_A[i]*3 + 0] = 0;
@@ -986,19 +997,12 @@ void ImpedancePlanner::GenerateReferenceTrj(
                         &m_lastLiftRefPos[index*3], &m_lastLiftRefVel[index*3],
                         &targetFootPos[index*3],    &targetFootVel[index*3],
                         index >= 3);
-
-                // leg angles of side swing legs are not changed
-                for(int j = 1; j < 2; j++)
-                {
-                    targetFootPos[index*3 + j] = m_lastShiftRefPos[index*3 + j];
-                    targetFootVel[index*3 + j] = m_lastShiftRefVel[index*3 + j];
-                }
                 
                 // A retract very little from the actual TD place 
                 index = LEG_INDEX_GROUP_A[i];
 
                 double tt = (timeNow - m_lastStateShiftTime) / Tset;
-                double estimateTouchdownVel = (m_lastTouchDownTime - m_lastLiftUpTime) * -9.81 * 0.1;
+                double estimateTouchdownVel = (m_lastTouchDownTime - m_lastLiftUpTime) * -9.81 * 0.05;
 
                 Model::HermitInterpolate(
                         Tset,
@@ -1023,6 +1027,15 @@ void ImpedancePlanner::GenerateReferenceTrj(
                     targetFootPos[index*3 + j] = m_lastShiftActPos[index*3 + j];
                     targetFootVel[index*3 + j] = 0; 
                 }
+
+                // Add rotation adjustment to supporting legs
+                RotationAdjustment(
+                        timeNow - m_lastTouchDownTime, 
+                        rotateAngle, 
+                        "A", 
+                        targetFootPos, 
+                        targetFootVel);
+
             }
             break;
 
@@ -1036,13 +1049,6 @@ void ImpedancePlanner::GenerateReferenceTrj(
                         &m_lastLiftRefPos[index*3], &m_lastLiftRefVel[index*3],
                         &targetFootPos[index*3],    &targetFootVel[index*3],
                         index >= 3);
-
-                // leg angles of swing leg are not changed
-                for(int j = 1; j < 2; j++)
-                {
-                    targetFootPos[index*3 + j] = m_lastShiftRefPos[index*3 + j];
-                    targetFootVel[index*3 + j] = m_lastShiftRefVel[index*3 + j];
-                }
                 
                 // A extend to the original standing length 
                 index = LEG_INDEX_GROUP_A[i];
@@ -1072,8 +1078,16 @@ void ImpedancePlanner::GenerateReferenceTrj(
                 for(int j = 1; j < 2; j++)
                 {
                     targetFootPos[index*3 + j] = m_lastShiftRefPos[index*3 + j];
-                    targetFootVel[index*3 + j] = m_lastShiftRefVel[index*3 + j];
+                    targetFootVel[index*3 + j] = 0; 
                 }
+                
+                // Add rotation adjustment to supporting legs
+                RotationAdjustment(
+                        timeNow - m_lastTouchDownTime, 
+                        rotateAngle, 
+                        "A", 
+                        targetFootPos, 
+                        targetFootVel);
             }
             break;
 
@@ -1102,12 +1116,6 @@ void ImpedancePlanner::GenerateReferenceTrj(
                         &m_lastLiftRefPos[index*3], &m_lastLiftRefVel[index*3],
                         &targetFootPos[index*3],    &targetFootVel[index*3],
                         index >= 3);
-
-                for(int j = 1; j < 2; j++)
-                {
-                    targetFootPos[index*3 + j] = m_lastShiftRefPos[index*3 + j];
-                    targetFootVel[index*3 + j] = m_lastShiftRefVel[index*3 + j];
-                }
             }
 
             break;
@@ -1123,18 +1131,12 @@ void ImpedancePlanner::GenerateReferenceTrj(
                         &targetFootPos[index*3],    &targetFootVel[index*3],
                         index >= 3);
 
-                // leg angles of swing leg are not changed
-                for(int j = 1; j < 2; j++)
-                {
-                    targetFootPos[index*3 + j] = m_lastShiftRefPos[index*3 + j];
-                    targetFootVel[index*3 + j] = m_lastShiftRefVel[index*3 + j];
-                }
                 
                 // B retract very little from the actual TD place 
                 index = LEG_INDEX_GROUP_B[i];
 
                 double tt = (timeNow - m_lastStateShiftTime) / Tset;
-                double estimateTouchdownVel = (m_lastTouchDownTime - m_lastLiftUpTime) * -9.81 * 0.1;
+                double estimateTouchdownVel = (m_lastTouchDownTime - m_lastLiftUpTime) * -9.81 * 0.05;
 
                 Model::HermitInterpolate(
                         Tset,
@@ -1159,6 +1161,13 @@ void ImpedancePlanner::GenerateReferenceTrj(
                     targetFootPos[index*3 + j] = m_lastShiftActPos[index*3 + j];
                     targetFootVel[index*3 + j] = 0; 
                 }
+                // Add rotation adjustment to supporting legs
+                RotationAdjustment(
+                        timeNow - m_lastTouchDownTime, 
+                        rotateAngle, 
+                        "B", 
+                        targetFootPos, 
+                        targetFootVel);
             }
             break;
 
@@ -1172,13 +1181,6 @@ void ImpedancePlanner::GenerateReferenceTrj(
                         &m_lastLiftRefPos[index*3], &m_lastLiftRefVel[index*3],
                         &targetFootPos[index*3],    &targetFootVel[index*3],
                         index >= 3);
-
-                // leg angles of swing leg are not changed
-                for(int j = 1; j < 2; j++)
-                {
-                    targetFootPos[index*3 + j] = m_lastShiftRefPos[index*3 + j];
-                    targetFootVel[index*3 + j] = m_lastShiftRefVel[index*3 + j];
-                }
                 
                 // B extend to the original standing length 
                 index = LEG_INDEX_GROUP_B[i];
@@ -1208,8 +1210,15 @@ void ImpedancePlanner::GenerateReferenceTrj(
                 for(int j = 1; j < 2; j++)
                 {
                     targetFootPos[index*3 + j] = m_lastShiftRefPos[index*3 + j];
-                    targetFootVel[index*3 + j] = m_lastShiftRefVel[index*3 + j];
+                    targetFootVel[index*3 + j] = 0;
                 }
+                // Add rotation adjustment to supporting legs
+                RotationAdjustment(
+                        timeNow - m_lastTouchDownTime, 
+                        rotateAngle, 
+                        "B", 
+                        targetFootPos, 
+                        targetFootVel);
             }
             break;
 
@@ -1237,11 +1246,6 @@ void ImpedancePlanner::GenerateReferenceTrj(
                         &targetFootPos[index*3],    &targetFootVel[index*3], 
                         index >= 3);
 
-                for(int j = 1; j < 2; j++)
-                {
-                    targetFootPos[index*3 + j] = m_lastShiftRefPos[index*3 + j];
-                    targetFootVel[index*3 + j] = m_lastShiftRefVel[index*3 + j];
-                }
             }
             break;
 
@@ -1280,7 +1284,7 @@ void ImpedancePlanner::RecoverTrj(double timeNow, double* targetFootPos, double*
     double tRecB = (timeNow - m_lastStateShiftTime) / (Trec/3.0);
     double tLiftA = (timeNow - m_lastStateShiftTime - Trec/3.0) / (Trec/3.0);
     double tRecA = (timeNow - m_lastStateShiftTime - 2*Trec/3.0) / (Trec/3.0);
-    double initLegPlace[3] = {0, 0, standingHeight - stepLDHeight};
+    double initLegPlace[3] = {0, 0, standingHeight};
     double liftLegPlace[3] = {0, 0, standingHeight - stepHeight};
 
     if (tRecB < 1)
@@ -1480,12 +1484,6 @@ void ImpedancePlanner::SwingReferenceTrj(
     // Planning leg angle
     if (tb < 1) // Keep swing backward
     {
-        Model::HermitInterpolate(
-                Tbackward, 
-                posAtLift[0], velAtLift[0], 
-                posAtLift[0]+velAtLift[0]*Tbackward, velAtLift[0], 
-                tb, 
-                posRef[0], velRef[0]);
         posRef[0] = posAtLift[0] + velAtLift[0]*tb*Tbackward;
         velRef[0] = velAtLift[0];
     }
@@ -1507,6 +1505,28 @@ void ImpedancePlanner::SwingReferenceTrj(
         EstimateTDState(tdAngle, tdAngVel, isFront);
         posRef[0] = tdAngle + tdAngVel*tm*Tforward;
         velRef[0] = tdAngVel;
+    }
+
+    // Planning side angle
+    if (tb < 1) // Keep swing backward
+    {
+        posRef[1] = posAtLift[1] + velAtLift[1]*tb*Tbackward;
+        velRef[1] = velAtLift[1];
+    }
+    else if (tf < 1) // Swing forward and try to match the touchdown speed
+    {
+        Model::HermitInterpolate(
+                Tforward,
+                posAtLift[1] + velAtLift[1]*Tbackward, velAtLift[1],
+                0, 0,
+                tf,
+                posRef[1], velRef[1]
+                );
+    }
+    else // Swing back at a constant speed, which is estimated touchdown speed
+    {
+        posRef[1] = 0;
+        velRef[1] = 0;
     }
 }
 
@@ -1665,5 +1685,67 @@ void ImpedancePlanner::CalculateTHLength(
         pitchCompensation = std::min(pitchError, 0.05);
     }
 
-    stepTHLength = standingHeight * (2 - cos(tdAngle)) - height + 0.0 + pitchCompensation*1.2;
+    stepTHLength = standingHeight * (2 - cos(tdAngle)) - height + 0.005 + pitchCompensation*1.2;
+}
+
+void ImpedancePlanner::RotationAdjustment(
+        double timeFromTd, 
+        double rotateAngle, 
+        const char* legGroupName,
+        double* targetFootPos, 
+        double* targetFootVel)
+{
+    double Tstance = Tset + Tth;
+    double tr = timeFromTd / Tstance;
+
+    double lenNormalized, lenDotNormalized;
+    double rs = rotateAngle / standingHeight;
+
+    Model::HermitInterpolate(
+            Tstance,
+            0, 0,
+            1, 0,
+            tr,
+            lenNormalized, lenDotNormalized);
+
+    // Limit the angle to a small value
+    if (rotateAngle > 3.0/180*Model::PI)
+    {
+        rotateAngle = 3.0/180*Model::PI;
+    }
+    else if (rotateAngle < -3.0/180*Model::PI)
+    {
+        rotateAngle = -3.0/180*Model::PI;
+    }
+
+    if (*legGroupName == 'A')  // A in support status
+    {
+        double sagAnglesA[3] = {0, 0.357*rs, -0.357*rs};
+        double sideAnglesA[3] = {0.539*rs, 0.396*rs, 0.396*rs};
+
+        for(int i = 0; i < 3; i++)
+        {
+            int index = LEG_INDEX_GROUP_A[i];
+            targetFootPos[index*3 + 0] += sagAnglesA[i] * lenNormalized;
+            targetFootVel[index*3 + 0] += sagAnglesA[i] * lenDotNormalized;
+
+            targetFootPos[index*3 + 1] += sideAnglesA[i] * lenNormalized;
+            targetFootVel[index*3 + 1] += sideAnglesA[i] * lenDotNormalized;
+        }
+    }
+    else // B in support status
+    {
+        double sagAnglesB[3] = {0.357*rs, -0.357*rs, 0};
+        double sideAnglesB[3] = {0.396*rs, 0.396*rs, 0.539*rs};
+
+        for(int i = 0; i < 3; i++)
+        {
+            int index = LEG_INDEX_GROUP_B[i];
+            targetFootPos[index*3 + 0] += sagAnglesB[i] * lenNormalized;
+            targetFootVel[index*3 + 0] += sagAnglesB[i] * lenDotNormalized;
+
+            targetFootPos[index*3 + 1] += sideAnglesB[i] * lenNormalized;
+            targetFootVel[index*3 + 1] += sideAnglesB[i] * lenDotNormalized;
+        }
+    }
 }

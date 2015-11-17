@@ -219,7 +219,9 @@ int CGait::RunGait(double timeNow, EGAIT* p_gait,Aris::RT_CONTROL::CMachineData&
     }
 
     if (onlinePlanner.GetCurrentState() == OnlinePlanner::OGS_ONLINE_WALK || 
-        onlinePlanner.GetCurrentState() == OnlinePlanner::OGS_ONLINE_GOTO_START_POINT)
+        onlinePlanner.GetCurrentState() == OnlinePlanner::OGS_ONLINE_GOTO_START_POINT ||
+        onlinePlanner.GetCurrentState() == OnlinePlanner::OGS_ONLINE_GOTO_SIT_POINT ||
+        onlinePlanner.GetCurrentState() == OnlinePlanner::OGS_ONLINE_GOTO_STAND_POINT)
     {
         CalculateModelInputs(data, m_jointStateInput, m_forceData, m_imuData);
         onlinePlanner.GenerateJointTrajectory( 

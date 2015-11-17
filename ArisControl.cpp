@@ -42,10 +42,12 @@ enum MACHINE_CMD
     GOHOME_2      = 1006,
     HOME2START_1  = 1007,
     HOME2START_2  = 1008,
-    ONLINEGAIT    = 1016, // Online home to start
-    ONLINEGAIT_2  = 1019, // Online impedance control
+    GOTO_START    = 1016, // Online home to start
     ONLINEBEGIN   = 1017,
     ONLINEEND     = 1018,
+    ONLINEGAIT_2  = 1019, // Online impedance control
+    GOTO_SIT      = 1020, // Online goto to sit
+    GOTO_STAND    = 1021, // Online goto to stand
     CLEAR_FORCE   = 1034,
     SET_PARA_CXB  = 1035
 };
@@ -230,7 +232,7 @@ int tg(Aris::RT_CONTROL::CMachineData& machineData,
             }
             break;
 
-        case ONLINEGAIT: 
+        case GOTO_START: 
             gait.onlinePlanner.Initialize(2); // online home to start
             if(gait.m_gaitState[MapAbsToPhy[0]]==GAIT_STOP)
             {
@@ -243,8 +245,33 @@ int tg(Aris::RT_CONTROL::CMachineData& machineData,
             }
             break;
 
+        case GOTO_SIT: 
+            gait.onlinePlanner.Initialize(3); // online goto sit point
+            if(gait.m_gaitState[MapAbsToPhy[0]]==GAIT_STOP)
+            {
+                for(int i=0;i<AXIS_NUMBER;i++)
+                {
+                    machineData.motorsModes[i]=EOperationMode::OM_CYCLICVEL;
+                    gaitcmd[MapAbsToPhy[i]]=EGAIT::GAIT_ONLINE;
+                    machineData.motorsCommands[i]=EMCMD_RUNNING;
+                }
+            }
+            break;
+
+        case GOTO_STAND: 
+            gait.onlinePlanner.Initialize(4); // online goto stand point
+            if(gait.m_gaitState[MapAbsToPhy[0]]==GAIT_STOP)
+            {
+                for(int i=0;i<AXIS_NUMBER;i++)
+                {
+                    machineData.motorsModes[i]=EOperationMode::OM_CYCLICVEL;
+                    gaitcmd[MapAbsToPhy[i]]=EGAIT::GAIT_ONLINE;
+                    machineData.motorsCommands[i]=EMCMD_RUNNING;
+                }
+            }
+            break;
+
         case ONLINEGAIT_2:
-            // TODO: add online trj code here
 
             gait.onlinePlanner.Initialize(1); // online impedance control
 
@@ -353,8 +380,16 @@ int OnGetControlCommand(Aris::Core::MSG &msg)
             commandMsg.SetMsgID(HOME2START_2);
             controlSystem.NRT_PostMsg(commandMsg);
             break;
-        case ONLINEGAIT:
-            commandMsg.SetMsgID(ONLINEGAIT);
+        case GOTO_START:
+            commandMsg.SetMsgID(GOTO_START);
+            controlSystem.NRT_PostMsg(commandMsg);
+            break;
+        case GOTO_SIT:
+            commandMsg.SetMsgID(GOTO_SIT);
+            controlSystem.NRT_PostMsg(commandMsg);
+            break;
+        case GOTO_STAND:
+            commandMsg.SetMsgID(GOTO_STAND);
             controlSystem.NRT_PostMsg(commandMsg);
             break;
         case ONLINEGAIT_2:
