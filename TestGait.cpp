@@ -9,7 +9,7 @@ using namespace std;
 int main(int argc, char *argv[])
 {
     double timeNow;
-    double legTipPoints[3] = {-0.0, -0.005, -0.66};
+    double legTipPoints[3] = {-0.0, -0.01, -0.66};
     double legTipPoints2[3] = {-0.0, 0, -0.66};
     double screwLength[3];
     double screwLength2[3];

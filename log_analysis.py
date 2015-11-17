@@ -1,5 +1,8 @@
 #!/usr/bin/python
 
+tstart = 70;
+tend   = 90;
+
 import numpy
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
@@ -26,16 +29,15 @@ for i in range(1, 113):
 print len(time)
 tplt = time / 1.0
 
-tstart = 0;
-tend   = 300;
-
 plt.subplot(3,1,1)
 plt.plot(tplt, axis[81])
+#plt.plot(tplt, axis[36])
+#plt.plot(tplt, axis[37])
 plt.xlim([tstart, tend])
 
 plt.subplot(3,1,2)
 for i in range(6):
-    plt.plot(tplt, axis[82+i*5+2])
+    plt.plot(tplt, axis[82+i*5+3])
 plt.xlim([tstart, tend])
 #plt.ylim([-0.3,0.3])
 plt.grid(True)
@@ -44,7 +46,7 @@ plt.subplot(3,1,3)
 for i in range(6):
     plt.plot(tplt, axis[82+i*5+1])
     plt.plot(tplt, axis[82+i*5+0])
-plt.ylim([0.53,0.73])
+plt.ylim([0.48,0.73])
 plt.xlim([tstart, tend])
 
 plt.show()
