@@ -87,8 +87,8 @@ int OnlinePlanner::Offline()
 
 int OnlinePlanner::GetInitialJointLength(double jointLength[], ONLINE_GAIT_STATE gaitState)
 {
-    static double sitFootTipPosition[3] = {0, 0, 0.62};
-    static double standFootTipPosition[3] = {0, 0, 0.7};
+    static double sitFootTipPosition[3] = {0, 0, 0.60};
+    static double standFootTipPosition[3] = {0, 0, 0.69};
     if (jointLength == nullptr)
         return -1;
 

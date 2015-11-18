@@ -608,13 +608,14 @@ int ImpedancePlanner::CalculateAdjForceBP(
     }
 
     // Gravity Compensation of body height
+    static double bodyM = 268+15.5;
     if (tdTimeInterval < 0.06 && tdTimeInterval > 0)
     {
-        force[2] += -9.81*268*tdTimeInterval;
+        force[2] += -9.81*bodyM*tdTimeInterval;
     }
     else
     {
-        force[2] += -9.81 * 268;
+        force[2] += -9.81 * bodyM;
     }
 
     // Force distribution

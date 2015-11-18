@@ -194,7 +194,7 @@ void MainWindow::OnDatagramReceived()
             // The first one force sensors have a different scale of data
             for (int i = 0; i < 6; ++i)
             {
-                m_machineData.forceData[RobotHighLevelControl::MapAbsToPhyForceSensor[0]].forceValues[i] /= 1000.0;
+                //m_machineData.forceData[RobotHighLevelControl::MapAbsToPhyForceSensor[0]].forceValues[i] /= 1000.0;
             }
             this->DisplayDeviceData(m_machineData);
             break;
