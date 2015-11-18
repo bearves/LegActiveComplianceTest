@@ -7,6 +7,7 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     m_remoteAddr = QHostAddress(REMOTE_IP_STRING);
     m_remotePort = REMOTE_PORT;
+    m_tickCount = 0;
     m_sendCount = 0;
     m_recvCount = 0;
     m_isConnected = false;
