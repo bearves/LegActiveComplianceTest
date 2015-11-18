@@ -6,7 +6,7 @@ import time
 network_configs = subprocess.Popen('/sbin/ifconfig', shell=True, stdout=subprocess.PIPE).stdout.read()
 
 # find out the hardware address
-pattern = '^(eth[0-9]*)\s.+?HWaddr\s+([0-9a-fA-F]{2}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2})'
+pattern = '^(eth[0-9]*|rename[0-9]*)\s.+?HWaddr\s+([0-9a-fA-F]{2}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2})'
 
 netcard_name_list = []
 mac_addr_list = []

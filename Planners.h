@@ -137,6 +137,7 @@ namespace RobotHighLevelControl
             int SetGaitParameter(const void* param, int dataLength);
             int GenerateJointTrajectory(
                     double timeNow,
+                    double m_lastHeartbeatTime,
                     double* currentPoint, 
                     Aris::RT_CONTROL::CForceData* forceInput, 
                     Aris::RT_CONTROL::CIMUData& imuFdbk,
@@ -152,9 +153,12 @@ namespace RobotHighLevelControl
             static const double IMPD_RATIO_A[3];
             static const double IMPD_RATIO_B[3];
             static const double BASE_ORIENT[2];
+            static const double SAFETY_RETURN_TIMEOUT;
 
             ControllerLogData m_logData;
-            bool isOnGround;
+            bool m_isOnGround;
+            bool m_isSafetyReturnStarted;
+            double m_safetyReturnStartTime;
 
             // following M_ac, B_ac and K_ac is used for ImpedancePlanner 
             double M_ac[6][3];
@@ -163,12 +167,12 @@ namespace RobotHighLevelControl
 
             // Timing for gait state machine and trj generation
             double Trt  = 0.3;
-            double Tset = 0.4;
-            double Tth  = 0.5;
+            double Tset = 0.35;
+            double Tth  = 0.42;
             double Tfly = 0.15; // the maximum flying time
             double Trec = 2;
             double stepHeight = 0.10;
-            double stepLDHeight = 0.025;
+            double stepLDHeight = 0.024;
             double stepTHHeight = 0.025;
             double standingHeight = 0.66;
             double bodyVelDesire = -0;
@@ -304,6 +308,8 @@ namespace RobotHighLevelControl
                     const char* legGroupName,
                     double* targetFootPos, 
                     double* targetFootVel);
+
+            void CheckHeartbeat(double timeNow, double lastHeartbeatTime);
     };
 
 }

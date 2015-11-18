@@ -194,7 +194,7 @@ void MainWindow::OnDatagramReceived()
             // The first one force sensors have a different scale of data
             for (int i = 0; i < 6; ++i)
             {
-                m_machineData.forceData[RobotHighLevelControl::MapAbsToPhyForceSensor[0]].forceValues[i] /= 1000.0;
+                //m_machineData.forceData[RobotHighLevelControl::MapAbsToPhyForceSensor[0]].forceValues[i] /= 1000.0;
             }
             this->DisplayDeviceData(m_machineData);
             break;
@@ -567,6 +567,20 @@ void MainWindow::OnTimerTick()
         if(m_tickCount % 40 == 0){
             if (m_tcpSocket->state() != QAbstractSocket::ConnectedState && m_isConnected == true)
                 OnSocketDisconnected();
+        }
+    }
+
+    if (m_tickCount % CONNECTION_FREQ == 0)  // For every 1 second, we send a HEART_BEAT msg to the robot
+    {
+        if (m_tcpSocket->state() == QAbstractSocket::ConnectedState)
+        {
+            m_robotMsgToSend.SetMsgID(RMID_HEARTBEAT);
+            QString processMsg;
+            processMsg.sprintf("Heartbeat: %.1lf s\n", m_tickCount * 1.0/CONNECTION_FREQ);
+            int byteSent = m_tcpSocket->write(
+                    m_robotMsgToSend.GetHeaderAddress(), m_robotMsgToSend.GetLength() + MSG_HEADER_LENGTH);
+            ui->plainTextEditMsgLog->appendPlainText(processMsg);
+            m_sendCount++;
         }
     }
 }
