@@ -729,7 +729,7 @@ void ImpedancePlanner::DetermineCurrentState(
         case GAIT_SUB_STATE::A_SP_B_LT:
             if (timeNow - m_lastStateShiftTime > Tset)
             { 
-                if (cmdFlag == GAIT_SUB_COMMAND::GSC_STOP || (timeNow - m_safetyReturnStartTime > 6))
+                if (cmdFlag == GAIT_SUB_COMMAND::GSC_STOP || (m_isSafetyReturnStarted && timeNow - m_safetyReturnStartTime > 6))
                 { 
                     currentState = GAIT_SUB_STATE::RECOVERING;
                     m_lastStateShiftTime = timeNow;
