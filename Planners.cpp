@@ -107,6 +107,7 @@ int GoToPointPlanner::GenerateJointTrajectory(double timeNow, double* currentPoi
     return 0;
 }
 
+const double ImpedancePlanner::SAFETY_RETURN_TIMEOUT = 6;
 const double ImpedancePlanner::FOOT_POS_UP_LIMIT[3]  = { Model::PI/9,  Model::PI/36, 0.76};
 const double ImpedancePlanner::FOOT_POS_LOW_LIMIT[3] = {-Model::PI/9, -Model::PI/36, 0.5};
 const double ImpedancePlanner::FORCE_DEADZONE[3]     = { 2.5, 2.5, 10 };
@@ -267,6 +268,7 @@ int ImpedancePlanner::Stop()
 
 int ImpedancePlanner::GenerateJointTrajectory(
         double timeNow, 
+        double lastHeartbeatTime,
         double* currentPoint, 
         Aris::RT_CONTROL::CForceData* forceInput, 
         Aris::RT_CONTROL::CIMUData& imuFdbk,
@@ -297,7 +299,6 @@ int ImpedancePlanner::GenerateJointTrajectory(
             m_currentIntegralValue[i] = 0;
             m_lastIntegralValue[i] = m_currentIntegralValue[i];
         }
-        isOnGround = false;
 
         m_cmdFlag = GAIT_SUB_COMMAND::GSC_NOCMD;
         m_subState = HOLD_INIT_POS;
@@ -305,10 +306,12 @@ int ImpedancePlanner::GenerateJointTrajectory(
 
         bodyVelLastTouchdown = 0;
         bodyVelNextLiftUp = 0;
+
+        m_isSafetyReturnStarted = false;
+        m_safetyReturnStartTime = timeNow;
     }
     else if (m_state == INMOTION)
     {
-        
         // re-initial desire force
         for( int i = 0; i < 18; i++)
         {
@@ -448,6 +451,16 @@ int ImpedancePlanner::GenerateJointTrajectory(
         {
             jointLength[i] = m_currentAdjustedJointPos[i];
         }
+         
+        // Check heartbeat for safety
+        CheckHeartbeat(timeNow, lastHeartbeatTime);
+
+        // automatically return to FINISHED if a safety return is activated
+        if (m_isSafetyReturnStarted && m_subState == HOLD_END_POS)
+        {
+            m_state = FINISHED;
+        }
+        
     }
     // When the controller has been stopped, the leg should held its current place
     else if (m_state == FINISHED)
@@ -715,7 +728,7 @@ void ImpedancePlanner::DetermineCurrentState(
         case GAIT_SUB_STATE::A_SP_B_LT:
             if (timeNow - m_lastStateShiftTime > Tset)
             { 
-                if (cmdFlag == GAIT_SUB_COMMAND::GSC_STOP)
+                if (cmdFlag == GAIT_SUB_COMMAND::GSC_STOP || (timeNow - m_safetyReturnStartTime > 6))
                 { 
                     currentState = GAIT_SUB_STATE::RECOVERING;
                     m_lastStateShiftTime = timeNow;
@@ -766,7 +779,7 @@ void ImpedancePlanner::DetermineCurrentState(
                     rotateAngle = m_trjGeneratorParam.rotationAngle;
                     cmdFlag = GAIT_SUB_COMMAND::GSC_NOCMD;
                 }
-                if (cmdFlag == GAIT_SUB_COMMAND::GSC_CLEAR)
+                if (cmdFlag == GAIT_SUB_COMMAND::GSC_CLEAR || m_isSafetyReturnStarted)
                 {
                     bodyVelDesire = 0;
                     rotateAngle = 0;
@@ -829,7 +842,7 @@ void ImpedancePlanner::DetermineCurrentState(
                     rotateAngle = m_trjGeneratorParam.rotationAngle;
                     cmdFlag = GAIT_SUB_COMMAND::GSC_NOCMD;
                 }
-                if (cmdFlag == GAIT_SUB_COMMAND::GSC_CLEAR)
+                if (cmdFlag == GAIT_SUB_COMMAND::GSC_CLEAR || m_isSafetyReturnStarted)
                 {
                     bodyVelDesire = 0;
                     rotateAngle = 0;
@@ -1749,5 +1762,15 @@ void ImpedancePlanner::RotationAdjustment(
             targetFootPos[index*3 + 1] += sideAnglesB[i] * lenNormalized;
             targetFootVel[index*3 + 1] += sideAnglesB[i] * lenDotNormalized;
         }
+    }
+}
+
+void ImpedancePlanner::CheckHeartbeat(double timeNow, double lastHeartbeatTime)
+{
+    if (timeNow - lastHeartbeatTime > SAFETY_RETURN_TIMEOUT && m_isSafetyReturnStarted == false)
+    {
+        m_isSafetyReturnStarted = true;
+        m_safetyReturnStartTime = timeNow;
+        rt_printf("WARNING: Lost heartbeat, and the SAFETY RETURN is activated\n");
     }
 }

@@ -152,7 +152,14 @@ int OnlinePlanner::GenerateJointTrajectory(
             m_startOnlineGaitFlag = false;
             m_impedancePlanner.Start(timeNow);
         }
-        m_impedancePlanner.GenerateJointTrajectory(timeNow, jointStateInput, forceData, imuFdbk, jointStateOutput, controlDataForLog);
+        m_impedancePlanner.GenerateJointTrajectory(
+                timeNow, 
+                m_lastHeartbeatTime,
+                jointStateInput, 
+                forceData, 
+                imuFdbk, 
+                jointStateOutput, 
+                controlDataForLog);
     }
     else if ( olgaitState == OGS_ONLINE_GOTO_START_POINT ||
               olgaitState == OGS_ONLINE_GOTO_SIT_POINT ||
@@ -186,4 +193,9 @@ int OnlinePlanner::SetGaitParameter(const void* paramData, int dataLength, int g
         m_impedancePlanner.SetGaitParameter(paramData, dataLength);
     }
     return 0;
+}
+
+void OnlinePlanner::UpdateHearbeatTimer(double updateTime)
+{
+    m_lastHeartbeatTime = updateTime;
 }

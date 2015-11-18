@@ -49,7 +49,10 @@ public:
             double* jointStateOutput,
             char* controlDataForLog);
     // Get the joint length of initial position, used for go to initial position before starting
-    int GetInitialJointLength(double jointLengthList[], ONLINE_GAIT_STATE gaitMod);
+    int GetInitialJointLength(double jointLengthList[], ONLINE_GAIT_STATE gaitState);
+
+    // Update the Heartbeat timer
+    void UpdateHearbeatTimer(double updateTime);
 
     ONLINE_GAIT_STATE GetCurrentState() const { return olgaitState; };
 
@@ -64,6 +67,8 @@ private:
     GoToPointPlanner m_gotoPointPlanner;
     ImpedancePlanner m_impedancePlanner;
     Model::Leg legList[6];
+
+    double m_lastHeartbeatTime = 0;
 
     // Assign the position of leg group from the virtual model to the position of acutal legs
     int CalculateEachLegPosition();

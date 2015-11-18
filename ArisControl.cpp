@@ -49,7 +49,8 @@ enum MACHINE_CMD
     GOTO_SIT      = 1020, // Online goto to sit
     GOTO_STAND    = 1021, // Online goto to stand
     CLEAR_FORCE   = 1034,
-    SET_PARA_CXB  = 1035
+    SET_PARA_CXB  = 1035,
+    HEARTBEAT     = 2000
 };
 
 enum MACHINE_DATA
@@ -319,6 +320,10 @@ int tg(Aris::RT_CONTROL::CMachineData& machineData,
             msgRecv.Paste((void *)&machineData.imuData, sizeof(CIMUData));
             break;
 
+        case HEARTBEAT:
+            gait.onlinePlanner.UpdateHearbeatTimer(timeNow);
+            break;
+
         default:
             //DO NOTHING, CMD AND TRAJ WILL KEEP STILL
             break;
@@ -406,6 +411,11 @@ int OnGetControlCommand(Aris::Core::MSG &msg)
             break;
         case CLEAR_FORCE:
             commandMsg.SetMsgID(CLEAR_FORCE);
+            controlSystem.NRT_PostMsg(commandMsg);
+            break;
+
+        case HEARTBEAT:
+            commandMsg.SetMsgID(HEARTBEAT);
             controlSystem.NRT_PostMsg(commandMsg);
             break;
 
