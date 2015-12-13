@@ -179,8 +179,8 @@ int ImpedancePlanner::ResetImpedanceParam(int impedanceMode)
     double B_SOFT_LANDING[3] = {1e5, 1e5, 1000};
     double M_SOFT_LANDING[3] = {100, 100, 20};
 
-    double K_MEDIUM_SOFT[3] = {1e8, 1e8, 40000};
-    double B_MEDIUM_SOFT[3] = {1e5, 1e5, 5000}; // actual damping ratio is much smaller than the desired
+    double K_MEDIUM_SOFT[3] = {1e8, 1e8, 30000};
+    double B_MEDIUM_SOFT[3] = {1e5, 1e5, 3000}; // actual damping ratio is much smaller than the desired
     double M_MEDIUM_SOFT[3] = {100, 100, 20};
 
     switch (impedanceMode)
@@ -609,6 +609,7 @@ int ImpedancePlanner::CalculateAdjForceBP(
 
     // Gravity Compensation of body height
     static double bodyM = 268+15.5;
+    //static double bodyM = 268;
     if (tdTimeInterval < 0.06 && tdTimeInterval > 0)
     {
         force[2] += -9.81*bodyM*tdTimeInterval;
