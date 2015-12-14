@@ -136,6 +136,8 @@ ImpedancePlanner::ImpedancePlanner()
         m_legList[i].SetID(i);
     }
 
+    ResetBasicGaitParameter();
+
     ResetInitialFootPos();
 
     ResetImpedanceParam(A_HARD_B_HARD);
@@ -151,6 +153,7 @@ int ImpedancePlanner::Initialize()
 {
     if (m_state == UNREADY || m_state == FINISHED)
     {
+        ResetBasicGaitParameter();
         ResetInitialFootPos();
         m_state = READY;
         return 0;
@@ -159,6 +162,26 @@ int ImpedancePlanner::Initialize()
     {
         return -1;
     }
+}
+
+int ImpedancePlanner::ResetBasicGaitParameter()
+{
+    Trt                  = 0.32;
+    Tset                 = 0.27;
+    Tth                  = 0.3;
+    Tfly                 = 0.15; // the maximum flying time
+    Trec                 = 2;
+    stepHeight           = 0.10;
+    stepLDHeight         = 0.024;
+    stepLDLenVel         = 0.1; // the vel of length of leg when td
+    stepTHHeight         = 0.025;
+    standingHeight       = 0.66;
+    bodyVelDesire        = -0;
+    rotateAngle          = 0;
+    bodyVelLastTouchdown = 0.0;
+    bodyVelNextLiftUp    = 0.0;
+
+    return 0;
 }
 
 int ImpedancePlanner::ResetInitialFootPos()
@@ -179,8 +202,8 @@ int ImpedancePlanner::ResetImpedanceParam(int impedanceMode)
     double B_SOFT_LANDING[3] = {1e5, 1e5, 1000};
     double M_SOFT_LANDING[3] = {100, 100, 20};
 
-    double K_MEDIUM_SOFT[3] = {1e8, 1e8, 40000};
-    double B_MEDIUM_SOFT[3] = {1e5, 1e5, 5000}; // actual damping ratio is much smaller than the desired
+    double K_MEDIUM_SOFT[3] = {1e8, 1e8, 30000};
+    double B_MEDIUM_SOFT[3] = {1e5, 1e5, 3000}; // actual damping ratio is much smaller than the desired
     double M_MEDIUM_SOFT[3] = {100, 100, 20};
 
     switch (impedanceMode)
@@ -608,8 +631,9 @@ int ImpedancePlanner::CalculateAdjForceBP(
     }
 
     // Gravity Compensation of body height
-    static double bodyM = 268+15.5;
-    if (tdTimeInterval < 0.06 && tdTimeInterval > 0)
+    //static double bodyM = 268+15.5;
+    static double bodyM = 268;
+    if (tdTimeInterval < 0.12 && tdTimeInterval > 0)
     {
         force[2] += -9.81*bodyM*tdTimeInterval;
     }
@@ -1110,10 +1134,11 @@ void ImpedancePlanner::GenerateReferenceTrj(
         case GAIT_SUB_STATE::A_LT_B_LD:
             for(int i = 0; i < 3; i++)
             {
-                // B hold at the pre-landing length
+                // B slowing extending from the pre-landing length
                 int index = LEG_INDEX_GROUP_B[i];
-                targetFootPos[index*3+2] = standingHeight - stepLDHeight;
-                targetFootVel[index*3+2] = 0;
+                targetFootPos[index*3+2] = standingHeight - stepLDHeight + 
+                                           stepLDLenVel * (timeNow - m_lastStateShiftTime);
+                targetFootVel[index*3+2] = stepLDLenVel;
 
                 // meanwhile, B swing back trying to cancel the relative speed with the ground
                 // leg angles of swing leg are not changed
@@ -1243,8 +1268,9 @@ void ImpedancePlanner::GenerateReferenceTrj(
             {
                 // A hold at the pre-landing length
                 int index = LEG_INDEX_GROUP_A[i];
-                targetFootPos[index*3+2] = standingHeight - stepLDHeight;
-                targetFootVel[index*3+2] = 0;
+                targetFootPos[index*3+2] = standingHeight - stepLDHeight + 
+                                           stepLDLenVel * (timeNow - m_lastStateShiftTime);
+                targetFootVel[index*3+2] = stepLDLenVel;
 
                 for(int j = 0; j < 2; j++)
                 {
@@ -1460,6 +1486,7 @@ void ImpedancePlanner::SwingReferenceTrj(
 
     double Text = (Tset + Tth - Trt + (lastTDTime - lastLiftTime) - 0.0);
     double tk = (timeNow - lastLiftTime - Trt) / Text;
+    double Tkex = timeNow - lastLiftTime - Trt - Text;
 
     double Tbackward = Tfly;
     double Tforward  = (Tset + Tth - Tbackward + (lastTDTime - lastLiftTime) - 0.02);
@@ -1486,15 +1513,15 @@ void ImpedancePlanner::SwingReferenceTrj(
         Model::Spline2SegInterpolate(
                 Text,
                 posAtLift[2] - stepHeight - lenComp, -0.05, 
-                standingHeight - stepLDHeight, 0, 
+                standingHeight - stepLDHeight, stepLDLenVel, 
                 standingHeight - (stepHeight + stepLDHeight)/2, 0.75, // t1 is normalized 
                 tk, 
                 posRef[2], velRef[2]);
     }
     else
     {
-        posRef[2] = standingHeight - stepLDHeight;
-        velRef[2] = 0;
+        posRef[2] = standingHeight - stepLDHeight + stepLDLenVel * Tkex;
+        velRef[2] = stepLDLenVel;
     }
 
     // Planning leg angle
