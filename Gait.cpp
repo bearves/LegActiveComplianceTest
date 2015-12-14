@@ -214,7 +214,17 @@ int CGait::RunGait(double timeNow, EGAIT* p_gait,Aris::RT_CONTROL::CMachineData&
         }
         
         rt_printf("\n");
-        rt_printf("Current Robot State: %d\n", m_currentGait[0]);
+
+        auto it = ROBOT_STATE_NAME.find(m_currentGait[0]);
+
+        if (it != ROBOT_STATE_NAME.end())
+        {
+            rt_printf("Current Robot State: %s\n", it->second);
+        }
+        else
+        {
+            rt_printf("Current Robot State UNKNOWN: %d\n", m_currentGait[0]);
+        }
         rt_printf("current substate: %d\n", m_gaitState[MapAbsToPhy[0]]);
     }
 

@@ -9,6 +9,7 @@
 #include "Aris_Control.h"
 #include "Aris_ControlData.h"
 #include "OnlinePlanner.h"
+#include <map>
 
 #include <string>
 using namespace std;
@@ -70,6 +71,13 @@ enum EGAIT
     GAIT_HOME           = 11,
     GAIT_ONLINE         = 12
 };
+
+static const map<int, const char*> ROBOT_STATE_NAME = 
+{ { GAIT_NULL,       "GAIT_NULL" },
+  { GAIT_STANDSTILL, "GAIT_STANDSTILL"},
+  { GAIT_HOME2START, "GAIT_HOME2START"},
+  { GAIT_HOME,       "GAIT_HOME"},
+  { GAIT_ONLINE,     "GAIT_ONLINE"} };
 
 
 class CGait
