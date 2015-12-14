@@ -136,6 +136,8 @@ ImpedancePlanner::ImpedancePlanner()
         m_legList[i].SetID(i);
     }
 
+    ResetBasicGaitParameter();
+
     ResetInitialFootPos();
 
     ResetImpedanceParam(A_HARD_B_HARD);
@@ -151,6 +153,7 @@ int ImpedancePlanner::Initialize()
 {
     if (m_state == UNREADY || m_state == FINISHED)
     {
+        ResetBasicGaitParameter();
         ResetInitialFootPos();
         m_state = READY;
         return 0;
@@ -159,6 +162,26 @@ int ImpedancePlanner::Initialize()
     {
         return -1;
     }
+}
+
+int ImpedancePlanner::ResetBasicGaitParameter()
+{
+    Trt                  = 0.32;
+    Tset                 = 0.27;
+    Tth                  = 0.3;
+    Tfly                 = 0.15; // the maximum flying time
+    Trec                 = 2;
+    stepHeight           = 0.10;
+    stepLDHeight         = 0.024;
+    stepLDLenVel         = 0.1; // the vel of length of leg when td
+    stepTHHeight         = 0.025;
+    standingHeight       = 0.66;
+    bodyVelDesire        = -0;
+    rotateAngle          = 0;
+    bodyVelLastTouchdown = 0.0;
+    bodyVelNextLiftUp    = 0.0;
+
+    return 0;
 }
 
 int ImpedancePlanner::ResetInitialFootPos()
@@ -608,9 +631,9 @@ int ImpedancePlanner::CalculateAdjForceBP(
     }
 
     // Gravity Compensation of body height
-    static double bodyM = 268+15.5;
-    //static double bodyM = 268;
-    if (tdTimeInterval < 0.06 && tdTimeInterval > 0)
+    //static double bodyM = 268+15.5;
+    static double bodyM = 268;
+    if (tdTimeInterval < 0.12 && tdTimeInterval > 0)
     {
         force[2] += -9.81*bodyM*tdTimeInterval;
     }
@@ -1487,7 +1510,7 @@ void ImpedancePlanner::SwingReferenceTrj(
         Model::Spline2SegInterpolate(
                 Text,
                 posAtLift[2] - stepHeight - lenComp, -0.05, 
-                standingHeight - stepLDHeight, 0, 
+                standingHeight - stepLDHeight, stepLDLenVel, 
                 standingHeight - (stepHeight + stepLDHeight)/2, 0.75, // t1 is normalized 
                 tk, 
                 posRef[2], velRef[2]);
@@ -1495,7 +1518,7 @@ void ImpedancePlanner::SwingReferenceTrj(
     else
     {
         posRef[2] = standingHeight - stepLDHeight;
-        velRef[2] = 0;
+        velRef[2] = stepLDLenVel;
     }
 
     // Planning leg angle
