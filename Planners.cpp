@@ -1536,13 +1536,13 @@ void ImpedancePlanner::SwingReferenceTrj(
         tdAngle = -posAtLift[0] * Tset / Tth;
         tdAngVel = 0;
         EstimateTDState(tdAngle, tdAngVel, isFront);
-        Model::HermitInterpolate(
+        Model::Spline2SegInterpolate(
                 Tforward,
                 posAtLift[0] + velAtLift[0]*Tbackward, velAtLift[0],
                 tdAngle, tdAngVel,
-                tf,
-                posRef[0], velRef[0]
-                );
+                tdAngle, 0.75, // t1 is normalized 
+                tf, 
+                posRef[0], velRef[0]);
     }
     else // Swing back at a constant speed, which is estimated touchdown speed
     {
