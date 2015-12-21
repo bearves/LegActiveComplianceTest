@@ -21,12 +21,13 @@ time = dataArr[:,0]
 tplt = time / 1.0
 axis = []
 
-for i in range(1, 3):
+for i in range(1, 5):
     print i
     axis.append(dataArr[:,i])
 
 plt.subplot(2,1, 1)
 plt.plot(tplt[::], (axis[0]))
+plt.plot(tplt[::], (axis[2]))
 plt.grid(True)
 plt.hold(False)
 
@@ -34,6 +35,7 @@ plt.subplot(2,1, 2)
 plt.plot(tplt[:-1:], numpy.diff( axis[0])/0.001)
 plt.hold(True)
 plt.plot(tplt, axis[1])
+plt.plot(tplt, axis[3])
 plt.hold(False)
 plt.grid(True)
 plt.show()

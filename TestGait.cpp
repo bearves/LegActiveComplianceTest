@@ -14,7 +14,7 @@ int main(int argc, char *argv[])
     double screwLength[3];
     double screwLength2[3];
     Model::Leg leg;
-
+/*
     leg.SetID(0);
 
     leg.InverseSolution(legTipPoints, screwLength, false);
@@ -35,5 +35,31 @@ int main(int argc, char *argv[])
         cout << 65536*1.5*(screwLength[i] - screwLength2[i])/0.005 << "\n";
     cout << endl;
 
+*/
+
+    double Tforward = 0.4;
+    double tdAngle = 0.2;
+    double tdAngleVel = -0.8;
+
+    for (int i = 0; i < Tforward*1000; i++)
+    {
+        double angRef, velRef;
+        double tf = i / (Tforward * 1000);
+        Model::Spline2SegInterpolate(
+                Tforward,
+                -0.3 + tdAngleVel*0.15, tdAngleVel,
+                tdAngle, tdAngleVel,
+                tdAngle, 0.75, // t1 is normalized 
+                tf, 
+                angRef, velRef);
+        cout << tf*Tforward << " " << angRef << " " << velRef;
+        Model::HermitInterpolate(
+                Tforward,
+                -0.3 + tdAngleVel*0.15, tdAngleVel,
+                tdAngle, tdAngleVel,
+                tf,
+                angRef, velRef);
+        cout << "  "  << angRef << " " << velRef << endl;
+    }
     return 0;
 }
