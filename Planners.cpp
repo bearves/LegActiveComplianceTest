@@ -166,9 +166,9 @@ int ImpedancePlanner::Initialize()
 
 int ImpedancePlanner::ResetBasicGaitParameter()
 {
-    Trt                  = 0.32;
-    Tset                 = 0.27;
-    Tth                  = 0.3;
+    Trt                  = 0.30;
+    Tset                 = 0.22;
+    Tth                  = 0.25;
     Tfly                 = 0.15; // the maximum flying time
     Trec                 = 2;
     stepHeight           = 0.10;
