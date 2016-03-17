@@ -9,12 +9,12 @@ using namespace std;
 int main(int argc, char *argv[])
 {
     double timeNow;
-    double legTipPoints[3] = {-0.015, -0.0, -0.66};
+    double legTipPoints[3] = {0.25, -0.0, -0.66};
     double legTipPoints2[3] = {-0.0, 0, -0.66};
     double screwLength[3];
     double screwLength2[3];
     Model::Leg leg;
-/*
+
     leg.SetID(0);
 
     leg.InverseSolution(legTipPoints, screwLength, false);
@@ -35,8 +35,8 @@ int main(int argc, char *argv[])
         cout << 65536*1.5*(screwLength[i] - screwLength2[i])/0.005 << "\n";
     cout << endl;
 
-*/
 
+/*
     double Tforward = 0.4;
     double tdAngle = 0.2;
     double tdAngleVel = -0.8;
@@ -61,5 +61,6 @@ int main(int argc, char *argv[])
                 angRef, velRef);
         cout << "  "  << angRef << " " << velRef << endl;
     }
+    */
     return 0;
 }

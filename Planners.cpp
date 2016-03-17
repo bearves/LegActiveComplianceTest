@@ -429,7 +429,7 @@ int ImpedancePlanner::GenerateJointTrajectory(
             m_logData.adjustedPos[i] = m_currentAdjustedFootPos[i*3+2];
             m_logData.legForceOnZ[i] = m_forceTransfromed[i*3+2];
 
-            m_logData.targetAng[i] = m_currentAdjustedFootPos[i*3+1];
+            m_logData.targetAng[i] = m_currentAdjustedFootPos[i*3+0];
             m_logData.legForceOnX[i] = m_forceTransfromed[i*3+0];
         }
         memcpy(controlDataForLog, (void *)&m_logData, sizeof(ControllerLogData));

@@ -31,7 +31,7 @@ int main(int argc, char *argv[])
             bool inSpace = true;
             for(int k = 0; k < 3; k++)
             {
-                if (!isfinite(jointLength[k]) || jointLength[k] < 0 || jointLength[k] > 0.16)
+                if (!isfinite(jointLength[k]) || jointLength[k] < 0 || jointLength[k] > 0.08)
                     inSpace = false;
             }
             cout << len << "   " << ang << "   " << (inSpace ? 1 : 0) << endl;
