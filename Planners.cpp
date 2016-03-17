@@ -108,8 +108,8 @@ int GoToPointPlanner::GenerateJointTrajectory(double timeNow, double* currentPoi
 }
 
 const double ImpedancePlanner::SAFETY_RETURN_TIMEOUT = 6;
-const double ImpedancePlanner::FOOT_POS_UP_LIMIT[3]  = { Model::PI/9,  Model::PI/36, 0.76};
-const double ImpedancePlanner::FOOT_POS_LOW_LIMIT[3] = {-Model::PI/9, -Model::PI/36, 0.5};
+const double ImpedancePlanner::FOOT_POS_UP_LIMIT[3]  = { Model::PI/7,  Model::PI/36, 0.76};
+const double ImpedancePlanner::FOOT_POS_LOW_LIMIT[3] = {-Model::PI/7, -Model::PI/36, 0.5};
 const double ImpedancePlanner::FORCE_DEADZONE[3]     = { 2.5, 2.5, 10 };
 const int ImpedancePlanner::LEG_INDEX_GROUP_A[3] = {Model::Leg::LEG_ID_MB, Model::Leg::LEG_ID_RF, Model::Leg::LEG_ID_LF};
 const int ImpedancePlanner::LEG_INDEX_GROUP_B[3] = {Model::Leg::LEG_ID_LB, Model::Leg::LEG_ID_RB, Model::Leg::LEG_ID_MF};
@@ -166,16 +166,16 @@ int ImpedancePlanner::Initialize()
 
 int ImpedancePlanner::ResetBasicGaitParameter()
 {
-    Trt                  = 0.30;
+    Trt                  = 0.28;
     Tset                 = 0.22;
     Tth                  = 0.25;
     Tfly                 = 0.15; // the maximum flying time
     Trec                 = 2;
-    stepHeight           = 0.10;
-    stepLDHeight         = 0.024;
+    stepHeight           = 0.09;
+    stepLDHeight         = 0.02;
     stepLDLenVel         = 0.1; // the vel of length of leg when td
-    stepTHHeight         = 0.025;
-    standingHeight       = 0.66;
+    stepTHHeight         = 0.02;
+    standingHeight       = 0.64;
     bodyVelDesire        = -0;
     rotateAngle          = 0;
     bodyVelLastTouchdown = 0.0;
@@ -593,7 +593,7 @@ int ImpedancePlanner::CalculateAdjForceBP(
         double  tdTimeInterval)
 {
                       //Roll, Pitch, Height
-    double KP_BP[3] = { 15000,  30000,     0};
+    double KP_BP[3] = { 12000,  30000,     0};
     double KI_BP[3] = {  2000,   2000,     0};
     double KD_BP[3] = {  1000,   2000,     0};
     double force[3];
@@ -945,6 +945,7 @@ int ImpedancePlanner::SetGaitParameter(const void* param, int dataLength)
             p_paramCXB->stepHeight,
             p_paramCXB->standHeight);
 
+
     switch (p_paramCXB->gaitCommand)
     {
         case GAIT_SUB_COMMAND::GSC_NOCMD:
@@ -957,6 +958,14 @@ int ImpedancePlanner::SetGaitParameter(const void* param, int dataLength)
         case GAIT_SUB_COMMAND::GSC_CLEAR:
             m_cmdFlag = p_paramCXB->gaitCommand;
             m_trjGeneratorParam = *p_paramCXB; // stage the param for further dealing
+            if (m_trjGeneratorParam.desireVelocity > 0.5)
+            {
+                m_trjGeneratorParam.desireVelocity = 0.5; 
+            }
+            if (m_trjGeneratorParam.desireVelocity < -0.5)
+            {
+                m_trjGeneratorParam.desireVelocity = -0.5; 
+            }
             break;
     }
 
@@ -1515,7 +1524,7 @@ void ImpedancePlanner::SwingReferenceTrj(
                 Text,
                 posAtLift[2] - stepHeight - lenComp, -0.05, 
                 standingHeight - stepLDHeight, stepLDLenVel, 
-                standingHeight - (stepHeight + stepLDHeight)/2, 0.75, // t1 is normalized 
+                standingHeight - (stepHeight + stepLDHeight)/2, 0.7, // t1 is normalized 
                 tk, 
                 posRef[2], velRef[2]);
     }
@@ -1540,7 +1549,7 @@ void ImpedancePlanner::SwingReferenceTrj(
                 Tforward,
                 posAtLift[0] + velAtLift[0]*Tbackward, velAtLift[0],
                 tdAngle, tdAngVel,
-                tdAngle, 0.75, // t1 is normalized 
+                tdAngle, 0.7, // t1 is normalized 
                 tf, 
                 posRef[0], velRef[0]);
     }
@@ -1674,10 +1683,11 @@ bool ImpedancePlanner::AllLegOnGround(const char* legGroupName)
 void ImpedancePlanner::EstimateTDState(
         double& tdAngle, double& tdAngVel, bool isFront)
 {
-    double mu = 1.16;
+    double mu = 1.22;
+    double eta = 1.0; // use to estimate the velocity at the touchdown moment 
     double Tstance = Tset + Tth;
     tdAngle = atan(mu * bodyVelNextLiftUp * Tstance / 2 / standingHeight);
-    tdAngVel = -bodyVelNextLiftUp / standingHeight;
+    tdAngVel = -eta * bodyVelNextLiftUp / standingHeight;
 
     if (!isFront)
     {
