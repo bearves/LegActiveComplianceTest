@@ -378,18 +378,28 @@ int ImpedancePlanner::GenerateJointTrajectory(
                 m_adjForceBP[i] = -2e3;
             }
         }
-        for (int i = 0; i < 18; ++i) 
-        {
-            // adjust the desire force 
-            m_forceDesire[i] += m_adjForceBP[i];
-        }
+        // adjust the desire force  CURRENT STAGE: FORBID BODY POSE CORRECTION
+        //for (int i = 0; i < 18; ++i) 
+        //{
+            //m_forceDesire[i] += m_adjForceBP[i];
+        //}
         for(int i = 0; i < 3; i++)
         {
             m_lastIntegralValue[i] = m_currentIntegralValue[i];
         }
-        
+
+        // CURRENT STAGE: TEST FORCE OF LEG NO.1
+        if (m_subState == A_SP_B_LT ){
+            double tmpTime = timeNow - m_lastStateShiftTime;
+
+            for (int i = 0; i < 1; ++i) 
+            {
+                m_forceDesire[i*3 + 2] = 300 + 200 * sin(2 * 3.1416 * 0.25 * tmpTime); 
+            }
+        }
+
         // Generate the reference trajectory 
-        GenerateReferenceTrj(timeNow, m_subState, m_currentTargetFootPos, m_currentTargetFootVel);
+        GenerateReferenceTrj(timeNow, GAIT_SUB_STATE::HOLD_INIT_POS, m_currentTargetFootPos, m_currentTargetFootVel);
 
         // Do the impedance adjustment
         for( int i = 0; i < 6; i++)
@@ -406,7 +416,7 @@ int ImpedancePlanner::GenerateJointTrajectory(
         }
 
         // Add the impdedance offset to the reference trj
-        for( int i = 0; i < 18; i++)
+        for( int i = 0; i < 3; i++)
         { 
             m_currentAdjustedFootPos[i] = m_currentTargetFootPos[i] - m_currentOffset[i];
             m_currentAdjustedFootVel[i] = m_currentTargetFootVel[i] - m_currentOffsetdot[i];
@@ -430,7 +440,8 @@ int ImpedancePlanner::GenerateJointTrajectory(
             m_logData.legForceOnZ[i] = m_forceTransfromed[i*3+2];
 
             m_logData.targetAng[i] = m_currentAdjustedFootPos[i*3+0];
-            m_logData.legForceOnX[i] = m_forceTransfromed[i*3+0];
+            //m_logData.legForceOnX[i] = m_forceTransfromed[i*3+0];
+            m_logData.legForceOnX[i] = m_forceDesire[i*3+2];
         }
         memcpy(controlDataForLog, (void *)&m_logData, sizeof(ControllerLogData));
 
@@ -752,29 +763,30 @@ void ImpedancePlanner::DetermineCurrentState(
             break;
             
         case GAIT_SUB_STATE::A_SP_B_LT:
-            if (timeNow - m_lastStateShiftTime > Tset)
-            { 
-                if (cmdFlag == GAIT_SUB_COMMAND::GSC_STOP || (m_isSafetyReturnStarted && timeNow - m_safetyReturnStartTime > 6))
-                { 
-                    currentState = GAIT_SUB_STATE::RECOVERING;
-                    m_lastStateShiftTime = timeNow;
-                    cmdFlag = GAIT_SUB_COMMAND::GSC_NOCMD; // clear the command flag
-                    
-                    // Reset Impedance param and clear the offsets 
-                    ResetImpedanceParam(A_HARD_B_HARD);
-                    ClearImpedanceStates("A");
-                    ClearImpedanceStates("B");
-                    ClearBalancePIDStates();
-                }
-                else
-                {
-                    ResetImpedanceParam(A_HARD_B_SOFT);
-                    currentState = GAIT_SUB_STATE::A_TH_B_TD;
-                    m_lastStateShiftTime = timeNow;
-                }
-                UpdateTransitionPosVel();
-            }
             break;
+            //if (timeNow - m_lastStateShiftTime > Tset)
+            //{ 
+                //if (cmdFlag == GAIT_SUB_COMMAND::GSC_STOP || (m_isSafetyReturnStarted && timeNow - m_safetyReturnStartTime > 6))
+                //{ 
+                    //currentState = GAIT_SUB_STATE::RECOVERING;
+                    //m_lastStateShiftTime = timeNow;
+                    //cmdFlag = GAIT_SUB_COMMAND::GSC_NOCMD; // clear the command flag
+                    
+                    //// Reset Impedance param and clear the offsets 
+                    //ResetImpedanceParam(A_HARD_B_HARD);
+                    //ClearImpedanceStates("A");
+                    //ClearImpedanceStates("B");
+                    //ClearBalancePIDStates();
+                //}
+                //else
+                //{
+                    //ResetImpedanceParam(A_HARD_B_SOFT);
+                    //currentState = GAIT_SUB_STATE::A_TH_B_TD;
+                    //m_lastStateShiftTime = timeNow;
+                //}
+                //UpdateTransitionPosVel();
+            //}
+            //break;
 
         case GAIT_SUB_STATE::A_TH_B_TD:
             if (timeNow - m_lastStateShiftTime > Tth)
