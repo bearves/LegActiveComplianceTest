@@ -115,7 +115,7 @@ const int ImpedancePlanner::LEG_INDEX_GROUP_A[3] = {Model::Leg::LEG_ID_MB, Model
 const int ImpedancePlanner::LEG_INDEX_GROUP_B[3] = {Model::Leg::LEG_ID_LB, Model::Leg::LEG_ID_RB, Model::Leg::LEG_ID_MF};
 const double ImpedancePlanner::IMPD_RATIO_A[3] = {1.7, 1, 1};
 const double ImpedancePlanner::IMPD_RATIO_B[3] = {1, 1, 1.7};
-const double ImpedancePlanner::BASE_ORIENT[2] = {0.01, 0.005};
+const double ImpedancePlanner::BASE_ORIENT[2] = {0.01, -0.005};
 const char * ImpedancePlanner::SUB_STATE_NAME[9] =
 {
     "HOLD_INIT_POS",
@@ -633,7 +633,7 @@ int ImpedancePlanner::CalculateAdjForceBP(
     // Gravity Compensation of body height
     //static double bodyM = 268+15.5;
     static double bodyM = 268;
-    double timeIntervalSet = Tset;
+    double timeIntervalSet = Tset+0.03;
     if (tdTimeInterval < timeIntervalSet && tdTimeInterval > 0)
     {
         force[2] += -9.81*bodyM*tdTimeInterval/timeIntervalSet;
@@ -1735,7 +1735,7 @@ void ImpedancePlanner::CalculateTHLength(
     EstimateTDState(tdAngle, tdAngVel, false);
 
     // Compensate the pitch error
-    double pitchError = bodyOrientLastTd[1] * (0.792+0.143);
+    double pitchError = (bodyOrientLastTd[1] - BASE_ORIENT[1]) * (0.792+0.143);
     double pitchCompensation = 0;
 
     using Model::Leg;
