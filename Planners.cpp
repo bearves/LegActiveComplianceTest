@@ -115,7 +115,7 @@ const int ImpedancePlanner::LEG_INDEX_GROUP_A[3] = {Model::Leg::LEG_ID_MB, Model
 const int ImpedancePlanner::LEG_INDEX_GROUP_B[3] = {Model::Leg::LEG_ID_LB, Model::Leg::LEG_ID_RB, Model::Leg::LEG_ID_MF};
 const double ImpedancePlanner::IMPD_RATIO_A[3] = {1.7, 1, 1};
 const double ImpedancePlanner::IMPD_RATIO_B[3] = {1, 1, 1.7};
-const double ImpedancePlanner::BASE_ORIENT[2] = {0.01, 0.0};
+const double ImpedancePlanner::BASE_ORIENT[2] = {0.01, -0.005};
 const char * ImpedancePlanner::SUB_STATE_NAME[9] =
 {
     "HOLD_INIT_POS",
@@ -172,9 +172,9 @@ int ImpedancePlanner::ResetBasicGaitParameter()
     Tfly                 = 0.15; // the maximum flying time
     Trec                 = 2;
     stepHeight           = 0.09;
-    stepLDHeight         = 0.02;
+    stepLDHeight         = 0.024;
     stepLDLenVel         = 0.1; // the vel of length of leg when td
-    stepTHHeight         = 0.02;
+    stepTHHeight         = 0.024;
     standingHeight       = 0.64;
     bodyVelDesire        = -0;
     rotateAngle          = 0;
@@ -644,7 +644,7 @@ int ImpedancePlanner::CalculateAdjForceBP(
     // Gravity Compensation of body height
     //static double bodyM = 268+15.5;
     static double bodyM = 268;
-    double timeIntervalSet = Tset;
+    double timeIntervalSet = Tset+0.03;
     if (tdTimeInterval < timeIntervalSet && tdTimeInterval > 0)
     {
         force[2] += -9.81*bodyM*tdTimeInterval/timeIntervalSet;
@@ -1156,14 +1156,13 @@ void ImpedancePlanner::GenerateReferenceTrj(
         case GAIT_SUB_STATE::A_LT_B_LD:
             for(int i = 0; i < 3; i++)
             {
-                // B slowing extending from the pre-landing length
+                // B slowly extends from the pre-landing length
                 int index = LEG_INDEX_GROUP_B[i];
-                targetFootPos[index*3+2] = standingHeight - stepLDHeight + 
+                targetFootPos[index*3+2] = m_lastShiftRefPos[index*3 + 2] + 
                                            stepLDLenVel * (timeNow - m_lastStateShiftTime);
                 targetFootVel[index*3+2] = stepLDLenVel;
 
                 // meanwhile, B swing back trying to cancel the relative speed with the ground
-                // leg angles of swing leg are not changed
                 for(int j = 0; j < 2; j++)
                 {
                     targetFootPos[index*3 + j] = m_lastShiftRefPos[index*3 + j] +
@@ -1288,9 +1287,9 @@ void ImpedancePlanner::GenerateReferenceTrj(
         case GAIT_SUB_STATE::A_LD_B_LT:
             for(int i = 0; i < 3; i++)
             {
-                // A hold at the pre-landing length
+                // A slowly extends from the pre-landing length
                 int index = LEG_INDEX_GROUP_A[i];
-                targetFootPos[index*3+2] = standingHeight - stepLDHeight + 
+                targetFootPos[index*3+2] = m_lastShiftRefPos[index*3+2] + 
                                            stepLDLenVel * (timeNow - m_lastStateShiftTime);
                 targetFootVel[index*3+2] = stepLDLenVel;
 
@@ -1475,7 +1474,9 @@ void ImpedancePlanner::StanceAngleReferenceTrj(
         double bodyVelAtTd, double bodyVelNextLt,
         double& angRef, double& angVelRef, bool isFront)
 {
-    double angVelBegin = -bodyVelAtTd * cos (angAtTd) / lenAtTd;
+    // Body speed usually a little faster than the planned velocity, we add a multiplier here
+    double kv = 1.03;
+    double angVelBegin = -bodyVelAtTd * kv * cos (angAtTd) / lenAtTd;
     double angVelEnd   = -bodyVelNextLt / lenAtTd;
     double Tstance     = Tset + Tth;
 
@@ -1532,17 +1533,25 @@ void ImpedancePlanner::SwingReferenceTrj(
     }
     else if (tk < 1) // extending phase
     {
+        EstimateTDState(tdAngle, tdAngVel, isFront);
+        
+        double angleCorretor = 1.0/cos(tdAngle * 0.8);
+        double tdLen = (standingHeight - stepLDHeight)*angleCorretor;
         Model::Spline2SegInterpolate(
                 Text,
                 posAtLift[2] - stepHeight - lenComp, -0.05, 
-                standingHeight - stepLDHeight, stepLDLenVel, 
+                tdLen, stepLDLenVel, 
                 standingHeight - (stepHeight + stepLDHeight)/2, 0.7, // t1 is normalized 
                 tk, 
                 posRef[2], velRef[2]);
     }
     else
     {
-        posRef[2] = standingHeight - stepLDHeight + stepLDLenVel * Tkex;
+        EstimateTDState(tdAngle, tdAngVel, isFront);
+        
+        double angleCorretor = 1.0/cos(tdAngle * 0.8);
+        double tdLen = (standingHeight - stepLDHeight)*angleCorretor;
+        posRef[2] = tdLen + stepLDLenVel * Tkex;
         velRef[2] = stepLDLenVel;
     }
 
@@ -1738,7 +1747,7 @@ void ImpedancePlanner::CalculateTHLength(
     EstimateTDState(tdAngle, tdAngVel, false);
 
     // Compensate the pitch error
-    double pitchError = bodyOrientLastTd[1] * (0.792+0.143);
+    double pitchError = (bodyOrientLastTd[1] - BASE_ORIENT[1]) * (0.792+0.143);
     double pitchCompensation = 0;
 
     using Model::Leg;
