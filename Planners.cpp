@@ -202,9 +202,9 @@ int ImpedancePlanner::ResetImpedanceParam(int impedanceMode)
     double B_SOFT_LANDING[3] = {1e5, 1e5, 1000};
     double M_SOFT_LANDING[3] = {100, 100, 20};
 
-    double K_MEDIUM_SOFT[3] = {1e8, 1e8, 30000};
-    double B_MEDIUM_SOFT[3] = {1e5, 1e5, 3000}; // actual damping ratio is much smaller than the desired
-    double M_MEDIUM_SOFT[3] = {100, 100, 20};
+    double K_MEDIUM_SOFT[3] = {1e8, 1e8, 0};
+    double B_MEDIUM_SOFT[3] = {1e5, 1e5, 700}; // actual damping ratio is much smaller than the desired
+    double M_MEDIUM_SOFT[3] = {100, 100, 0.5};
 
     switch (impedanceMode)
     { 
@@ -394,7 +394,7 @@ int ImpedancePlanner::GenerateJointTrajectory(
 
             for (int i = 0; i < 1; ++i) 
             {
-                m_forceDesire[i*3 + 2] = 300 + 200 * sin(2 * 3.1416 * 0.25 * tmpTime); 
+                m_forceDesire[i*3 + 2] = 300 + 100 * sin(2 * 3.1416 * 3 * tmpTime); 
             }
         }
 
@@ -944,6 +944,10 @@ void ImpedancePlanner::DetermineCurrentState(
 
 int ImpedancePlanner::SetGaitParameter(const void* param, int dataLength)
 {
+    if (m_state != INMOTION)
+    {
+        return -2;
+    }
     if (param == NULL || dataLength < sizeof(ParamCXB))
     {
         rt_printf("Wrong param data received\n");
