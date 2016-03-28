@@ -108,7 +108,7 @@ int GoToPointPlanner::GenerateJointTrajectory(double timeNow, double* currentPoi
 }
 
 const double ImpedancePlanner::SAFETY_RETURN_TIMEOUT = 6;
-const double ImpedancePlanner::FOOT_POS_UP_LIMIT[3]  = { Model::PI/7,  Model::PI/36, 0.76};
+const double ImpedancePlanner::FOOT_POS_UP_LIMIT[3]  = { Model::PI/7,  Model::PI/36, 0.73};
 const double ImpedancePlanner::FOOT_POS_LOW_LIMIT[3] = {-Model::PI/7, -Model::PI/36, 0.5};
 const double ImpedancePlanner::FORCE_DEADZONE[3]     = { 2.5, 2.5, 10 };
 const int ImpedancePlanner::LEG_INDEX_GROUP_A[3] = {Model::Leg::LEG_ID_MB, Model::Leg::LEG_ID_RF, Model::Leg::LEG_ID_LF};
@@ -203,8 +203,8 @@ int ImpedancePlanner::ResetImpedanceParam(int impedanceMode)
     double M_SOFT_LANDING[3] = {100, 100, 20};
 
     double K_MEDIUM_SOFT[3] = {1e8, 1e8, 0};
-    double B_MEDIUM_SOFT[3] = {1e5, 1e5, 700}; // actual damping ratio is much smaller than the desired
-    double M_MEDIUM_SOFT[3] = {100, 100, 0.5};
+    double B_MEDIUM_SOFT[3] = {1e5, 1e5, 800}; // actual damping ratio is much smaller than the desired
+    double M_MEDIUM_SOFT[3] = {100, 100, 0.7};
 
     switch (impedanceMode)
     { 
@@ -391,11 +391,22 @@ int ImpedancePlanner::GenerateJointTrajectory(
         // CURRENT STAGE: TEST FORCE OF LEG NO.1
         if (m_subState == A_SP_B_LT ){
             double tmpTime = timeNow - m_lastStateShiftTime;
+            double K_ll = 3000;
+            double B_ll = 300;
 
             for (int i = 0; i < 1; ++i) 
             {
-                m_forceDesire[i*3 + 2] = 300 + 100 * sin(2 * 3.1416 * 3 * tmpTime); 
+                m_forceDesire[i*3 + 2] = K_ll * m_lastOffset[i*3+2] + B_ll * m_lastOffsetdot[i*3+2];
+               if ( m_forceDesire[i*3 + 2] > 2e3 )
+               {
+                   m_forceDesire[i*3 + 2] = 2e3;
+               }
+               if ( m_forceDesire[i*3 + 2] < -2e3 )
+               {
+                   m_forceDesire[i*3 + 2] = -2e3;
+               }
             }
+            
         }
 
         // Generate the reference trajectory 
@@ -435,8 +446,8 @@ int ImpedancePlanner::GenerateJointTrajectory(
         m_logData.gaitState = m_subState;
         for(int i = 0; i < 6; i++)
         {
-            m_logData.targetPos[i] = m_currentTargetFootPos[i*3+2];
-            m_logData.adjustedPos[i] = m_currentAdjustedFootPos[i*3+2];
+            m_logData.targetPos[i] = m_lastOffset[i*3 + 2]; 
+            m_logData.adjustedPos[i] = m_lastOffsetdot[i * 3 + 2];
             m_logData.legForceOnZ[i] = m_forceTransfromed[i*3+2];
 
             m_logData.targetAng[i] = m_currentAdjustedFootPos[i*3+0];
@@ -452,11 +463,11 @@ int ImpedancePlanner::GenerateJointTrajectory(
                 rt_printf("Force desire: ");
                 for (int j = 2; j < 3; ++j)
                 {
-                    rt_printf("FD: %7.6lf  ", m_forceDesire[i*3+j]);
+                    rt_printf("FD: %7.6lf  ", m_lastOffset[i*3+j]);
                 }
                 for (int j = 2; j < 3; ++j)
                 {
-                    rt_printf("OF: %7.6lf  ", m_forceTransfromed[i*3+j]);
+                    rt_printf("OF: %7.6lf  ", m_lastOffsetdot[i*3+j]);
                 }
                 rt_printf("\n");
 
