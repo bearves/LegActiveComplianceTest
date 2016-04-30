@@ -166,14 +166,14 @@ int ImpedancePlanner::Initialize()
 
 int ImpedancePlanner::ResetBasicGaitParameter()
 {
-    Trt                  = 0.28;
-    Tset                 = 0.22;
+    Trt                  = 0.32;
+    Tset                 = 0.25;
     Tth                  = 0.25;
     Tfly                 = 0.15; // the maximum flying time
     Trec                 = 2;
     stepHeight           = 0.09;
-    stepLDHeight         = 0.024;
-    stepLDLenVel         = 0.1; // the vel of length of leg when td
+    stepLDHeight         = 0.026;
+    stepLDLenVel         = 0.2; // the vel of length of leg when td
     stepTHHeight         = 0.024;
     standingHeight       = 0.64;
     bodyVelDesire        = -0;
@@ -203,8 +203,8 @@ int ImpedancePlanner::ResetImpedanceParam(int impedanceMode)
     double M_SOFT_LANDING[3] = {100, 100, 20};
 
     double K_MEDIUM_SOFT[3] = {1e8, 1e8, 30000};
-    double B_MEDIUM_SOFT[3] = {1e5, 1e5, 3000}; // actual damping ratio is much smaller than the desired
-    double M_MEDIUM_SOFT[3] = {100, 100, 20};
+    double B_MEDIUM_SOFT[3] = {1e5, 1e5, 2000}; // actual damping ratio is much smaller than the desired
+    double M_MEDIUM_SOFT[3] = {100, 100, 2};
 
     switch (impedanceMode)
     { 
