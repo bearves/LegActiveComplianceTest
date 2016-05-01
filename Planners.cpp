@@ -631,7 +631,7 @@ int ImpedancePlanner::CalculateAdjForceBP(
     }
 
     // Gravity Compensation of body height
-    static double bodyM = 268+15.5;
+    static double bodyM = 268+15;
     //static double bodyM = 268;
     double timeIntervalSet = Tset+0.03;
     if (tdTimeInterval < timeIntervalSet && tdTimeInterval > 0)
@@ -1106,6 +1106,8 @@ void ImpedancePlanner::GenerateReferenceTrj(
                 double tt = (timeNow - m_lastStateShiftTime) / Tth;
 
                 CalculateTHLength(index, m_lastTdActPos, m_lastTdBodyOrient, "A", stepTHHeight);
+                if(index == Model::Leg::LEG_ID_MB || index == Model::Leg::LEG_ID_MF)
+                    stepTHHeight -= 0.005;
                 
                 Model::HermitInterpolate(
                         Tth,
@@ -1248,8 +1250,8 @@ void ImpedancePlanner::GenerateReferenceTrj(
                 CalculateTHLength(index, m_lastTdActPos, m_lastTdBodyOrient, "B", stepTHHeight);
 
                 //stepTHHeight = standingHeight + 0.005;
-                //if(index == Model::Leg::LEG_ID_MB || index == Model::Leg::LEG_ID_RB)
-                    //stepTHHeight += 0.005;
+                if(index == Model::Leg::LEG_ID_MB || index == Model::Leg::LEG_ID_MF)
+                    stepTHHeight -= 0.005;
 
                 Model::HermitInterpolate(
                         Tth,

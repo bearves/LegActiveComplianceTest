@@ -174,7 +174,7 @@ namespace RobotHighLevelControl
             double stepHeight;           
             double stepLDHeight;
             double stepLDLenVel;         // the vel of length of leg when td
-            double stepTHHeight;         ;
+            double stepTHHeight; 
             double standingHeight;       
             double bodyVelDesire;        
             double rotateAngle;          
