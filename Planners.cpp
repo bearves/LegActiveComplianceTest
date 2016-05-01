@@ -113,8 +113,8 @@ const double ImpedancePlanner::FOOT_POS_LOW_LIMIT[3] = {-Model::PI/7, -Model::PI
 const double ImpedancePlanner::FORCE_DEADZONE[3]     = { 2.5, 2.5, 10 };
 const int ImpedancePlanner::LEG_INDEX_GROUP_A[3] = {Model::Leg::LEG_ID_MB, Model::Leg::LEG_ID_RF, Model::Leg::LEG_ID_LF};
 const int ImpedancePlanner::LEG_INDEX_GROUP_B[3] = {Model::Leg::LEG_ID_LB, Model::Leg::LEG_ID_RB, Model::Leg::LEG_ID_MF};
-const double ImpedancePlanner::IMPD_RATIO_A[3] = {1.7, 1, 1};
-const double ImpedancePlanner::IMPD_RATIO_B[3] = {1, 1, 1.7};
+const double ImpedancePlanner::IMPD_RATIO_A[3] = {1.8, 1, 1};
+const double ImpedancePlanner::IMPD_RATIO_B[3] = {1, 1, 1.8};
 const double ImpedancePlanner::BASE_ORIENT[2] = {0.01, -0.005};
 const char * ImpedancePlanner::SUB_STATE_NAME[9] =
 {
@@ -167,12 +167,12 @@ int ImpedancePlanner::Initialize()
 int ImpedancePlanner::ResetBasicGaitParameter()
 {
     Trt                  = 0.32;
-    Tset                 = 0.25;
-    Tth                  = 0.25;
+    Tset                 = 0.21;
+    Tth                  = 0.26;
     Tfly                 = 0.15; // the maximum flying time
     Trec                 = 2;
-    stepHeight           = 0.09;
-    stepLDHeight         = 0.026;
+    stepHeight           = 0.08;
+    stepLDHeight         = 0.023;
     stepLDLenVel         = 0.2; // the vel of length of leg when td
     stepTHHeight         = 0.024;
     standingHeight       = 0.64;
@@ -199,10 +199,10 @@ int ImpedancePlanner::ResetInitialFootPos()
 int ImpedancePlanner::ResetImpedanceParam(int impedanceMode)
 { 
     double K_SOFT_LANDING[3] = {1e8, 1e8, 500};
-    double B_SOFT_LANDING[3] = {1e5, 1e5, 1000};
-    double M_SOFT_LANDING[3] = {100, 100, 20};
+    double B_SOFT_LANDING[3] = {1e5, 1e5, 900};
+    double M_SOFT_LANDING[3] = {100, 100, 1.7};
 
-    double K_MEDIUM_SOFT[3] = {1e8, 1e8, 30000};
+    double K_MEDIUM_SOFT[3] = {1e8, 1e8, 26000};
     double B_MEDIUM_SOFT[3] = {1e5, 1e5, 2000}; // actual damping ratio is much smaller than the desired
     double M_MEDIUM_SOFT[3] = {100, 100, 2};
 
@@ -213,11 +213,11 @@ int ImpedancePlanner::ResetImpedanceParam(int impedanceMode)
                 for (int j = 0; j < 3; ++j)
                 { 
                     K_ac[LEG_INDEX_GROUP_A[i]][j] = K_MEDIUM_SOFT[j] * IMPD_RATIO_A[i];
-                    B_ac[LEG_INDEX_GROUP_A[i]][j] = B_MEDIUM_SOFT[j] * sqrt(IMPD_RATIO_A[i]);
+                    B_ac[LEG_INDEX_GROUP_A[i]][j] = B_MEDIUM_SOFT[j] * IMPD_RATIO_A[i];
                     M_ac[LEG_INDEX_GROUP_A[i]][j] = M_MEDIUM_SOFT[j];
 
                     K_ac[LEG_INDEX_GROUP_B[i]][j] = K_MEDIUM_SOFT[j] * IMPD_RATIO_B[i];
-                    B_ac[LEG_INDEX_GROUP_B[i]][j] = B_MEDIUM_SOFT[j] * sqrt(IMPD_RATIO_B[i]);
+                    B_ac[LEG_INDEX_GROUP_B[i]][j] = B_MEDIUM_SOFT[j] * IMPD_RATIO_B[i];
                     M_ac[LEG_INDEX_GROUP_B[i]][j] = M_MEDIUM_SOFT[j];
                 }
             }
@@ -237,7 +237,7 @@ int ImpedancePlanner::ResetImpedanceParam(int impedanceMode)
                 for (int j = 0; j < 3; ++j)
                 { 
                     K_ac[LEG_INDEX_GROUP_A[i]][j] = K_MEDIUM_SOFT[j] * IMPD_RATIO_A[i];
-                    B_ac[LEG_INDEX_GROUP_A[i]][j] = B_MEDIUM_SOFT[j] * sqrt(IMPD_RATIO_A[i]);
+                    B_ac[LEG_INDEX_GROUP_A[i]][j] = B_MEDIUM_SOFT[j] * IMPD_RATIO_A[i];
                     M_ac[LEG_INDEX_GROUP_A[i]][j] = M_MEDIUM_SOFT[j];
 
                     K_ac[LEG_INDEX_GROUP_B[i]][j] = K_SOFT_LANDING[j];
@@ -251,7 +251,7 @@ int ImpedancePlanner::ResetImpedanceParam(int impedanceMode)
                 for (int j = 0; j < 3; ++j)
                 { 
                     K_ac[LEG_INDEX_GROUP_B[i]][j] = K_MEDIUM_SOFT[j] * IMPD_RATIO_B[i];
-                    B_ac[LEG_INDEX_GROUP_B[i]][j] = B_MEDIUM_SOFT[j] * sqrt(IMPD_RATIO_B[i]);
+                    B_ac[LEG_INDEX_GROUP_B[i]][j] = B_MEDIUM_SOFT[j] * IMPD_RATIO_B[i];
                     M_ac[LEG_INDEX_GROUP_B[i]][j] = M_MEDIUM_SOFT[j];
 
                     K_ac[LEG_INDEX_GROUP_A[i]][j] = K_SOFT_LANDING[j];
@@ -594,7 +594,7 @@ int ImpedancePlanner::CalculateAdjForceBP(
 {
                       //Roll, Pitch, Height
     double KP_BP[3] = { 12000,  30000,     0};
-    double KI_BP[3] = {  2000,   2000,     0};
+    double KI_BP[3] = { 20000,  30000,     0};
     double KD_BP[3] = {  1000,   2000,     0};
     double force[3];
     double th = 0.001;
@@ -631,8 +631,8 @@ int ImpedancePlanner::CalculateAdjForceBP(
     }
 
     // Gravity Compensation of body height
-    //static double bodyM = 268+15.5;
-    static double bodyM = 268;
+    static double bodyM = 268+15.5;
+    //static double bodyM = 268;
     double timeIntervalSet = Tset+0.03;
     if (tdTimeInterval < timeIntervalSet && tdTimeInterval > 0)
     {
