@@ -115,7 +115,7 @@ const int ImpedancePlanner::LEG_INDEX_GROUP_A[3] = {Model::Leg::LEG_ID_MB, Model
 const int ImpedancePlanner::LEG_INDEX_GROUP_B[3] = {Model::Leg::LEG_ID_LB, Model::Leg::LEG_ID_RB, Model::Leg::LEG_ID_MF};
 const double ImpedancePlanner::IMPD_RATIO_A[3] = {1.8, 1, 1};
 const double ImpedancePlanner::IMPD_RATIO_B[3] = {1, 1, 1.8};
-const double ImpedancePlanner::BASE_ORIENT[2] = {0.01, -0.005};
+const double ImpedancePlanner::BASE_ORIENT[2] = {0.01, 0.00};
 const char * ImpedancePlanner::SUB_STATE_NAME[9] =
 {
     "HOLD_INIT_POS",
@@ -593,8 +593,8 @@ int ImpedancePlanner::CalculateAdjForceBP(
         double  tdTimeInterval)
 {
                       //Roll, Pitch, Height
-    double KP_BP[3] = { 12000,  30000,     0};
-    double KI_BP[3] = { 20000,  30000,     0};
+    double KP_BP[3] = { 10000,  30000,     0};
+    double KI_BP[3] = { 10000,  10000,     0};
     double KD_BP[3] = {  1000,   2000,     0};
     double force[3];
     double th = 0.001;
@@ -659,9 +659,9 @@ int ImpedancePlanner::CalculateAdjForceBP(
             break;
         case GAIT_SUB_STATE::A_SP_B_LT:
         case GAIT_SUB_STATE::A_TH_B_TD:
-            adjForceBP[Leg::LEG_ID_RF*3 + 2] = -1.401 * force[0] - 0.535 * force[1] - 0.288 * force[2];
-            adjForceBP[Leg::LEG_ID_LF*3 + 2] =  1.401 * force[0] - 0.535 * force[1] - 0.288 * force[2];
-            adjForceBP[Leg::LEG_ID_MB*3 + 2] =      0 * force[0] + 1.070 * force[1] - 0.426 * force[2];
+            adjForceBP[Leg::LEG_ID_RF*3 + 2] = -1.401 * force[0] - 0.535 * force[1] - 0.268 * force[2];
+            adjForceBP[Leg::LEG_ID_LF*3 + 2] =  1.401 * force[0] - 0.535 * force[1] - 0.268 * force[2];
+            adjForceBP[Leg::LEG_ID_MB*3 + 2] =      0 * force[0] + 1.070 * force[1] - 0.466 * force[2];
             break;
         case GAIT_SUB_STATE::A_LT_B_LD:
             break;
@@ -1095,7 +1095,7 @@ void ImpedancePlanner::GenerateReferenceTrj(
                 // B swing
                 int index = LEG_INDEX_GROUP_B[i];
                 SwingReferenceTrj(
-                        timeNow,   m_lastLiftUpTime, m_lastTouchDownTime,
+                        timeNow, m_lastLiftUpTime, m_lastTouchDownTime,
                         &m_lastLiftRefPos[index*3], &m_lastLiftRefVel[index*3],
                         &targetFootPos[index*3],    &targetFootVel[index*3],
                         index >= 3);
@@ -1106,7 +1106,7 @@ void ImpedancePlanner::GenerateReferenceTrj(
                 double tt = (timeNow - m_lastStateShiftTime) / Tth;
 
                 CalculateTHLength(index, m_lastTdActPos, m_lastTdBodyOrient, "A", stepTHHeight);
-
+                
                 Model::HermitInterpolate(
                         Tth,
                         m_lastShiftRefPos[index*3 + 2], 
@@ -1246,6 +1246,10 @@ void ImpedancePlanner::GenerateReferenceTrj(
                         index >= 3);
 
                 CalculateTHLength(index, m_lastTdActPos, m_lastTdBodyOrient, "B", stepTHHeight);
+
+                //stepTHHeight = standingHeight + 0.005;
+                //if(index == Model::Leg::LEG_ID_MB || index == Model::Leg::LEG_ID_RB)
+                    //stepTHHeight += 0.005;
 
                 Model::HermitInterpolate(
                         Tth,
@@ -1725,10 +1729,12 @@ void ImpedancePlanner::CalculateTHLength(
         groupList = LEG_INDEX_GROUP_B;
     }
 
+    double sumHeight = 0;
     for(int i = 0; i < 3; i++)
     {
-        height = std::max(posLastTd[groupList[i] * 3 + 2], height);
+        sumHeight += posLastTd[groupList[i] * 3 + 2];
     }
+    height = sumHeight/3.0;
 
     double tdAngle, tdAngVel;
     // Get the angle planned to lift up at current step
