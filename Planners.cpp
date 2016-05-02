@@ -364,7 +364,8 @@ int ImpedancePlanner::GenerateJointTrajectory(
                 m_currentIntegralValue, 
                 m_adjForceBP,
                 m_subState,
-                timeNow - m_lastTouchDownTime);
+                timeNow - m_lastTouchDownTime[0],
+                timeNow - m_lastTouchDownTime[1]);
 
         // Add saturation to Pose ajustment force
         for (int i = 0; i < 18; ++i) 
@@ -590,7 +591,8 @@ int ImpedancePlanner::CalculateAdjForceBP(
         double* currentIntegralValue,
         double* adjForceBP,
         GAIT_SUB_STATE gaitState,
-        double  tdTimeInterval)
+        double tdTimeIntervalA,
+        double tdTimeInvervalB)
 {
                       //Roll, Pitch, Height
     double KP_BP[3] = { 10000,  30000,     0};
@@ -598,6 +600,7 @@ int ImpedancePlanner::CalculateAdjForceBP(
     double KD_BP[3] = {  1000,   2000,     0};
     double force[3];
     double th = 0.001;
+    double timeInterval[2] = {tdTimeIntervalA, tdTimeInvervalB};
 
     double currentErrorValue[3];
     double currentErrorDotValue[3];
@@ -633,14 +636,26 @@ int ImpedancePlanner::CalculateAdjForceBP(
     // Gravity Compensation of body height
     static double bodyM = 268+15;
     //static double bodyM = 268;
-    double timeIntervalSet = Tset+0.03;
-    if (tdTimeInterval < timeIntervalSet && tdTimeInterval > 0)
-    {
-        force[2] += -9.81*bodyM*tdTimeInterval/timeIntervalSet;
-    }
-    else
-    {
-        force[2] += -9.81 * bodyM;
+    double timeIntervalSet   = Tset+0.03;
+    double timeIntervalReset = 0.12;
+    double forceG[2];
+    for(int i = 0; i < 2; i++){
+        if (timeInterval[i] < timeIntervalSet && timeInterval[i] > 0)
+        {
+            forceG[i] = -9.81*bodyM*timeInterval[i]/timeIntervalSet;
+        }
+        else if (timeInterval[i] >= timeIntervalSet && timeInterval[i] < Tset+Tth)
+        {
+            forceG[i] = -9.81 * bodyM;
+        }
+        else if (timeInterval[i] >= Tset + Tth && timeInterval[i] < Tset + Tth + timeIntervalReset)
+        {
+            forceG[i] = -9.81 * bodyM * (timeInterval[i] - Tset - Tth)/timeIntervalReset;
+        }
+        else
+        {
+            forceG[i] = 0;
+        }
     }
 
     // Force distribution
@@ -658,20 +673,48 @@ int ImpedancePlanner::CalculateAdjForceBP(
         case GAIT_SUB_STATE::HOLD_INIT_POS:
             break;
         case GAIT_SUB_STATE::A_SP_B_LT:
+            // For A legs
+            adjForceBP[Leg::LEG_ID_RF*3 + 2] = -1.401 * force[0] - 0.535 * force[1] - 0.268 * forceG[0];
+            adjForceBP[Leg::LEG_ID_LF*3 + 2] =  1.401 * force[0] - 0.535 * force[1] - 0.268 * forceG[0];
+            adjForceBP[Leg::LEG_ID_MB*3 + 2] =      0 * force[0] + 1.070 * force[1] - 0.466 * forceG[0];
+            // For B legs
+            adjForceBP[Leg::LEG_ID_RB*3 + 2] =  - 0.268 * forceG[1];
+            adjForceBP[Leg::LEG_ID_LB*3 + 2] =  - 0.268 * forceG[1];
+            adjForceBP[Leg::LEG_ID_MF*3 + 2] =  - 0.466 * forceG[1];
+            break;
         case GAIT_SUB_STATE::A_TH_B_TD:
-            adjForceBP[Leg::LEG_ID_RF*3 + 2] = -1.401 * force[0] - 0.535 * force[1] - 0.268 * force[2];
-            adjForceBP[Leg::LEG_ID_LF*3 + 2] =  1.401 * force[0] - 0.535 * force[1] - 0.268 * force[2];
-            adjForceBP[Leg::LEG_ID_MB*3 + 2] =      0 * force[0] + 1.070 * force[1] - 0.466 * force[2];
+            // For A legs
+            adjForceBP[Leg::LEG_ID_RF*3 + 2] = -1.401 * force[0] - 0.535 * force[1] - 0.268 * forceG[0];
+            adjForceBP[Leg::LEG_ID_LF*3 + 2] =  1.401 * force[0] - 0.535 * force[1] - 0.268 * forceG[0];
+            adjForceBP[Leg::LEG_ID_MB*3 + 2] =      0 * force[0] + 1.070 * force[1] - 0.466 * forceG[0];
             break;
         case GAIT_SUB_STATE::A_LT_B_LD:
+            // For A legs
+            adjForceBP[Leg::LEG_ID_RF*3 + 2] =  - 0.268 * forceG[0];
+            adjForceBP[Leg::LEG_ID_LF*3 + 2] =  - 0.268 * forceG[0];
+            adjForceBP[Leg::LEG_ID_MB*3 + 2] =  - 0.466 * forceG[0];
             break;
         case GAIT_SUB_STATE::A_LT_B_SP:
+            // For B legs
+            adjForceBP[Leg::LEG_ID_RB*3 + 2] = -1.401 * force[0] + 0.535 * force[1] - 0.288 * forceG[1];
+            adjForceBP[Leg::LEG_ID_LB*3 + 2] =  1.401 * force[0] + 0.535 * force[1] - 0.288 * forceG[1];
+            adjForceBP[Leg::LEG_ID_MF*3 + 2] =      0 * force[0] - 1.070 * force[1] - 0.426 * forceG[1];
+            // For A legs
+            adjForceBP[Leg::LEG_ID_RF*3 + 2] =  - 0.268 * forceG[0];
+            adjForceBP[Leg::LEG_ID_LF*3 + 2] =  - 0.268 * forceG[0];
+            adjForceBP[Leg::LEG_ID_MB*3 + 2] =  - 0.466 * forceG[0];
+            break;
         case GAIT_SUB_STATE::A_TD_B_TH:
-            adjForceBP[Leg::LEG_ID_RB*3 + 2] = -1.401 * force[0] + 0.535 * force[1] - 0.288 * force[2];
-            adjForceBP[Leg::LEG_ID_LB*3 + 2] =  1.401 * force[0] + 0.535 * force[1] - 0.288 * force[2];
-            adjForceBP[Leg::LEG_ID_MF*3 + 2] =      0 * force[0] - 1.070 * force[1] - 0.426 * force[2];
+            // For B legs
+            adjForceBP[Leg::LEG_ID_RB*3 + 2] = -1.401 * force[0] + 0.535 * force[1] - 0.288 * forceG[1];
+            adjForceBP[Leg::LEG_ID_LB*3 + 2] =  1.401 * force[0] + 0.535 * force[1] - 0.288 * forceG[1];
+            adjForceBP[Leg::LEG_ID_MF*3 + 2] =      0 * force[0] - 1.070 * force[1] - 0.426 * forceG[1];
             break;
         case GAIT_SUB_STATE::A_LD_B_LT:
+            // For B legs
+            adjForceBP[Leg::LEG_ID_RB*3 + 2] =  - 0.268 * forceG[1];
+            adjForceBP[Leg::LEG_ID_LB*3 + 2] =  - 0.268 * forceG[1];
+            adjForceBP[Leg::LEG_ID_MF*3 + 2] =  - 0.466 * forceG[1];
             break;
         case GAIT_SUB_STATE::RECOVERING:
         case GAIT_SUB_STATE::HOLD_END_POS:
@@ -729,8 +772,10 @@ void ImpedancePlanner::DetermineCurrentState(
             {
                 currentState = GAIT_SUB_STATE::A_SP_B_LT;
                 m_lastStateShiftTime = timeNow;
-                m_lastLiftUpTime     = timeNow;
-                m_lastTouchDownTime  = timeNow;
+                m_lastLiftUpTime[1]     = timeNow;
+                m_lastLiftUpTime[0]     = timeNow - Tset - Tth - Tfly/2;
+                m_lastTouchDownTime[0]  = timeNow;
+                m_lastTouchDownTime[1]  = timeNow - Tset - Tth - Tfly/2;
                 cmdFlag = GAIT_SUB_COMMAND::GSC_NOCMD; // clear the command flag
 
                 // Reset Impedance param and clear the offsets 
@@ -781,7 +826,7 @@ void ImpedancePlanner::DetermineCurrentState(
             {
                 currentState = GAIT_SUB_STATE::A_LT_B_LD;
                 m_lastStateShiftTime = timeNow;
-                m_lastLiftUpTime     = timeNow;
+                m_lastLiftUpTime[0]     = timeNow;
 
                 // Reset Impedance param and clear the offsets 
                 ResetImpedanceParam(A_HARD_B_SOFT);
@@ -819,7 +864,7 @@ void ImpedancePlanner::DetermineCurrentState(
             {
                 currentState = GAIT_SUB_STATE::A_LT_B_SP;
                 m_lastStateShiftTime = timeNow;
-                m_lastTouchDownTime  = timeNow;
+                m_lastTouchDownTime[1]  = timeNow;
                 UpdateTransitionPosVel();
                 UpdateTouchDownLegPosVel(imuData);
                 ResetImpedanceParam(A_HARD_B_HARD);
@@ -844,7 +889,7 @@ void ImpedancePlanner::DetermineCurrentState(
             {
                 currentState = GAIT_SUB_STATE::A_LD_B_LT;
                 m_lastStateShiftTime = timeNow;
-                m_lastLiftUpTime     = timeNow;
+                m_lastLiftUpTime[1]     = timeNow;
 
                 // Reset Impedance param and clear the offsets 
                 ResetImpedanceParam(A_SOFT_B_HARD);
@@ -882,7 +927,7 @@ void ImpedancePlanner::DetermineCurrentState(
             {
                 currentState = GAIT_SUB_STATE::A_SP_B_LT;
                 m_lastStateShiftTime = timeNow;
-                m_lastTouchDownTime  = timeNow;
+                m_lastTouchDownTime[0]  = timeNow;
                 UpdateTransitionPosVel();
                 UpdateTouchDownLegPosVel(imuData);
                 ResetImpedanceParam(A_HARD_B_HARD);
@@ -910,8 +955,10 @@ void ImpedancePlanner::DetermineCurrentState(
             {
                 currentState = GAIT_SUB_STATE::A_SP_B_LT;
                 m_lastStateShiftTime = timeNow;
-                m_lastLiftUpTime     = timeNow;
-                m_lastTouchDownTime  = timeNow;
+                m_lastLiftUpTime[0]  = timeNow - Tset - Tth - Tfly/2;
+                m_lastLiftUpTime[1]     = timeNow;
+                m_lastTouchDownTime[0]  = timeNow;
+                m_lastTouchDownTime[1]  = timeNow - Tset - Tth - Tfly/2;
 
                 cmdFlag = GAIT_SUB_COMMAND::GSC_NOCMD; // clear the command flag
                 // Reset Impedance param and clear the offsets 
@@ -1043,7 +1090,7 @@ void ImpedancePlanner::GenerateReferenceTrj(
                 // B Liftup and swing
                 int index = LEG_INDEX_GROUP_B[i];
                 SwingReferenceTrj(
-                        timeNow,   m_lastLiftUpTime, m_lastTouchDownTime,
+                        timeNow, m_lastLiftUpTime[1], m_lastTouchDownTime[0],
                         &m_lastLiftRefPos[index*3], &m_lastLiftRefVel[index*3],
                         &targetFootPos[index*3],    &targetFootVel[index*3],
                         index >= 3);
@@ -1052,7 +1099,7 @@ void ImpedancePlanner::GenerateReferenceTrj(
                 index = LEG_INDEX_GROUP_A[i];
 
                 double tt = (timeNow - m_lastStateShiftTime) / Tset;
-                double estimateTouchdownVel = (m_lastTouchDownTime - m_lastLiftUpTime) * -9.81 * 0.05;
+                double estimateTouchdownVel = (m_lastTouchDownTime[0] - m_lastLiftUpTime[1]) * -9.81 * 0.05;
 
                 Model::HermitInterpolate(
                         Tset,
@@ -1066,7 +1113,7 @@ void ImpedancePlanner::GenerateReferenceTrj(
 
                 // leg angle planning for supporting leg
                 StanceAngleReferenceTrj(
-                        timeNow,  m_lastTouchDownTime,  m_lastTdActPos[index*3 + 2],
+                        timeNow,  m_lastTouchDownTime[0],  m_lastTdActPos[index*3 + 2],
                         m_lastTdActPos[index*3+0],  m_lastTdActVel[index*3+0],
                         bodyVelLastTouchdown,  bodyVelNextLiftUp,
                         targetFootPos[index*3+0], targetFootVel[index*3+0],
@@ -1080,7 +1127,7 @@ void ImpedancePlanner::GenerateReferenceTrj(
 
                 // Add rotation adjustment to supporting legs
                 RotationAdjustment(
-                        timeNow - m_lastTouchDownTime, 
+                        timeNow - m_lastTouchDownTime[0], 
                         rotateAngle, 
                         "A", 
                         targetFootPos, 
@@ -1095,7 +1142,7 @@ void ImpedancePlanner::GenerateReferenceTrj(
                 // B swing
                 int index = LEG_INDEX_GROUP_B[i];
                 SwingReferenceTrj(
-                        timeNow, m_lastLiftUpTime, m_lastTouchDownTime,
+                        timeNow, m_lastLiftUpTime[1], m_lastTouchDownTime[0],
                         &m_lastLiftRefPos[index*3], &m_lastLiftRefVel[index*3],
                         &targetFootPos[index*3],    &targetFootVel[index*3],
                         index >= 3);
@@ -1121,7 +1168,7 @@ void ImpedancePlanner::GenerateReferenceTrj(
 
                 // leg angle planning for supporting leg
                 StanceAngleReferenceTrj(
-                        timeNow,  m_lastTouchDownTime,  m_lastTdActPos[index*3 + 2],
+                        timeNow,  m_lastTouchDownTime[0],  m_lastTdActPos[index*3 + 2],
                         m_lastTdActPos[index*3+0],  m_lastTdActVel[index*3+0],
                         bodyVelLastTouchdown,  bodyVelNextLiftUp,
                         targetFootPos[index*3+0], targetFootVel[index*3+0],
@@ -1135,7 +1182,7 @@ void ImpedancePlanner::GenerateReferenceTrj(
                 
                 // Add rotation adjustment to supporting legs
                 RotationAdjustment(
-                        timeNow - m_lastTouchDownTime, 
+                        timeNow - m_lastTouchDownTime[0], 
                         rotateAngle, 
                         "A", 
                         targetFootPos, 
@@ -1164,7 +1211,7 @@ void ImpedancePlanner::GenerateReferenceTrj(
                 index = LEG_INDEX_GROUP_A[i];
 
                 SwingReferenceTrj(
-                        timeNow,   m_lastLiftUpTime, m_lastTouchDownTime,
+                        timeNow,   m_lastLiftUpTime[0], m_lastTouchDownTime[0],
                         &m_lastLiftRefPos[index*3], &m_lastLiftRefVel[index*3],
                         &targetFootPos[index*3],    &targetFootVel[index*3],
                         index >= 3);
@@ -1178,7 +1225,7 @@ void ImpedancePlanner::GenerateReferenceTrj(
                 // A Liftup and swing
                 int index = LEG_INDEX_GROUP_A[i];
                 SwingReferenceTrj(
-                        timeNow,   m_lastLiftUpTime, m_lastTouchDownTime,
+                        timeNow,   m_lastLiftUpTime[0], m_lastTouchDownTime[1],
                         &m_lastLiftRefPos[index*3], &m_lastLiftRefVel[index*3],
                         &targetFootPos[index*3],    &targetFootVel[index*3],
                         index >= 3);
@@ -1188,7 +1235,7 @@ void ImpedancePlanner::GenerateReferenceTrj(
                 index = LEG_INDEX_GROUP_B[i];
 
                 double tt = (timeNow - m_lastStateShiftTime) / Tset;
-                double estimateTouchdownVel = (m_lastTouchDownTime - m_lastLiftUpTime) * -9.81 * 0.05;
+                double estimateTouchdownVel = (m_lastTouchDownTime[1] - m_lastLiftUpTime[0]) * -9.81 * 0.05;
 
                 Model::HermitInterpolate(
                         Tset,
@@ -1202,7 +1249,7 @@ void ImpedancePlanner::GenerateReferenceTrj(
                  
                 // leg angle planning for supporting leg
                 StanceAngleReferenceTrj(
-                        timeNow,  m_lastTouchDownTime,  m_lastTdActPos[index*3 + 2],
+                        timeNow,  m_lastTouchDownTime[1],  m_lastTdActPos[index*3 + 2],
                         m_lastTdActPos[index*3+0],  m_lastTdActVel[index*3+0],
                         bodyVelLastTouchdown,  bodyVelNextLiftUp,
                         targetFootPos[index*3+0], targetFootVel[index*3+0],
@@ -1215,7 +1262,7 @@ void ImpedancePlanner::GenerateReferenceTrj(
                 }
                 // Add rotation adjustment to supporting legs
                 RotationAdjustment(
-                        timeNow - m_lastTouchDownTime, 
+                        timeNow - m_lastTouchDownTime[1], 
                         rotateAngle, 
                         "B", 
                         targetFootPos, 
@@ -1229,7 +1276,7 @@ void ImpedancePlanner::GenerateReferenceTrj(
                 // A swing
                 int index = LEG_INDEX_GROUP_A[i];
                 SwingReferenceTrj(
-                        timeNow,   m_lastLiftUpTime, m_lastTouchDownTime,
+                        timeNow,   m_lastLiftUpTime[0], m_lastTouchDownTime[1],
                         &m_lastLiftRefPos[index*3], &m_lastLiftRefVel[index*3],
                         &targetFootPos[index*3],    &targetFootVel[index*3],
                         index >= 3);
@@ -1241,7 +1288,7 @@ void ImpedancePlanner::GenerateReferenceTrj(
 
                 // leg angle planning for supporting leg
                 StanceAngleReferenceTrj(
-                        timeNow,  m_lastTouchDownTime,  m_lastTdActPos[index*3 + 2],
+                        timeNow,  m_lastTouchDownTime[1],  m_lastTdActPos[index*3 + 2],
                         m_lastTdActPos[index*3+0],  m_lastTdActVel[index*3+0],
                         bodyVelLastTouchdown,  bodyVelNextLiftUp,
                         targetFootPos[index*3+0], targetFootVel[index*3+0],
@@ -1270,7 +1317,7 @@ void ImpedancePlanner::GenerateReferenceTrj(
                 }
                 // Add rotation adjustment to supporting legs
                 RotationAdjustment(
-                        timeNow - m_lastTouchDownTime, 
+                        timeNow - m_lastTouchDownTime[1], 
                         rotateAngle, 
                         "B", 
                         targetFootPos, 
@@ -1298,7 +1345,7 @@ void ImpedancePlanner::GenerateReferenceTrj(
                 index = LEG_INDEX_GROUP_B[i];
 
                 SwingReferenceTrj(
-                        timeNow,   m_lastLiftUpTime, m_lastTouchDownTime,
+                        timeNow,   m_lastLiftUpTime[1], m_lastTouchDownTime[1],
                         &m_lastLiftRefPos[index*3], &m_lastLiftRefVel[index*3],
                         &targetFootPos[index*3],    &targetFootVel[index*3], 
                         index >= 3);
