@@ -115,7 +115,7 @@ const int ImpedancePlanner::LEG_INDEX_GROUP_A[3] = {Model::Leg::LEG_ID_MB, Model
 const int ImpedancePlanner::LEG_INDEX_GROUP_B[3] = {Model::Leg::LEG_ID_LB, Model::Leg::LEG_ID_RB, Model::Leg::LEG_ID_MF};
 const double ImpedancePlanner::IMPD_RATIO_A[3] = {1.8, 1, 1};
 const double ImpedancePlanner::IMPD_RATIO_B[3] = {1, 1, 1.8};
-const double ImpedancePlanner::BASE_ORIENT[2] = {0.01, 0.00};
+const double ImpedancePlanner::BASE_ORIENT[2] = {0.01, -0.02};
 const char * ImpedancePlanner::SUB_STATE_NAME[9] =
 {
     "HOLD_INIT_POS",
@@ -167,13 +167,13 @@ int ImpedancePlanner::Initialize()
 int ImpedancePlanner::ResetBasicGaitParameter()
 {
     Trt                  = 0.32;
-    Tset                 = 0.21;
-    Tth                  = 0.26;
+    Tset                 = 0.24;
+    Tth                  = 0.28;
     Tfly                 = 0.15; // the maximum flying time
     Trec                 = 2;
     stepHeight           = 0.08;
     stepLDHeight         = 0.023;
-    stepLDLenVel         = 0.2; // the vel of length of leg when td
+    stepLDLenVel         = 0.16; // the vel of length of leg when td
     stepTHHeight         = 0.024;
     standingHeight       = 0.64;
     bodyVelDesire        = -0;
@@ -200,11 +200,11 @@ int ImpedancePlanner::ResetImpedanceParam(int impedanceMode)
 { 
     double K_SOFT_LANDING[3] = {1e8, 1e8, 500};
     double B_SOFT_LANDING[3] = {1e5, 1e5, 900};
-    double M_SOFT_LANDING[3] = {100, 100, 1.7};
+    double M_SOFT_LANDING[3] = {100, 100, 5};
 
     double K_MEDIUM_SOFT[3] = {1e8, 1e8, 26000};
-    double B_MEDIUM_SOFT[3] = {1e5, 1e5, 2000}; // actual damping ratio is much smaller than the desired
-    double M_MEDIUM_SOFT[3] = {100, 100, 2};
+    double B_MEDIUM_SOFT[3] = {1e5, 1e5, 2600}; // actual damping ratio is much smaller than the desired
+    double M_MEDIUM_SOFT[3] = {100, 100, 15};
 
     switch (impedanceMode)
     { 
@@ -593,9 +593,12 @@ int ImpedancePlanner::CalculateAdjForceBP(
         double  tdTimeInterval)
 {
                       //Roll, Pitch, Height
-    double KP_BP[3] = { 10000,  30000,     0};
-    double KI_BP[3] = { 10000,  10000,     0};
-    double KD_BP[3] = {  1000,   2000,     0};
+    //double KP_BP[3] = { 12000,  30000,     0};
+    //double KI_BP[3] = { 60000,  60000,     0};
+    //double KD_BP[3] = {   100,    100,     0};
+    double KP_BP[3] = {  0,  0,     0};
+    double KI_BP[3] = {  0,  0,     0};
+    double KD_BP[3] = {  0,  0,     0};
     double force[3];
     double th = 0.001;
 
