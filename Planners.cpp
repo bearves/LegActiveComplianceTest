@@ -593,12 +593,12 @@ int ImpedancePlanner::CalculateAdjForceBP(
         double  tdTimeInterval)
 {
                       //Roll, Pitch, Height
-    //double KP_BP[3] = { 12000,  30000,     0};
-    //double KI_BP[3] = { 60000,  60000,     0};
-    //double KD_BP[3] = {   100,    100,     0};
-    double KP_BP[3] = {  0,  0,     0};
-    double KI_BP[3] = {  0,  0,     0};
-    double KD_BP[3] = {  0,  0,     0};
+    double KP_BP[3] = { 12000,  30000,     0};
+    double KI_BP[3] = { 60000,  60000,     0};
+    double KD_BP[3] = {   100,    100,     0};
+    //double KP_BP[3] = {  0,  0,     0};
+    //double KI_BP[3] = {  0,  0,     0};
+    //double KD_BP[3] = {  0,  0,     0};
     double force[3];
     double th = 0.001;
 
