@@ -9,8 +9,8 @@ using namespace std;
 int main(int argc, char *argv[])
 {
     double timeNow;
-    double legTipPoints[3] = {0.045, -0.0, -0.64};
-    double legTipPoints2[3] = {-0.0, 0, -0.64};
+    double legTipPoints[3] = {0.00, -0.01, -0.62};
+    double legTipPoints2[3] = {-0.0, 0, -0.62};
     double screwLength[3];
     double screwLength2[3];
     Model::Leg leg;
