@@ -109,7 +109,7 @@ int GoToPointPlanner::GenerateJointTrajectory(double timeNow, double* currentPoi
 
 const double ImpedancePlanner::SAFETY_RETURN_TIMEOUT = 6;
 const double ImpedancePlanner::FOOT_POS_UP_LIMIT[3]  = { Model::PI/7,  Model::PI/36, 0.76};
-const double ImpedancePlanner::FOOT_POS_LOW_LIMIT[3] = {-Model::PI/7, -Model::PI/36, 0.5};
+const double ImpedancePlanner::FOOT_POS_LOW_LIMIT[3] = {-Model::PI/7, -Model::PI/36, 0.46};
 const double ImpedancePlanner::FORCE_DEADZONE[3]     = { 2.5, 2.5, 10 };
 const int ImpedancePlanner::LEG_INDEX_GROUP_A[3] = {Model::Leg::LEG_ID_MB, Model::Leg::LEG_ID_RF, Model::Leg::LEG_ID_LF};
 const int ImpedancePlanner::LEG_INDEX_GROUP_B[3] = {Model::Leg::LEG_ID_LB, Model::Leg::LEG_ID_RB, Model::Leg::LEG_ID_MF};
@@ -200,7 +200,7 @@ int ImpedancePlanner::ResetImpedanceParam(int impedanceMode)
 { 
     double K_SOFT_LANDING[3] = {1e8, 1e8, 500};
     double B_SOFT_LANDING[3] = {1e5, 1e5, 900};
-    double M_SOFT_LANDING[3] = {100, 100, 5};
+    double M_SOFT_LANDING[3] = {100, 100, 15};
 
     double K_MEDIUM_SOFT[3] = {1e8, 1e8, 26000};
     double B_MEDIUM_SOFT[3] = {1e5, 1e5, 2600}; // actual damping ratio is much smaller than the desired
