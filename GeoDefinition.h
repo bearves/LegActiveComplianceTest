@@ -7,7 +7,7 @@ namespace Model
 
     const double LG1 = 250;
     const double LG2 = 280;
-    const double LG3 = 280;
+    const double LG3 = 230;
     const double LGOS = LG1 - 50;
     const double PHI = 180 * PI / 180;
     const double LGC = 110;

@@ -108,13 +108,13 @@ int GoToPointPlanner::GenerateJointTrajectory(double timeNow, double* currentPoi
 }
 
 const double ImpedancePlanner::SAFETY_RETURN_TIMEOUT = 6;
-const double ImpedancePlanner::FOOT_POS_UP_LIMIT[3]  = { Model::PI/7,  Model::PI/36, 0.76};
-const double ImpedancePlanner::FOOT_POS_LOW_LIMIT[3] = {-Model::PI/7, -Model::PI/36, 0.46};
+const double ImpedancePlanner::FOOT_POS_UP_LIMIT[3]  = { Model::PI/7,  Model::PI/36, 0.72};
+const double ImpedancePlanner::FOOT_POS_LOW_LIMIT[3] = {-Model::PI/7, -Model::PI/36, 0.44};
 const double ImpedancePlanner::FORCE_DEADZONE[3]     = { 2.5, 2.5, 10 };
 const int ImpedancePlanner::LEG_INDEX_GROUP_A[3] = {Model::Leg::LEG_ID_MB, Model::Leg::LEG_ID_RF, Model::Leg::LEG_ID_LF};
 const int ImpedancePlanner::LEG_INDEX_GROUP_B[3] = {Model::Leg::LEG_ID_LB, Model::Leg::LEG_ID_RB, Model::Leg::LEG_ID_MF};
-const double ImpedancePlanner::IMPD_RATIO_A[3] = {1.8, 1, 1};
-const double ImpedancePlanner::IMPD_RATIO_B[3] = {1, 1, 1.8};
+const double ImpedancePlanner::IMPD_RATIO_A[3] = {1.6, 1, 1};
+const double ImpedancePlanner::IMPD_RATIO_B[3] = {1, 1, 1.6};
 const double ImpedancePlanner::BASE_ORIENT[2] = {0.01, -0.02};
 const char * ImpedancePlanner::SUB_STATE_NAME[9] =
 {
@@ -175,7 +175,7 @@ int ImpedancePlanner::ResetBasicGaitParameter()
     stepLDHeight         = 0.023;
     stepLDLenVel         = 0.16; // the vel of length of leg when td
     stepTHHeight         = 0.024;
-    standingHeight       = 0.64;
+    standingHeight       = 0.59;
     bodyVelDesire        = -0;
     rotateAngle          = 0;
     bodyVelLastTouchdown = 0.0;
