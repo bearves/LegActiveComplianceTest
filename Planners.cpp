@@ -115,7 +115,7 @@ const int ImpedancePlanner::LEG_INDEX_GROUP_A[3] = {Model::Leg::LEG_ID_MB, Model
 const int ImpedancePlanner::LEG_INDEX_GROUP_B[3] = {Model::Leg::LEG_ID_LB, Model::Leg::LEG_ID_RB, Model::Leg::LEG_ID_MF};
 const double ImpedancePlanner::IMPD_RATIO_A[3] = {1.8, 1, 1};
 const double ImpedancePlanner::IMPD_RATIO_B[3] = {1, 1, 1.8};
-const double ImpedancePlanner::BASE_ORIENT[2] = {0.01, -0.02};
+const double ImpedancePlanner::BASE_ORIENT[2] = {0.007, -0.005};
 const char * ImpedancePlanner::SUB_STATE_NAME[9] =
 {
     "HOLD_INIT_POS",
@@ -202,6 +202,10 @@ int ImpedancePlanner::ResetImpedanceParam(int impedanceMode)
     double B_SOFT_LANDING[3] = {1e5, 1e5, 900};
     double M_SOFT_LANDING[3] = {100, 100, 15};
 
+    //double K_SOFT_LANDING[3] = {1e8, 1e8, 26000};
+    //double B_SOFT_LANDING[3] = {1e5, 1e5, 2600};
+    //double M_SOFT_LANDING[3] = {100, 100, 15};
+    
     double K_MEDIUM_SOFT[3] = {1e8, 1e8, 26000};
     double B_MEDIUM_SOFT[3] = {1e5, 1e5, 2600}; // actual damping ratio is much smaller than the desired
     double M_MEDIUM_SOFT[3] = {100, 100, 15};
